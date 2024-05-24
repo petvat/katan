@@ -4,9 +4,17 @@ import io.github.petvat.katan.server.Settings
 import io.github.petvat.katan.server.board.Coordinate
 import io.github.petvat.katan.server.board.Resource
 import io.github.petvat.katan.server.board.Tile
+import io.github.petvat.katan.server.board.TileCoordinate
 
 
 object BoardGenerator {
+
+    /**
+     * Probably necessary for creating UI
+     */
+    fun getIntersections(tileCoordinates: Collection<Coordinate>): Set<Coordinate> {
+        TODO("Implement get intersections OR maybe not")
+    }
 
 
     /**
@@ -78,6 +86,7 @@ object BoardGenerator {
     }
 
 
+    // FIXME:
     fun generateDefaultBoard(): List<Tile> {
         val tiles: MutableList<Tile> = mutableListOf()
         val numbers = mutableListOf<Int>()
@@ -93,7 +102,7 @@ object BoardGenerator {
         )
 
         val minWidth = 3
-        val maxWidth = 6 // 4 + desert
+        val maxWidth = 4 // 4 + desert
         val height = (maxWidth + 1) - minWidth
 
         var x = -maxWidth
@@ -138,6 +147,89 @@ object BoardGenerator {
             y += 2
         }
         return tiles
+    }
+
+    /**
+     * Generate default board, i.e. radius = 3
+     */
+    fun generateDefaultBoardCircular(): List<Tile> {
+        return generateBoardCircular(3)
+    }
+
+    /**
+     * Generates a board using rings from radius.
+     *
+     * @see ringTiles
+     */
+    fun generateBoardCircular(rings: Int): List<Tile> {
+        val tiles: MutableList<Tile> = mutableListOf()
+        val tileCoordinates: MutableList<TileCoordinate> = mutableListOf()
+
+        for (ring in 1..rings) {
+            tileCoordinates.addAll(ringTiles(ring))
+        }
+
+        val numbers = mutableListOf<Int>()
+        numbers.addAll(Settings.TERRAIN_NUMBERS)
+        numbers.shuffle()
+
+        val terrainCounts = mutableMapOf(
+            Resource.WOOL to Settings.NUM_PASTURE,
+            Resource.ORE to Settings.NUM_MOUNTAINS,
+            Resource.WOOD to Settings.NUM_FOREST,
+            Resource.BRICK to Settings.NUM_HILLS,
+            Resource.WHEAT to Settings.NUM_FIELDS
+        )
+
+        tileCoordinates.forEach { coord ->
+            if (coord.x == 0 && coord.y == 0) {
+                tiles.add(Tile(coord, null, -1)) // desert
+            } else {
+                // TODO: Check this works
+                tiles.add(Tile(coord, randomTile(terrainCounts), numbers.removeFirst()))
+            }
+        }
+        return tiles
+    }
+
+    /**
+     * Get tiles of radius away from origin.
+     * @param radius away from origin
+     * @return List of tile coordinates
+     */
+    private fun ringTiles(radius: Int): List<TileCoordinate> {
+
+        val tiles: MutableList<TileCoordinate> = mutableListOf()
+
+        fun addTiles(x: Int, y: Int) {
+            tiles.add(TileCoordinate(x, y))
+            tiles.add(TileCoordinate(y, x)) // add mirror as well
+        }
+
+        var currX = 0
+        var currY = 0
+        currX = radius * -2
+        currY = radius * -2
+
+        tiles.add(TileCoordinate(currX, currY))
+        repeat(radius) {
+            currY += 2
+            addTiles(currX, currY)
+        }
+        repeat(radius) {
+            currX += 2
+            currY += 2
+            addTiles(currX, currY)
+        }
+        repeat(radius) {
+            currX += 2
+            addTiles(currX, currY)
+        }
+        return tiles
+    }
+
+    fun randomizedBoardCircular(tiles: Int) {
+
     }
 
 

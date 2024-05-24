@@ -14,13 +14,14 @@ class InitiateTrade(
 
 ) : AbstractAction() {
     override fun execute(): Map<Int, ActionResponse> {
-        validatePlayerInTurn() // Currently only the player in turn can initiate trades
         val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
+        validatePlayerInTurn() // Currently only the player in turn can initiate trades
         gameProgress.players.forEach { player ->
+            val actionDTO = InitiateTradeDTO(playerID, tradeID, targetPlayers, offer, request)
             if (player.ID == playerID) {
-                responses[playerID] = ActionResponse(true, "You sent a trade offer", null)
+                responses[playerID] =
+                    ActionResponse(true, "You sent a trade offer", actionDTO) // Use ID to act on response
             } else if (targetPlayers.contains(player.ID)) {
-                val actionDTO = InitiateTradeDTO(playerID, tradeID, targetPlayers, offer, request)
                 responses[player.ID] = ActionResponse(
                     true, "Trade offer sent to you." +
                         "Respond to trade ID $tradeID", actionDTO

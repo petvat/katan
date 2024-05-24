@@ -15,6 +15,6 @@ data class Tile(
     val rollListenValue: Int,
 )
 
-enum class Terrain {
-    FOREST, FIELDS, PASTURE, MOUNTAINS, HILLS, DESERT
-}
+//enum class Terrain {
+//    FOREST, FIELDS, PASTURE, MOUNTAINS, HILLS, DESERT
+//}

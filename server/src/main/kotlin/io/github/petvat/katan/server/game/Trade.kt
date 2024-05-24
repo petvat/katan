@@ -13,5 +13,9 @@ class Trade(
 ) {
     fun transact() {
         // TODO: Implement transaction
+        throw IllegalStateException(
+            "Trade can not be completed because the two contracting parts do not have" +
+                "sufficient resources."
+        )
     }
 }

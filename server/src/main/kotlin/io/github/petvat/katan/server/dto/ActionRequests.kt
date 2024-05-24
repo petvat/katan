@@ -15,6 +15,10 @@ interface ActionRequest {
     val actionID: ActionID
 }
 
+/**
+ * NOTE: gameID should be -1
+ * FIXME: Fix gameID not need be required
+ */
 data class NewGameRequest(
     override val playerID: Int,
     override val gameID: Int,
@@ -76,6 +80,12 @@ data class MoveRobberRequest(
     override val playerID: Int,
     override val actionID: ActionID = ActionID.SETUP,
     val newTileCoordinate: Coordinate
+) : ActionRequest
+
+data class EndTurnRequest(
+    override val gameID: Int,
+    override val playerID: Int,
+    override val actionID: ActionID = ActionID.SETUP,
 ) : ActionRequest
 
 

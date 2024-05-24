@@ -5,6 +5,6 @@ package io.github.petvat.katan.server.board
  * @see Road
  */
 data class Path(
-    val coordinate: io.github.petvat.katan.server.board.Coordinate,
-    val road: io.github.petvat.katan.server.board.Road
+    val coordinate: Coordinate,
+    val road: Road
 )

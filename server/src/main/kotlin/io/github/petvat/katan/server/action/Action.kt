@@ -13,11 +13,20 @@ interface Action {
      * @return responses for each player
      */
     fun execute(): Map<Int, ActionResponse>
+
+    fun validatePlayerInTurn() {
+        if (gameProgress.playerInTurn() != playerID) {
+            throw IllegalArgumentException(
+                "Player $playerID denied ${this::class.simpleName} " +
+                    "action.\n Reason: Not your turn!"
+            )
+        }
+    }
 }
 
 abstract class AbstractAction : Action {
 
-    protected fun validatePlayerInTurn() {
+    override fun validatePlayerInTurn() {
         if (gameProgress.playerInTurn() != playerID) {
             throw IllegalArgumentException(
                 "Player $playerID denied ${this::class.simpleName} " +

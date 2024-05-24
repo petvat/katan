@@ -12,7 +12,7 @@ enum class VillageKind(val productionNumber: Int, val cost: ResourceMap) {
 
 enum class RoadKind(val cost: ResourceMap) {
     ROAD(ResourceMap(1, 0, 0, 0, 1))
-    // SHIP
+    // SHIP(ResourceMap(1, 0, 0, 1, 0))
 }
 
 class Village(
@@ -28,3 +28,9 @@ class Road(
     val roadKind: RoadKind,
     val owner: Player
 )
+
+
+fun main() {
+    val buildKind = BuildKind.Village(VillageKind.SETTLEMENT)
+    println("OK)")
+}

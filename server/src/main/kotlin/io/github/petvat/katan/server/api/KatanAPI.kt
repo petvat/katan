@@ -1,12 +1,15 @@
 package io.github.petvat.katan.server.api
 
 import io.github.petvat.katan.server.action.ActionResponse
-import io.github.petvat.katan.server.action.InitiateTrade
-import io.github.petvat.katan.server.action.MoveRobber
 import io.github.petvat.katan.server.board.Player
 import io.github.petvat.katan.server.dto.*
 import io.github.petvat.katan.server.game.GameProgress
 
+/**
+ * All game actions go through the KatanAPI for processing.
+ * KatanAPI is responsible for translating client requests into game actions and performing them,
+ * then prompt the Network handler.
+ */
 object KatanAPI {
 
     val ongoingGames: MutableList<GameProgress> = mutableListOf()
@@ -14,15 +17,31 @@ object KatanAPI {
     fun performAction(actionRequest: ActionRequest) {
 
         // ActionFactory.createAction(actionRequest, getGameByID(actionRequest.gameID)).execute()
-        val game = getGameByID(actionRequest.gameID)
-        val responses = when (actionRequest) {
-            is NewGameRequest -> createNewGame(actionRequest)
-            is RollDiceRequest -> game.gameState.rollDice(actionRequest.playerID)
-            is InitiateTradeRequest -> game.gameState.initiateTrade(actionRequest)
-            is RespondTradeRequest -> game.gameState.respondTrade(actionRequest)
-            is BuildRequest -> game.gameState.build(actionRequest)
-            is MoveRobberRequest -> game.gameState.moveRobber(actionRequest)
-            else -> throw IllegalArgumentException("Unknown action request.")
+
+        var responses: Map<Int, ActionResponse> = mutableMapOf()
+
+        try {
+            if (actionRequest is NewGameRequest) {
+                responses = createNewGame(actionRequest);
+            } else {
+                val game = getGameByID(actionRequest.gameID)
+                responses = when (actionRequest) {
+                    is RollDiceRequest -> game.gameState.rollDice(actionRequest.playerID)
+                    is InitiateTradeRequest -> game.gameState.initiateTrade(actionRequest)
+                    is RespondTradeRequest -> game.gameState.respondTrade(actionRequest)
+                    is BuildRequest -> game.gameState.build(actionRequest)
+                    is MoveRobberRequest -> game.gameState.moveRobber(actionRequest)
+                    is EndTurnRequest -> game.gameState.endTurn(actionRequest.playerID)
+                    else -> throw IllegalArgumentException("Unknown action request.")
+                }
+            }
+        } catch (e: RuntimeException) {
+            responses as MutableMap
+            responses.clear() // Ensure empty
+            responses[actionRequest.playerID] = ActionResponse(
+                false, e.message ?: ("Unknown exception" +
+                    "occured."), null
+            )
         }
 
         // TODO: response to network OUT
@@ -42,4 +61,5 @@ object KatanAPI {
     fun getGameByID(ID: Int): GameProgress {
         return ongoingGames.find { g -> g.ID == ID } ?: throw IllegalArgumentException("No such game exist.")
     }
+
 }

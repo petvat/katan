@@ -4,12 +4,8 @@ class BoardManager {
 
     var tiles: MutableList<Tile> = mutableListOf()
     var robberLocation: Coordinate = Coordinate(0, 0)
-    private var players: MutableList<Player> = mutableListOf()
-
     private var intersections: MutableList<Intersection> = mutableListOf()
-
     private var paths: MutableList<Path> = mutableListOf()
-
 
     /**
      * Get intersections adjacent to a tile. Will return atmost return 6 intersections.
@@ -55,12 +51,11 @@ class BoardManager {
      * Attempts to move robber to tile coordinate.
      * @return true if success
      */
-    fun moveRobber(tileCoordinate: Coordinate): Boolean {
-        if (tiles.any { it.coordinate == tileCoordinate } && robberLocation != tileCoordinate) {
-            robberLocation = tileCoordinate
-            return true
+    fun moveRobber(tileCoordinate: Coordinate) {
+        if (tiles.none { it.coordinate == tileCoordinate } || robberLocation == tileCoordinate) {
+            throw IllegalArgumentException("Cannot move robber to coordinate $tileCoordinate")
         } else {
-            return false
+            robberLocation = tileCoordinate
         }
     }
 
@@ -93,16 +88,75 @@ class BoardManager {
     }
 
 
-    fun getPlayerBuildingCount() {}
+    fun getAdjacentPaths(intersectionCoordinate: IntersectionCoordinate): List<Coordinate> {
+        val adjacentPathCoordinates: MutableList<PathCoordinate> = mutableListOf()
 
-    fun getAdjacentPaths(intersection: Intersection) {
-        val coordinate = intersection.coordinate
-
-        val offsets = arrayOf(
+        val offsets = if (intersectionCoordinate.x % 2 == 0) arrayOf(
+            // top
             0, 0,
+            -1, -1,
+            -1, 0
+        ) else {
+            // bottom
+            arrayOf(
+                0, 0,
+                0, -1,
+                -1, -1
+            )
+        }
+        return calculateOffsets(intersectionCoordinate, offsets).filter { isValidCoordinate(it) }
+    }
+
+    /**
+     * Get Adjacent paths to a path.
+     *
+     * There are 3 offsets. ...
+     */
+    fun getAdjacentPaths(pathCoordinate: PathCoordinate): List<Coordinate> {
+        // |
+        val horizontalOffsets = arrayOf(
             -1, 0,
-            -1, -1
+            0, 1,
+            0, -1,
+            1, 0
         )
+        // \
+        val downOffsets = arrayOf(
+            -1, 0,
+            -1, -1,
+            1, 0,
+            1, 1
+        )
+        // /
+        val upOffsets = arrayOf(
+            0, 1,
+            1, 1,
+            -1, -1,
+            0, -1
+        )
+
+        val offsets: Array<Int> = if (pathCoordinate.x + pathCoordinate.y % 2 == 0) {
+            // Path is horizontal
+            horizontalOffsets
+        } else if (pathCoordinate.x % 2 == 0) {
+            // Path is downwards
+            downOffsets
+        } else {
+            // path is upwards
+            upOffsets
+        }
+        return calculateOffsets(pathCoordinate, offsets)
+    }
+
+    /**
+     * @param offsets expects array to iterate over in pairs of 2
+     */
+    private fun calculateOffsets(coordinate: Coordinate, offsets: Array<Int>): List<Coordinate> {
+        val coordinateOffsets: MutableList<Coordinate> = mutableListOf()
+        for (i in offsets.indices.step(2)) {
+            coordinateOffsets.add(Coordinate(coordinate.x + offsets[i], coordinate.y + offsets[i + 1]))
+        }
+        return coordinateOffsets
     }
 
     // Samtidig kan bruke cache, treng ikkje å oppdatere ofte
@@ -163,11 +217,43 @@ class BoardManager {
                 adjacentTiles.add(Coordinate(x + offsets[i + 1], y + offsets[i]))
             }
         }
-        return tiles.map { it.coordinate }.any { it in adjacentTiles }
+        return tiles.map { it.coordinate }.any { adjacentTiles.contains(it) }
     }
 
+    // TODO: Intersection coordinate
     private fun isValidCoordinate(coordinate: Coordinate): Boolean {
         return isValidCoordinate(Coordinate(coordinate.x, coordinate.y))
+    }
+
+    private fun isValidCoordinate(pathCoordinate: PathCoordinate): Boolean {
+
+        // |
+        val horizontalOffsets = arrayOf(
+            -1, -1,
+            1, 1
+        )
+        // \
+        val downOffsets = arrayOf(
+            0, -1,
+            0, 1
+        )
+        // upOffsets
+        val upOffsets = arrayOf(
+            -1, 0,
+            1, 0
+        )
+
+
+        val offsets = if (pathCoordinate.x + pathCoordinate.y % 2 == 0) {
+            horizontalOffsets
+        } else if (pathCoordinate.x % 2 == 0) {
+            downOffsets
+        } else {
+            upOffsets
+        }
+        val adjacentTiles = calculateOffsets(pathCoordinate, offsets)
+
+        return tiles.map { t -> t.coordinate }.any { adjacentTiles.contains(it) }
     }
 
     fun intersectionAt(coordinate: Coordinate): Boolean {
@@ -252,6 +338,29 @@ class BoardManager {
         return player.inventory.minus(cost)
     }
 
+    private fun getCoordinatesPathsOwnedBy(player: Player): List<PathCoordinate> {
+        return paths.filter { p -> p.road.owner == player }.map { p -> p.coordinate as PathCoordinate }.toList()
+    }
+
+    /**
+     * Check if a building on this intersection would violate distance rule.
+     *
+     * @param intersectionCoordinate to check
+     * @return true if comply distance rule
+     */
+    private fun distanceRule(intersectionCoordinate: IntersectionCoordinate): Boolean {
+        return intersections
+            .map { i -> i.coordinate }
+            .any { it in getAdjacentIntersections(intersectionCoordinate) }
+    }
+
+    private fun invalidIntersectionsByDistanceRule(): Set<Coordinate> {
+        return intersections
+            .flatMap { i ->
+                listOf(i.coordinate) + getAdjacentIntersections(i.coordinate)
+            }.toSet()
+    }
+
     /**
      * Checks whether coordinate is valid.
      */
@@ -259,7 +368,10 @@ class BoardManager {
         player: Player,
         coordinate: Coordinate
     ): Boolean {
-        return getSettlementFrontier(player).contains(coordinate)
+        // road into intersection owned player and follows distance rule
+        return (getCoordinatesPathsOwnedBy(player).any {
+            getAdjacentPaths(coordinate as IntersectionCoordinate).contains(it)
+        } && !invalidIntersectionsByDistanceRule().contains(coordinate))
     }
 
     /**
@@ -298,11 +410,7 @@ class BoardManager {
         coordinate: Coordinate,
         villageKind: VillageKind
     ) {
-        val invalidIntersections: Set<Coordinate> = intersections
-            .flatMap { i ->
-                listOf(i.coordinate) + getAdjacentIntersections(i.coordinate)
-            }.toSet()
-        if (!isValidCoordinate(coordinate) || invalidIntersections.contains(coordinate)) {
+        if (!isValidCoordinate(coordinate) || invalidIntersectionsByDistanceRule().contains(coordinate)) {
             throw IllegalArgumentException("Invalid build coordinate.")
         } else {
             intersections.add(
@@ -371,7 +479,11 @@ class BoardManager {
         coordinate: Coordinate,
         roadKind: RoadKind
     ): Boolean {
-        return getRoadFrontier(player).contains(coordinate)
+        return (!paths.map { p -> p.coordinate }.contains(coordinate) ||
+            getCoordinatesPathsOwnedBy(player)
+                .any { getAdjacentPaths(coordinate as PathCoordinate).contains(it) }
+            )
+        // return getRoadFrontier(player).contains(coordinate)
     }
 
 

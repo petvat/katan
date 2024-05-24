@@ -3,7 +3,7 @@ package io.github.petvat.katan.server.action
 import io.github.petvat.katan.server.game.GameProgress
 
 
-// TODO: RETIRED
+// NOTE: Retired
 //class SetupGame(
 //    override val gameProgress: GameProgress,
 //    override val playerID: Int

@@ -8,7 +8,7 @@ import io.github.petvat.katan.server.board.Player
  * Keep track of all that data of a game.
  */
 class GameProgress(val ID: Int, val gameSettings: GameSettings) {
-    var gameState: GameState = RollDiceState(this)
+    var gameState: GameState = StartGameState(this)
     val boardManager = BoardManager()
     private val _players: MutableList<Player> = mutableListOf()
     private val _turns: MutableList<Turn> = mutableListOf()
@@ -44,8 +44,12 @@ class GameProgress(val ID: Int, val gameSettings: GameSettings) {
         return actionQueue.removeFirst()
     }
 
-    private fun initializeRandomTurnOrder() {
-
+    fun initializeRandomTurnOrder(): List<Int> {
+        if (gameState is SetUpState) {
+            TODO("Implement init turnorder")
+        } else {
+            throw IllegalStateException("Can only initialize turn order in setup state.")
+        }
     }
 
     fun setNextTurn(nextPlayerID: Int) {
@@ -54,8 +58,9 @@ class GameProgress(val ID: Int, val gameSettings: GameSettings) {
         }
     }
 
-    private fun nextTurn() {
-
+    fun nextTurn(): Int {
+        gameState = RollDiceState(this)
+        TODO("Player ID next player")
     }
 
     fun getPlayer(playerID: Int): Player {

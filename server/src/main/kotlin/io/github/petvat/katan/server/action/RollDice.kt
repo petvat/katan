@@ -2,7 +2,9 @@ package io.github.petvat.katan.server.action
 
 // Make general
 import io.github.petvat.katan.server.dto.RollDiceDTO
+import io.github.petvat.katan.server.game.BuildAndTradeState
 import io.github.petvat.katan.server.game.GameProgress
+import io.github.petvat.katan.server.game.MoveRobberState
 import kotlin.random.Random
 
 class RollDice(
@@ -15,29 +17,24 @@ class RollDice(
 
     override fun execute(): Map<Int, ActionResponse> {
         val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
-        try {
-            validatePlayerInTurn()
-            val diceRoll: Pair<Int, Int> = rollDice()
-            val moveRobber: Boolean = diceRoll.first + diceRoll.second == 7
 
-            if (moveRobber) {
-                // gameProgress.enqueue()
-            }
+        validatePlayerInTurn()
+        val diceRoll: Pair<Int, Int> = rollDice()
+        val moveRobber: Boolean = diceRoll.first + diceRoll.second == 7
 
-            // TODO: Better approach regarding player resource diff.
-            gameProgress.players.forEach { player ->
-                val actionDTO = RollDiceDTO(
-                    this.player.ID, diceRoll.first,
-                    diceRoll.second, player.inventory,
-                    moveRobber// Not optimal
-                )
-                responses[player.ID] =
-                    ActionResponse(true, "$diceRoll was rolled.", actionDTO)
-            }
-        } catch (e: Exception) {
-            responses.clear() // flush
-            responses[playerID] =
-                ActionResponse(false, e.message ?: "Unknown error occured.", null)
+        // TODO: State switch, MoveRobber() or BuildAndTrade()
+        if (moveRobber) gameProgress.gameState = MoveRobberState(gameProgress)
+        else gameProgress.gameState = BuildAndTradeState(gameProgress)
+
+        // TODO: Better approach regarding player resource diff.
+        gameProgress.players.forEach { player ->
+            val actionDTO = RollDiceDTO(
+                this.player.ID, diceRoll.first,
+                diceRoll.second, player.inventory,
+                moveRobber// Not optimal
+            )
+            responses[player.ID] =
+                ActionResponse(true, "$diceRoll was rolled.", actionDTO)
         }
         return responses
     }

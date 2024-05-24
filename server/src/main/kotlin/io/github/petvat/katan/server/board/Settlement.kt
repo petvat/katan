@@ -1,5 +1,6 @@
 package io.github.petvat.katan.server.board
 
+// NOTE: Retired
 //class Settlement(
 //    override val owner: Player, override val intersectionCoordinate: Coordinate
 //) : Building {

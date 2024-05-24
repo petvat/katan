@@ -43,3 +43,14 @@ class InitiateTradeDTO(
     val offer: ResourceMap,
     val request: ResourceMap
 ) : ActionDTO
+
+class TradeDTO(
+    override val playerID: Int,
+    val tradeID: Int,
+    val accept: Boolean
+) : ActionDTO
+
+class GameStartedDTO(
+    override val playerID: Int,
+    val turnOrder: List<Int>
+) : ActionDTO
