@@ -7,7 +7,7 @@ class ActionResponse(
     val actionCode: ActionCode,
     val success: Boolean,
     val message: String,
-    vararg data: ActionDTO?
+    val data: ActionDTO?
 )
 
 interface Action {

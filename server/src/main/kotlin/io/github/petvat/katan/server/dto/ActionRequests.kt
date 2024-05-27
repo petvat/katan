@@ -4,7 +4,6 @@ import io.github.petvat.katan.server.action.ActionCode
 import io.github.petvat.katan.server.board.BuildKind
 import io.github.petvat.katan.server.board.Coordinate
 import io.github.petvat.katan.server.board.ResourceMap
-import io.github.petvat.katan.server.game.GameSettings
 
 /**
  * Request to do an action
@@ -22,8 +21,8 @@ interface ActionRequest {
 data class NewGameRequest(
     override val playerID: Int,
     override val gameID: Int,
-    override val actionCode: ActionCode = ActionCode.GAME_CREATE,
-    val gameSettings: GameSettings
+    override val actionCode: ActionCode = ActionCode.GAME_CREATE
+    // val gameSettings: GameSettings?
 ) : ActionRequest
 
 data class RollDiceRequest(

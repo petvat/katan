@@ -7,7 +7,8 @@ import io.github.petvat.katan.server.board.Player
 /**
  * Keep track of all that data of a game.
  */
-class GameProgress(val ID: Int, val gameSettings: GameSettings) {
+class GameProgress(val ID: Int /*val gameSettings: GameSettings*/) {
+
     var gameState: GameState = StartGameState(this)
     val boardManager = BoardManager()
     private val _players: MutableList<Player> = mutableListOf()
