@@ -20,7 +20,7 @@ class StartGame(
         gameProgress.players.forEach { player ->
             val actionDTO = GameStartedDTO(playerID, gameProgress.initializeRandomTurnOrder())
             responses[player.ID] = ActionResponse(
-                true, "Game has now started!" +
+                ActionCode.GAME_START, true, "Game has now started!" +
                     "First player to place a settlement is ${gameProgress.turnOrder[0]}", actionDTO
             )
         }

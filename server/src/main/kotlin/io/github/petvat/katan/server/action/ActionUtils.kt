@@ -27,12 +27,12 @@ object ActionUtils {
         gameProgress.players.forEach { player ->
             if (player.ID == playerID) {
                 responses[player.ID] =
-                    ActionResponse(true, "You built a ${buildKind}.", null)
+                    ActionResponse(ActionCode.BUILD,true, "You built a ${buildKind}.", null)
             } else {
                 // Broadcast
                 val buildDTO = BuildDTO(playerID, buildKind, coordinate)
                 responses[player.ID] =
-                    ActionResponse(
+                    ActionResponse(ActionCode.BUILD,
                         true,
                         "${player.playerName} built a $buildKind.",
                         buildDTO

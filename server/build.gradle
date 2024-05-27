@@ -9,7 +9,7 @@ application.setMainClass(mainClassName)
 eclipse.project.name = appName + '-server'
 
 dependencies {
-
+  implementation(project(":core"))
 }
 
 jar {

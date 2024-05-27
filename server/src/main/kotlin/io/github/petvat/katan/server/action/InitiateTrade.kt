@@ -20,9 +20,9 @@ class InitiateTrade(
             val actionDTO = InitiateTradeDTO(playerID, tradeID, targetPlayers, offer, request)
             if (player.ID == playerID) {
                 responses[playerID] =
-                    ActionResponse(true, "You sent a trade offer", actionDTO) // Use ID to act on response
+                    ActionResponse(ActionCode.INIT_TRADE, true, "You sent a trade offer", actionDTO) // Use ID to act on response
             } else if (targetPlayers.contains(player.ID)) {
-                responses[player.ID] = ActionResponse(
+                responses[player.ID] = ActionResponse(ActionCode.INIT_TRADE,
                     true, "Trade offer sent to you." +
                         "Respond to trade ID $tradeID", actionDTO
                 )

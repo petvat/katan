@@ -52,17 +52,17 @@ configure(subprojects) {
     }
   }
   compileKotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-  
+
 }
 
 subprojects {
   version = '1.0.0'
   ext.appName = 'Katan'
   repositories {
+    google()
     mavenCentral()
     maven { url 'https://s01.oss.sonatype.org' }
     // You may want to remove the following line if you have errors downloading dependencies.
-    mavenLocal()
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
     maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
     maven { url 'https://jitpack.io' }

@@ -1,12 +1,15 @@
 package io.github.petvat.katan.server.dto
 
+import io.github.petvat.katan.server.action.ActionCode
 import io.github.petvat.katan.server.board.BuildKind
 import io.github.petvat.katan.server.board.Coordinate
 import io.github.petvat.katan.server.board.ResourceMap
-import io.github.petvat.katan.server.game.GameState
 
 /**
  * Response to an action
+ * Sent as an acknowledgement and may also provide some response data associated with a request.
+ *
+ * TODO: append gameID to support multiple games same client
  */
 interface ActionDTO {
     val playerID: Int // Executer of action
@@ -14,6 +17,17 @@ interface ActionDTO {
 
 // TODO: Maybe add a ResponseID/ActionID to each DTO or to ActionResponse,
 //  so that client knows *what* a respond is responding to
+
+// NOTE: Because data classes doesn't like inheritance
+data class GenericDTO(
+    val actionCode: ActionCode,
+    override val playerID: Int,
+) : ActionDTO
+
+data class GameCreatedDTO(
+    override val playerID: Int,
+    val gameID: Int
+) : ActionDTO
 
 data class RollDiceDTO(
     override val playerID: Int,
@@ -53,4 +67,17 @@ class TradeDTO(
 class GameStartedDTO(
     override val playerID: Int,
     val turnOrder: List<Int>
+) : ActionDTO
+
+// NOTE:
+class TurnEndedDTO(
+    override val playerID: Int
+) : ActionDTO
+
+/**
+ * Response when setup has ended only.
+ */
+data class SetupEndedDTO(
+    override val playerID: Int,
+    val inventory: ResourceMap
 ) : ActionDTO

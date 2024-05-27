@@ -3,7 +3,12 @@ package io.github.petvat.katan.server.action
 import io.github.petvat.katan.server.dto.ActionDTO
 import io.github.petvat.katan.server.game.GameProgress
 
-class ActionResponse(val success: Boolean, val message: String, val data: ActionDTO?)
+class ActionResponse(
+    val actionCode: ActionCode,
+    val success: Boolean,
+    val message: String,
+    vararg data: ActionDTO?
+)
 
 interface Action {
     val gameProgress: GameProgress
@@ -36,6 +41,8 @@ abstract class AbstractAction : Action {
     }
 }
 
-enum class ActionID {
-    ROLL, BUILD, BUILD_SETTL_INIT, SETUP, INIT_TRADE, RESPOND_TRADE
+// Not really used
+enum class ActionCode {
+    GAME_CREATE, GAME_START, SETUP_END, ROLL_DICE, MOVE_ROBBER, STEAL_CARD,
+    BUILD, INIT_TRADE, RESPOND_TRADE, TURN_END
 }

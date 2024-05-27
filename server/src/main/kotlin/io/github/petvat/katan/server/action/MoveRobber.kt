@@ -21,12 +21,12 @@ class MoveRobber(
                     // TODO: State ID? or Response ID? Notify if new State
                     //  Or responseID: Send request for action, get response with corresponding ID
                     //  Because you don't know what the response is responding to
-                    true, "You moved the robber to" +
+                    ActionCode.MOVE_ROBBER,true, "You moved the robber to" +
                         "coordinate $tileCoordinate.", null
                 )
             } else {
                 responses[playerID] = ActionResponse(
-                    true, "player $playerID moved the robber to" +
+                    ActionCode.MOVE_ROBBER, true, "player $playerID moved the robber to" +
                         "coordinate $tileCoordinate.", null
                 )
             }

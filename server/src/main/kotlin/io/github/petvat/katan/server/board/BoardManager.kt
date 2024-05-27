@@ -75,6 +75,25 @@ class BoardManager {
         return adjacents.filter { isValidCoordinate(it) }
     }
 
+    fun getAdjacentTiles(intersectionCoordinate: IntersectionCoordinate): List<Tile> {
+        val offsets = if (intersectionCoordinate.x % 2 == 0) {
+            arrayOf(
+                -2, -1,
+                0, 1,
+                0, -1
+            )
+        } else {
+            arrayOf(
+                -1, 0,
+                -1, -2,
+                1, 0
+            )
+        }
+        val offsetCoordinates = calculateOffsets(intersectionCoordinate, offsets)
+        return this.tiles.filter { offsetCoordinates.contains(it.coordinate) }
+
+    }
+
 
     /**
      * Eller 2d-liste med offset
@@ -487,4 +506,11 @@ class BoardManager {
     }
 
 
+    fun harvestInitialResources() {
+        intersections.forEach { intersection ->
+            getAdjacentTiles(intersection as IntersectionCoordinate).forEach { tile ->
+                tile.resource?.let { intersection.village.harvest(it) }
+            }
+        }
+    }
 }

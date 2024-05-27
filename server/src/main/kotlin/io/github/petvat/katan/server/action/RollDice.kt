@@ -34,7 +34,7 @@ class RollDice(
                 moveRobber// Not optimal
             )
             responses[player.ID] =
-                ActionResponse(true, "$diceRoll was rolled.", actionDTO)
+                ActionResponse(ActionCode.ROLL_DICE, true, "$diceRoll was rolled.", actionDTO)
         }
         return responses
     }

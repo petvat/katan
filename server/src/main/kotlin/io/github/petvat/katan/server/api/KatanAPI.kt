@@ -39,6 +39,7 @@ object KatanAPI {
             responses as MutableMap
             responses.clear() // Ensure empty
             responses[actionRequest.playerID] = ActionResponse(
+                actionRequest.actionCode,
                 false, e.message ?: ("Unknown exception" +
                     "occured."), null
             )

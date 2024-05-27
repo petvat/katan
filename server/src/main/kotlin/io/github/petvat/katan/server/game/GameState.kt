@@ -2,6 +2,8 @@ package io.github.petvat.katan.server.game
 
 import io.github.petvat.katan.server.action.*
 import io.github.petvat.katan.server.api.KatanAPI
+import io.github.petvat.katan.server.board.Player
+import io.github.petvat.katan.server.board.ResourceMap
 import io.github.petvat.katan.server.dto.*
 
 /**
@@ -135,16 +137,6 @@ class SetUpState(val gameProgress: GameProgress) : GameState {
      * In SETUP State, BuildRequest in interpreted as initial settl. request
      */
     override fun build(request: BuildRequest): Map<Int, ActionResponse> {
-        /*
-        * NOTE: 2 POSSIBLE APPROACHES
-        *  USE INTERNAL TURNS SETUP:
-        *  1. Involves creating a custom PlaceFirstSettlement action, not implementing BuildAction
-        *  2. Check turn here
-        *  USE EXISTING TURNS
-        *  1. Manually set the turn, or check SETUP-phase turnorder
-        *  2. May keep other implementation as is
-        * */
-
         val responses = PlaceFirstSettlements(gameProgress, request.playerID, request.coordinate)
             .execute()
         if (responses[request.playerID]?.success == true) { // TODO: FIX NULLABLE
@@ -153,13 +145,18 @@ class SetUpState(val gameProgress: GameProgress) : GameState {
         }
         if (currentTurn == turnOrder.size) {
             gameProgress.gameState = RollDiceState(gameProgress) // Set-up done
-            // TODO: Notify players Setup over
-            // Either pass in Arg to PlaceFirstSettlement(Boolean last) or
-            // Create new response on change state, on RollDiceState
-            // Or append to current actionResponse
+            gameProgress.boardManager.harvestInitialResources() // TODO: Make private
+            // Modify the Action responses
+            (responses as MutableMap).forEach { (id, ar) ->
+                val playerInventory = gameProgress.getPlayer(id).inventory
 
-            // TODO: Harvest initial resources
-            // KatanAPI.performAction() action harvest manual ...
+                responses[id] = ActionResponse(
+                    ActionCode.TURN_END,
+                    ar.success,
+                    ar.message,
+                    SetupEndedDTO(request.playerID, playerInventory)
+                )
+            }
         }
         return responses
     }

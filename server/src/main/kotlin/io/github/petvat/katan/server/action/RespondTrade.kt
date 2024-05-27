@@ -21,24 +21,33 @@ class RespondTrade(
     override fun execute(): Map<Int, ActionResponse> {
         val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
         val trade = gameProgress.currentTurn.currentTrade
-        val tradeDTO = TradeDTO(playerID, tradeID, accept)
+        val tradeDTO = TradeDTO(
+            playerID, tradeID, accept
+        )
 
         // TODO: Use TradeID instead of currentTrade!!!
         if (trade == null) {
-            responses[playerID] = ActionResponse(false, "Trade does not exist.", null)
+            responses[playerID] = ActionResponse(ActionCode.RESPOND_TRADE, false, "Trade does not exist.", null)
         } else if (!trade.targets.contains(playerID)) {
-            responses[playerID] = ActionResponse(false, "You (Player $playerID) are not a target of this trade.", null)
+            responses[playerID] = ActionResponse(
+                ActionCode.RESPOND_TRADE,
+                false,
+                "You (Player $playerID) are not a target of this trade.",
+                null
+            )
         } else if (accept) {
             trade.transact() // do transaction
-            responses[playerID] = ActionResponse(true, "You accepted the offer", null)
+            responses[playerID] = ActionResponse(ActionCode.RESPOND_TRADE, true, "You accepted the offer", null)
             gameProgress.players.forEach { player ->
-                responses[player.ID] = ActionResponse(true, "$playerID accepted the offer.", tradeDTO)
+                responses[player.ID] =
+                    ActionResponse(ActionCode.RESPOND_TRADE, true, "$playerID accepted the offer.", tradeDTO)
             }
             gameProgress.currentTurn.currentTrade = null // TODO: REemove ID
         } else {
             // decline
-            responses[playerID] = ActionResponse(true, "You declined the offer", tradeDTO)
-            responses[trade.initiator] = ActionResponse(true, "$playerID declined the offer.", tradeDTO)
+            responses[playerID] = ActionResponse(ActionCode.RESPOND_TRADE, true, "You declined the offer", tradeDTO)
+            responses[trade.initiator] =
+                ActionResponse(ActionCode.RESPOND_TRADE, true, "$playerID declined the offer.", tradeDTO)
         }
         return responses
     }
