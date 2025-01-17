@@ -1,6 +1,0 @@
-[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
-eclipse.project.name = appName + '-lib'
-
-dependencies {
-  api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-}
