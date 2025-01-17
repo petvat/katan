@@ -1,54 +1,76 @@
 package io.github.petvat.katan.server.action
 
-import io.github.petvat.katan.server.dto.TradeDTO
-import io.github.petvat.katan.server.game.GameProgress
+import io.github.petvat.katan.server.api.ExecutionResult
+import io.github.petvat.katan.server.group.Game
+import io.github.petvat.katan.shared.model.game.Trade
+import io.github.petvat.katan.shared.protocol.Payload
+import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 
 /**
  * Action to respond to an existing trade.
  */
 class RespondTrade(
-    override val gameProgress: GameProgress,
-    override val playerID: Int,
-    val tradeID: Int,
-    val accept: Boolean,
+    override val game: Game,
+    override val playerNumber: Int,
+    private val tradeId: Int,
+    private val accept: Boolean,
 ) : Action {
+    override fun validate(): String? {
+        val trade: Trade = game.getTradeByID(tradeId)
+
+        if (!trade.targets.contains(playerNumber)) {
+            return "You (Player $playerNumber) are not a target of this trade."
+        }
+        return null
+    }
 
     /**
      * Note the subtle difference between accept and success; response is successful if it sucessfully
      * responds to a existing request. So a response can be successful even though it was declined by the target.
-     * If false, something wrong happened during the processing of the request, causing the success flag to return false.
+     * If false, something wrong happened during the processing of the request (indicating bad request), causing the success flag to return false.
      */
-    override fun execute(): Map<Int, ActionResponse> {
-        val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
-        val trade = gameProgress.currentTurn.currentTrade
-        val tradeDTO = TradeDTO(
-            playerID, tradeID, accept
-        )
+    override fun execute(): ExecutionResult<ActionResponse.RespondTrade> {
+        validate()?.let { ExecutionResult.Failure(it) }
 
-        // TODO: Use TradeID instead of currentTrade!!!
-        if (trade == null) {
-            responses[playerID] = ActionResponse(ActionCode.RESPOND_TRADE, false, "Trade does not exist.", null)
-        } else if (!trade.targets.contains(playerID)) {
-            responses[playerID] = ActionResponse(
-                ActionCode.RESPOND_TRADE,
-                false,
-                "You (Player $playerID) are not a target of this trade.",
-                null
+        val responses: MutableMap<Int, ActionResponse.RespondTrade> = mutableMapOf()
+        // val trade = game.currentTurn.currentTrade
+        val trade: Trade = game.getTradeByID(tradeId)
+
+        // if trade = null return ExecutionResult.failure
+
+        validate()?.let { ExecutionResult.Failure(it) }
+
+        if (accept) { // do transaction
+            trade.transact(game.getPlayer(playerNumber)!!) // atomic
+
+
+            val tradeDTO = ActionResponse.RespondTrade(
+                playerNumber,
+                tradeId,
+                true,
+                TODO("Private game state")
             )
-        } else if (accept) {
-            trade.transact() // do transaction
-            responses[playerID] = ActionResponse(ActionCode.RESPOND_TRADE, true, "You accepted the offer", null)
-            gameProgress.players.forEach { player ->
-                responses[player.ID] =
-                    ActionResponse(ActionCode.RESPOND_TRADE, true, "$playerID accepted the offer.", tradeDTO)
+
+            game.players.forEach { player ->
+                responses[player.playerNumber] =
+                    tradeDTO
             }
-            gameProgress.currentTurn.currentTrade = null // TODO: REemove ID
+            game.currentTurn.currentTrade = null
         } else {
             // decline
-            responses[playerID] = ActionResponse(ActionCode.RESPOND_TRADE, true, "You declined the offer", tradeDTO)
-            responses[trade.initiator] =
-                ActionResponse(ActionCode.RESPOND_TRADE, true, "$playerID declined the offer.", tradeDTO)
+            val tradeDTO = ActionResponse.RespondTrade(
+                playerNumber,
+                tradeId,
+                true,
+                null // No difference to game state.
+            )
+
+            responses[playerNumber] =
+                tradeDTO
+            responses[trade.initiator.playerNumber] =
+                tradeDTO
         }
-        return responses
+        return ExecutionResult.Success(responses, "$playerNumber responded to the offer.")
     }
+
 }

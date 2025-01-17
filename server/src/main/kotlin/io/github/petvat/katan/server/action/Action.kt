@@ -1,48 +1,44 @@
 package io.github.petvat.katan.server.action
 
-import io.github.petvat.katan.server.dto.ActionDTO
-import io.github.petvat.katan.server.game.GameProgress
 
-class ActionResponse(
-    val actionCode: ActionCode,
-    val success: Boolean,
-    val message: String,
-    val data: ActionDTO?
-)
+import io.github.petvat.katan.server.api.ExecutionResult
+import io.github.petvat.katan.server.group.Game
+import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 
+/**
+ * This is an implementation of the Command pattern.
+ * All actions should implement the Action interface.
+ *
+ * @property execute Performs the action command. [execute] does not catch any thrown exceptions.
+ * @property validatePlayerInTurn Checks if player is allowed to execute the command. Subclasses can extend this function.
+ */
 interface Action {
-    val gameProgress: GameProgress
-    val playerID: Int
+    val game: Game
+    val playerNumber: Int
+
+
+    fun validate(): String?
 
     /**
-     * @return responses for each player
+     * Executes an action command.
+     *
+     * @return responses for each player.
      */
-    fun execute(): Map<Int, ActionResponse>
+    fun execute(): ExecutionResult<ActionResponse>
 
-    fun validatePlayerInTurn() {
-        if (gameProgress.playerInTurn() != playerID) {
-            throw IllegalArgumentException(
-                "Player $playerID denied ${this::class.simpleName} " +
-                    "action.\n Reason: Not your turn!"
-            )
-        }
+    /**
+     * Some actions requires it is the requesting player's turn. For these actions, use the this to validate the player.
+     */
+    fun validatePlayerInTurn(): Boolean {
+        return game.playerInTurn() == playerNumber
+
+//        if (game.playerInTurn() != userId) {
+//            throw IllegalArgumentException(
+//                "Player $userId denied ${this::class.simpleName} " +
+//                    "action.\n Reason: Not your turn!"
+//            )
+//        }
     }
 }
 
-abstract class AbstractAction : Action {
 
-    override fun validatePlayerInTurn() {
-        if (gameProgress.playerInTurn() != playerID) {
-            throw IllegalArgumentException(
-                "Player $playerID denied ${this::class.simpleName} " +
-                    "action.\n Reason: Not your turn!"
-            )
-        }
-    }
-}
-
-// Not really used
-enum class ActionCode {
-    GAME_CREATE, GAME_START, SETUP_END, ROLL_DICE, MOVE_ROBBER, STEAL_CARD,
-    BUILD, INIT_TRADE, RESPOND_TRADE, TURN_END
-}

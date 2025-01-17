@@ -1,42 +1,61 @@
 package io.github.petvat.katan.server.action
 
-// Make general
-import io.github.petvat.katan.server.dto.RollDiceDTO
-import io.github.petvat.katan.server.game.BuildAndTradeState
-import io.github.petvat.katan.server.game.GameProgress
-import io.github.petvat.katan.server.game.MoveRobberState
+import io.github.petvat.katan.server.api.BuildAndTradeState
+import io.github.petvat.katan.server.api.ExecutionResult
+import io.github.petvat.katan.server.api.MoveRobberState
+import io.github.petvat.katan.server.group.Game
+import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 import kotlin.random.Random
 
 class RollDice(
-    override val gameProgress: GameProgress,
-    // override val ID: Int,
-    override val playerID: Int
-) : AbstractAction() {
-    var player = gameProgress.getPlayer(playerID)
+    override val game: Game,
+    override val playerNumber: Int
+) : Action {
+    var player = game.getPlayer(playerNumber)
     private val random = Random
 
-    override fun execute(): Map<Int, ActionResponse> {
-        val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
+    override fun validate(): String? {
+        if (playerNumber != game.playerInTurn()) {
+            return "Not your turn."
+        }
+        return null
+    }
 
-        validatePlayerInTurn()
+    override fun execute(): ExecutionResult<ActionResponse.RollDice> {
+        val responses: MutableMap<Int, ActionResponse.RollDice> = mutableMapOf()
+
+        validate()?.let { return ExecutionResult.Failure(it) }
+
         val diceRoll: Pair<Int, Int> = rollDice()
         val moveRobber: Boolean = diceRoll.first + diceRoll.second == 7
 
         // TODO: State switch, MoveRobber() or BuildAndTrade()
-        if (moveRobber) gameProgress.gameState = MoveRobberState(gameProgress)
-        else gameProgress.gameState = BuildAndTradeState(gameProgress)
+
+        game.transitionToState(
+            if (moveRobber) MoveRobberState(game) else BuildAndTradeState(
+                game
+            )
+        )
+
+        val newCardCounts = mutableMapOf<Int, Int>()
+        game.players.forEach { player ->
+            newCardCounts[player.playerNumber] = player.cardCount
+        }
 
         // TODO: Better approach regarding player resource diff.
-        gameProgress.players.forEach { player ->
-            val actionDTO = RollDiceDTO(
-                this.player.ID, diceRoll.first,
-                diceRoll.second, player.inventory,
+        game.players.forEach { player ->
+            val actionDTO = ActionResponse.RollDice(
+                diceRoll.first,
+                diceRoll.second,
+                player.inventory,
+                newCardCounts.filterNot { (pid, count) -> pid == player.playerNumber },
                 moveRobber// Not optimal
             )
-            responses[player.ID] =
-                ActionResponse(ActionCode.ROLL_DICE, true, "$diceRoll was rolled.", actionDTO)
+
+            responses[player.playerNumber] =
+                actionDTO
         }
-        return responses
+        return ExecutionResult.Success(responses, "Rolled dice")
     }
 
     private fun rollDice(): Pair<Int, Int> {
@@ -44,7 +63,7 @@ class RollDice(
         val roll2 = random.nextInt(1, 7)
 
         val eyes = roll1 + roll2
-        if (eyes != 7) {
+        if (eyes != game.settings.numRobber) {
             harvestResources(eyes)
         } else {
             discardResources()
@@ -55,28 +74,28 @@ class RollDice(
     }
 
     /**
-     * On not rolled 7.
+     * On not rolled move robber.
      */
     private fun harvestResources(eyes: Int) {
-        gameProgress.boardManager.tiles.filter { it.rollListenValue == eyes }
+        game.boardManager.board.tiles.filter { it.rollListenValue == eyes }
             .flatMap { t ->
-                gameProgress.boardManager.getAdjacentBuildings(t)
+                game.boardManager.getAdjacentBuildings(t)
                     .map { b -> b to t }
             }
             .forEach { (b, t) ->
-                if (gameProgress.boardManager.robberLocation != t.coordinate)
+                if (game.boardManager.robberLocation != t.hexCoordinate)
                     t.resource?.let { b.harvest(it) }
             }
     }
 
     /**
-     * On rolled 7.
+     * On rolled move robber.
      */
     private fun discardResources() {
-        val players = gameProgress.players
+        val players = game.players
         players.forEach { player ->
             val cards = player.cardCount
-            if (cards >= 7) {
+            if (cards >= game.settings.cardLimit) {
                 val removes = cards.floorDiv(2)
                 repeat(removes) {
                     Random.nextInt(0, player.cardCount)
@@ -94,7 +113,7 @@ class RollDice(
         // add to queue if specific, else check turn
         // TODO: Should invoke robber as a follow-up response
         // Problem: Action ikkje initialisert, ikkje bruke queue, men excpect next
-        // gameProgress.enqueue(MoveRobber())
+        // game.enqueue(MoveRobber())
     }
 
 }

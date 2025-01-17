@@ -1,39 +1,50 @@
 package io.github.petvat.katan.server.action
 
-import io.github.petvat.katan.server.board.Coordinate
-import io.github.petvat.katan.server.game.GameProgress
-import io.github.petvat.katan.server.game.StealCardState
+
+import io.github.petvat.katan.server.api.ExecutionResult
+import io.github.petvat.katan.server.api.StealCardState
+import io.github.petvat.katan.server.group.Game
+import io.github.petvat.katan.shared.hexlib.HexCoordinates
+import io.github.petvat.katan.shared.protocol.dto.ActionResponse
+
 
 class MoveRobber(
-    override val gameProgress: GameProgress,
-    override val playerID: Int,
-    private val tileCoordinate: Coordinate,
-) : AbstractAction() {
+    override val game: Game,
+    override val playerNumber: Int,
+    private val tileCoordinate: HexCoordinates,
+) : Action {
+    override fun validate(): String? {
+        TODO("Not yet implemented")
+    }
 
-    override fun execute(): Map<Int, ActionResponse> {
-        val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
+    override fun execute(): ExecutionResult<ActionResponse.MoveRobber> {
+        val responses: MutableMap<Int, ActionResponse.MoveRobber> = mutableMapOf()
 
-        validatePlayerInTurn()
-        gameProgress.boardManager.moveRobber(tileCoordinate)
-        gameProgress.players.forEach { player ->
-            if (player.ID == playerID) {
-                responses[playerID] = ActionResponse(
-                    // TODO: State ID? or Response ID? Notify if new State
-                    //  Or responseID: Send request for action, get response with corresponding ID
-                    //  Because you don't know what the response is responding to
-                    ActionCode.MOVE_ROBBER,true, "You moved the robber to" +
-                        "coordinate $tileCoordinate.", null
-                )
+        validate()?.let { return ExecutionResult.Failure(it) }
+
+        game.boardManager.moveRobber(tileCoordinate)
+
+        // Check if nearby players, if true, go to steal state
+
+        val moveRobberDTO = ActionResponse.MoveRobber(tileCoordinate, true)
+        game.players.forEach { player ->
+            if (player.playerNumber == playerNumber) {
+                responses[playerNumber] =
+                    moveRobberDTO
+
             } else {
-                responses[playerID] = ActionResponse(
-                    ActionCode.MOVE_ROBBER, true, "player $playerID moved the robber to" +
-                        "coordinate $tileCoordinate.", null
-                )
+                responses[playerNumber] =
+                    moveRobberDTO
+
             }
         }
-        gameProgress.gameState = StealCardState(gameProgress)
 
-        return responses
+        game.transitionToState(StealCardState(game))
+
+        return ExecutionResult.Success(
+            responses, "player $playerNumber moved the robber to" +
+                "coordinate $tileCoordinate."
+        )
     }
 
 }

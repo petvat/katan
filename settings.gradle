@@ -1,4 +1,10 @@
-// A list of which subprojects to load as part of the same larger project.
+plugins {
+  id 'org.gradle.toolchains.foojay-resolver-convention' version '0.5.0'
+}// A list of which subprojects to load as part of the same larger project.
 // You can remove Strings from the list and reload the Gradle project
 // if you want to temporarily disable a subproject.
 include 'core', 'server', 'lwjgl3', 'lib'
+include 'shared'
+include 'server:src:main:resources'
+findProject(':server:src:main:resources')?.name = 'resources'
+

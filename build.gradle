@@ -10,9 +10,13 @@ buildscript {
   }
   dependencies {
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-
   }
 }
+
+//plugins {
+//  id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.10' apply false
+//}
+
 
 allprojects {
   apply plugin: 'eclipse'
@@ -30,7 +34,7 @@ allprojects {
 configure(subprojects) {
   apply plugin: 'java-library'
   apply plugin: 'kotlin'
-  sourceCompatibility = 11
+  sourceCompatibility = 21
   compileJava {
     options.incremental = true
   }
@@ -51,7 +55,7 @@ configure(subprojects) {
       assetsFile.append(it + "\n")
     }
   }
-  compileKotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+  compileKotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
 
 }
 
@@ -67,6 +71,15 @@ subprojects {
     maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
     maven { url 'https://jitpack.io' }
   }
+
+  dependencies {
+    // Kotlin Logging Dependency (for SLF4J API with Kotlin support)
+    implementation 'io.github.oshai:kotlin-logging-jvm:7.0.3'
+
+    implementation "ch.qos.logback:logback-classic:1.5.16"
+
+  }
+
 }
 
 eclipse.project.name = 'Katan' + '-parent'

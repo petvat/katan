@@ -1,45 +1,46 @@
 package io.github.petvat.katan.server.action
 
-import io.github.petvat.katan.server.board.BuildKind
-import io.github.petvat.katan.server.board.Coordinate
-import io.github.petvat.katan.server.dto.BuildDTO
-import io.github.petvat.katan.server.game.GameProgress
+
+import io.github.petvat.katan.server.api.ExecutionResult
+import io.github.petvat.katan.server.group.Game
+import io.github.petvat.katan.shared.hexlib.Coordinates
+import io.github.petvat.katan.shared.model.board.BuildKind
+import io.github.petvat.katan.shared.protocol.Payload
+import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 
 object ActionUtils {
 
+    /**
+     * Generic execution procedure for build actions.
+     * HACK: diff PlaceFirstSettlements
+     */
     fun executeBuildAction(
-        gameProgress: GameProgress,
-        playerID: Int,
-        coordinate: Coordinate,
+        game: Game,
+        playerNumber: Int,
+        coordinate: Coordinates,
         buildKind: BuildKind,
-        buildAction: (GameProgress, Int, Coordinate, BuildKind) -> Unit
-    ): Map<Int, ActionResponse> {
-        val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
+        buildAction: (Game, Int, Coordinates, BuildKind) -> Unit
+    ): ExecutionResult<ActionResponse.Build> {
+        val responses: MutableMap<Int, ActionResponse.Build> = mutableMapOf()
 
-        // Validate player in turn
-        if (gameProgress.playerInTurn() != playerID) {
-            throw IllegalArgumentException("Player $playerID is not in turn.") // TODO: Use validate
-        }
         // Execute the specific build action
-        buildAction(gameProgress, playerID, coordinate, buildKind)
+        buildAction(game, playerNumber, coordinate, buildKind)
+
+
+        // TODO: CHECK LONGEST ROAD!
+        //  Both because build settlement can ruin longest road!
+
+        val dto =
+            ActionResponse.Build(buildKind, coordinate, false, null)
 
         // Alert players
-        gameProgress.players.forEach { player ->
-            if (player.ID == playerID) {
-                responses[player.ID] =
-                    ActionResponse(ActionCode.BUILD,true, "You built a ${buildKind}.", null)
-            } else {
-                // Broadcast
-                val buildDTO = BuildDTO(playerID, buildKind, coordinate)
-                responses[player.ID] =
-                    ActionResponse(ActionCode.BUILD,
-                        true,
-                        "${player.playerName} built a $buildKind.",
-                        buildDTO
-                    )
-            }
+        game.players.forEach { player ->
+            responses[player.playerNumber] = dto
         }
 
-        return responses
+        return ExecutionResult.Success(
+            responses,
+            "$playerNumber built a $buildKind.",
+        )
     }
 }

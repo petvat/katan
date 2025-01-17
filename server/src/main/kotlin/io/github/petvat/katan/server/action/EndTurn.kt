@@ -1,31 +1,30 @@
 package io.github.petvat.katan.server.action
 
-import io.github.petvat.katan.server.game.GameProgress
+import io.github.petvat.katan.server.api.ExecutionResult
+import io.github.petvat.katan.server.group.Game
+import io.github.petvat.katan.shared.protocol.Payload
+import io.github.petvat.katan.shared.protocol.dto.ActionResponse
+
 
 class EndTurn(
-    override val gameProgress: GameProgress,
-    override val playerID: Int
-) : AbstractAction() {
+    override val game: Game,
+    override val playerNumber: Int
+) : Action {
+    override fun validate(): String? {
+        TODO("Not yet implemented")
+    }
 
-    override fun execute(): Map<Int, ActionResponse> {
-        val responses: MutableMap<Int, ActionResponse> = mutableMapOf()
-        validatePlayerInTurn()
-        val nextPlayer = gameProgress.nextTurn()
-        gameProgress.players.forEach { player ->
-            if (player.ID == playerID) {
-                // Maybe send next player ID, but server already sends turnOrder at start
-                responses[playerID] =
-                    ActionResponse(ActionCode.TURN_END, true, "You ended your turn. Next player is $nextPlayer", null)
-            } else {
-                responses[player.ID] =
-                    ActionResponse(
-                        ActionCode.TURN_END,
-                        true,
-                        "$playerID ended their turn. Next player is $nextPlayer",
-                        null
-                    )
-            }
+
+    override fun execute(): ExecutionResult<ActionResponse.EndTurn> {
+        validate()?.let { return ExecutionResult.Failure(it) }
+        val responses: MutableMap<Int, ActionResponse.EndTurn> = mutableMapOf()
+        val nextPlayer = game.nextTurn()
+        game.players.forEach { player ->
+            responses[player.playerNumber] =
+                ActionResponse.EndTurn(nextPlayer)
         }
-        return responses
+        return ExecutionResult.Success(
+            responses, "$playerNumber ended their turn. Next player is $nextPlayer",
+        )
     }
 }

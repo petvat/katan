@@ -2,14 +2,16 @@ apply plugin: 'application'
 apply plugin: 'org.jetbrains.kotlin.jvm'
 
 
-java.sourceCompatibility = 11
-java.targetCompatibility = 11
+java.sourceCompatibility = 21
+java.targetCompatibility = 21
 mainClassName = 'io.github.petvat.katan.server.ServerLauncher'
 application.setMainClass(mainClassName)
 eclipse.project.name = appName + '-server'
 
 dependencies {
-  implementation(project(":core"))
+  implementation(project(":shared"))
+  api 'com.google.code.gson:gson:2.10.1'
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
 }
 
 jar {
@@ -35,4 +37,13 @@ jar {
 
 // Equivalent to the jar task; here for compatibility with gdx-setup.
 task dist(dependsOn: [jar]) {
+}
+
+tasks.named('run', JavaExec) {
+  doFirst {
+    if (project.hasProperty('loggingLevel')) {
+      systemProperty 'logging.level', project.property('loggingLevel')
+    }
+  }
+  standardInput = System.in
 }
