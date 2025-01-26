@@ -8,25 +8,41 @@ import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.protocol.PermissionLevel
 import kotlinx.serialization.Serializable
 
+/**
+ * Accesssable members of this group.
+ */
 @Serializable
-open class RestrictedGroupView( // TODO: RENAME
+open class PrivateGroupView(
     open val id: String,
     open val clients: MutableMap<String, String>,
     open val level: PermissionLevel,
-    open val chatLog: MutableMap<String, String>,
+    open val chatLog: MutableList<Pair<String, String>>, // TODO: Use custom data structure.
     open val settings: Settings
 )
+
+
+/**
+ * Accessable to all users.
+ */
+@Serializable
+data class PublicGroupView(
+    val id: String,
+    val numClients: Int,
+    val level: PermissionLevel,
+    val settings: Settings
+)
+
 
 @Serializable
 data class VillageView(
     val villageKind: VillageKind,
-    val owner: String,
+    val owner: Int,
 ) : DomainDTO
 
 @Serializable
 data class RoadView(
     val roadKind: RoadKind,
-    val owner: String
+    val owner: Int
 ) : DomainDTO
 
 @Serializable
@@ -57,7 +73,7 @@ data class EdgeView(
 @Serializable
 data class BoardView(
     var tiles: List<Tile>,
-    val intersections: List<IntersectionView>,
+    val intersections: MutableList<IntersectionView>,
     val paths: List<EdgeView>,
     val robberLocation: HexCoordinates
 ) : DomainDTO, Board

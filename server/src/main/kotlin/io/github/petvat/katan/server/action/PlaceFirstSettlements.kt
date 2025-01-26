@@ -21,7 +21,7 @@ class PlaceFirstSettlements(
         return null
     }
 
-    override fun execute(): ExecutionResult<ActionResponse.PlaceInitSettlment> {
+    override fun execute(): ExecutionResult<ActionResponse.PlaceInitSettlement> {
         validate()?.let { ExecutionResult.Failure(it) }
 
         game.boardManager.buildSettlementInitial(
@@ -29,7 +29,7 @@ class PlaceFirstSettlements(
             intersectionCoordinate as ICoordinates,
             VillageKind.SETTLEMENT // Not optimal
         )
-        val responses: Map<Int, ActionResponse.PlaceInitSettlment>
+        val responses: Map<Int, ActionResponse.PlaceInitSettlement>
 
         if (game.turnIndex == game.setupTurnOrder.size - 1) {
             // Setup state done
@@ -37,7 +37,7 @@ class PlaceFirstSettlements(
             game.boardManager.harvestInitialResources() // TODO: Make private
 
             responses = game.players.associate { p ->
-                p.playerNumber to ActionResponse.PlaceInitSettlment(
+                p.playerNumber to ActionResponse.PlaceInitSettlement(
                     intersectionCoordinate,
                     true,
                     inventory = p.inventory,
@@ -48,7 +48,7 @@ class PlaceFirstSettlements(
             }
         } else {
             responses = game.players.associate { p ->
-                p.playerNumber to ActionResponse.PlaceInitSettlment(
+                p.playerNumber to ActionResponse.PlaceInitSettlement(
                     intersectionCoordinate,
                     false,
                     null,

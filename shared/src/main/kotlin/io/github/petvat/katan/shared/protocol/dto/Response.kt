@@ -28,7 +28,7 @@ sealed class Response() : PayloadDTO {
 
     @Serializable
     data class Join(
-        val groupView: RestrictedGroupView? = null,
+        val groupView: PrivateGroupView? = null,
         val joinedUser: PublicUserView? = null
     ) : Response()
 
@@ -40,7 +40,7 @@ sealed class Response() : PayloadDTO {
 
     @Serializable
     data class Groups(
-        val groups: Collection<RestrictedGroupView>
+        val groups: Collection<PublicGroupView>
     ) : Response()
 
 //    @Serializable
@@ -53,7 +53,7 @@ sealed class Response() : PayloadDTO {
 
     @Serializable
     data class Init(
-        val publicGameState: PrivateGameState
+        val privateGameState: PrivateGameState
     ) : Response()
 
     @Serializable
@@ -86,7 +86,7 @@ sealed class Response() : PayloadDTO {
 //
 //data class StealCard(
 //    val stealCardVictim: Int,
-//    val publicGameState: PublicGameState // Check diff in client
+//    val privateGameState: PublicGameState // Check diff in client
 //) : ActionDTO, Response() {
 //    override val actionCode = ActionCode.STEAL_CARD
 //}

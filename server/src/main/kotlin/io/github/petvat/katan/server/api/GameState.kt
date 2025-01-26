@@ -3,7 +3,6 @@ package io.github.petvat.katan.server.api
 import io.github.petvat.katan.server.action.*
 import io.github.petvat.katan.server.group.Game
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
-import io.github.petvat.katan.shared.protocol.Payload
 import io.github.petvat.katan.shared.protocol.dto.ActionRequest
 import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 
@@ -18,7 +17,7 @@ interface GameState {
     fun placeInitialSettlements(
         actorId: Int,
         request: ActionRequest.Build
-    ): ExecutionResult<ActionResponse.PlaceInitSettlment> {
+    ): ExecutionResult<ActionResponse.PlaceInitSettlement> {
         return ExecutionResult.Failure("Cannot place initial settlement in current state.")
     }
 
@@ -84,7 +83,7 @@ class SetUpState(val game: Game) :
     override fun placeInitialSettlements(
         actorId: Int,
         request: ActionRequest.Build
-    ): ExecutionResult<ActionResponse.PlaceInitSettlment> {
+    ): ExecutionResult<ActionResponse.PlaceInitSettlement> {
         return PlaceFirstSettlements(game, actorId, request.coordinate).execute()
     }
 }

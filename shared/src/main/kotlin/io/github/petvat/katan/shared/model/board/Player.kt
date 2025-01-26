@@ -3,7 +3,7 @@ package io.github.petvat.katan.shared.model.board
 import io.github.petvat.katan.shared.User
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.session.PublicPlayerView
+import io.github.petvat.katan.shared.model.session.OtherPlayerViewModel
 import kotlinx.serialization.Serializable
 
 
@@ -12,15 +12,17 @@ import kotlinx.serialization.Serializable
  *
  * TODO: Consistency model DTO
  *
+ * TODO: PlayerViewInterface
+ *
  * @property id The id of this class should be the same as the [User]-id associated with this player.
  */
 @Serializable
 data class Player(
-    val id: kotlin.String,
+    val id: String,
     val playerNumber: Int,
     val settings: Settings,
 ) {
-    val inventory = ResourceMap(0, 0, 0, 0, 0)
+    var inventory = ResourceMap(0, 0, 0, 0, 0)
     var victoryPoints: Int = 0
     var settlementCount: Int = settings.maxSettlements
     var cityCount: Int = settings.maxCities
@@ -29,8 +31,9 @@ data class Player(
     // TODO: devCards
 
 
-    fun toPublic(): PublicPlayerView {
-        return PublicPlayerView(
+    fun toPublic(): OtherPlayerViewModel {
+        return OtherPlayerViewModel(
+            playerNumber = playerNumber,
             id = id,
             cardCount = cardCount,
             settlementCount = settlementCount,

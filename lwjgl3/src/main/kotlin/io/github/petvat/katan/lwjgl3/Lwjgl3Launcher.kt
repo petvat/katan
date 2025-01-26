@@ -4,11 +4,11 @@ package io.github.petvat.katan.lwjgl3
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
-import io.github.petvat.katan.client.ResponseController
+import io.github.petvat.katan.controller.ResponseController
 import io.github.petvat.katan.controller.KtxInputController
 import io.github.petvat.katan.controller.MainController
 import io.github.petvat.katan.model.KatanModel
-import io.github.petvat.katan.view.ktx.KtxKatan
+import io.github.petvat.katan.ui.ktx.KtxKatan
 
 /** Launches the desktop (LWJGL3) application. */
 fun main() {

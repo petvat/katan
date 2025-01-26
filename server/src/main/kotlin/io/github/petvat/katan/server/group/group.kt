@@ -13,7 +13,7 @@ import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.model.game.Turn
 import io.github.petvat.katan.shared.model.session.PrivateGameState
-import io.github.petvat.katan.shared.protocol.dto.RestrictedGroupView
+import io.github.petvat.katan.shared.protocol.dto.PrivateGroupView
 import kotlinx.coroutines.sync.Mutex
 
 
@@ -51,7 +51,7 @@ interface Group {
         clients.remove(client.id)
     }
 
-    suspend fun view(excluding: SessionId): RestrictedGroupView
+    suspend fun view(excluding: SessionId): PrivateGroupView
 }
 
 data class UserGroup(
@@ -63,8 +63,8 @@ data class UserGroup(
 ) : Group {
     override val mutex = Mutex()
     override val chatLog = mutableMapOf<String, String>()
-    override suspend fun view(excluding: SessionId): RestrictedGroupView {
-        return RestrictedGroupView(
+    override suspend fun view(excluding: SessionId): PrivateGroupView {
+        return PrivateGroupView(
             id.value,
             clients.filter { (s, _) -> s != excluding }.map { (sid, mem) -> sid.value to mem.name }.toMap()
                 .toMutableMap(),
@@ -86,8 +86,8 @@ data class GuestGroup(
 
     override val chatLog = mutableMapOf<String, String>()
 
-    override suspend fun view(excluding: SessionId): RestrictedGroupView {
-        return RestrictedGroupView(
+    override suspend fun view(excluding: SessionId): PrivateGroupView {
+        return PrivateGroupView(
             id.value,
             clients.filter { (s, _) -> s != excluding }.map { (sid, mem) -> sid.value to mem.name }.toMap()
                 .toMutableMap(),

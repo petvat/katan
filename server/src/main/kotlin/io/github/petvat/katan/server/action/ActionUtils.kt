@@ -31,7 +31,14 @@ object ActionUtils {
         //  Both because build settlement can ruin longest road!
 
         val dto =
-            ActionResponse.Build(buildKind, coordinate, false, null)
+            ActionResponse.Build(
+                playerNumber,
+                buildKind,
+                coordinate,
+                game.getPlayer(playerNumber)!!.victoryPoints,
+                false,
+                null
+            )
 
         // Alert players
         game.players.forEach { player ->

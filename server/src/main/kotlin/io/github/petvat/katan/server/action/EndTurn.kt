@@ -21,7 +21,7 @@ class EndTurn(
         val nextPlayer = game.nextTurn()
         game.players.forEach { player ->
             responses[player.playerNumber] =
-                ActionResponse.EndTurn(nextPlayer)
+                ActionResponse.EndTurn(playerNumber, nextPlayer)
         }
         return ExecutionResult.Success(
             responses, "$playerNumber ended their turn. Next player is $nextPlayer",

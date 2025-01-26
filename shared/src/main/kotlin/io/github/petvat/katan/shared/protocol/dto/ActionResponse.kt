@@ -5,6 +5,7 @@ import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.session.PrivateGameState
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 
@@ -20,9 +21,11 @@ sealed class ActionResponse : Response(), ActionDTO {
      * Represents a response after a RollDice command.
      *
      * @property otherPlayersResources The cards of the other people, as they are hidden
+     * @property playerNumber The player that performed this action.
      */
     @Serializable
     data class RollDice(
+        val playerNumber: Int,
         val roll1: Int,
         val roll2: Int,
         val resources: ResourceMap,
@@ -34,6 +37,7 @@ sealed class ActionResponse : Response(), ActionDTO {
 
     @Serializable
     data class MoveRobber(
+        val playerNumber: Int,
         val newRobberCoordinate: Coordinates,
         val nextState: Boolean = true // TODO: Not necessary
         // val stealCardVictim: Int
@@ -43,16 +47,21 @@ sealed class ActionResponse : Response(), ActionDTO {
 
     @Serializable
     data class StealCard(
+        val playerNumber: Int,
         val stealCardVictim: Int,
         val publicGameState: PrivateGameState // Check diff in client
     ) : ActionResponse() {
         override val actionCode = ActionCode.STEAL_CARD
     }
 
+    // TODO: Use intersectionView
+
     @Serializable
     class Build(
+        val playerNumber: Int,
         val buildKind: BuildKind,
         val coordinate: Coordinates,
+        val victoryPoints: Int,
         val newLongestRoad: Boolean,
         val longestRoadHolder: Int?
     ) : ActionResponse() {
@@ -87,6 +96,7 @@ sealed class ActionResponse : Response(), ActionDTO {
 
     @Serializable
     class EndTurn(
+        val playerNumber: Int,
         val nextPlayer: Int
     ) : ActionResponse() {
         override val actionCode = ActionCode.TURN_END
@@ -109,7 +119,8 @@ sealed class ActionResponse : Response(), ActionDTO {
     }
 
     @Serializable
-    data class PlaceInitSettlment(
+    @SerialName("InitSettl")
+    data class PlaceInitSettlement(
         val coordinates: Coordinates,
         val setupEnded: Boolean,
         val inventory: ResourceMap?,
@@ -155,7 +166,7 @@ sealed class ActionResponse : Response(), ActionDTO {
 //
 //data class StealCardResDTO(
 //    val stealCardVictim: Int,
-//    val publicGameState: PublicGameState // Check diff in client
+//    val privateGameState: PublicGameState // Check diff in client
 //) : ActionResponse(() {
 //    override val actionCode = ActionCode.MOVE_ROBBER
 //

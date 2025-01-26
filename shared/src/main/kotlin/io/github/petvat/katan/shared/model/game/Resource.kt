@@ -37,6 +37,10 @@ class ResourceMap(
         resourceMap.getAmount(Resource.BRICK)
     )
 
+    operator fun get(resource: Resource): Int? {
+        return resources[resource]
+    }
+
     fun get(): HashMap<Resource, Int> {
         return HashMap(resources)
     }

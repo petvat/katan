@@ -160,6 +160,8 @@ class NioServer(
             client.write(buffer)
             writes++
         }
+        // TODO: Now blocking but could use channel's MessageWriter
+
         logger.debug { "Writes: $writes" }
 
     }

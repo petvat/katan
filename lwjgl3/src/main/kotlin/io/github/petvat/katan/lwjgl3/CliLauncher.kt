@@ -1,10 +1,10 @@
 package io.github.petvat.katan.lwjgl3
 
-import io.github.petvat.katan.client.ResponseController
+import io.github.petvat.katan.controller.ResponseController
 import io.github.petvat.katan.controller.MainController
 import io.github.petvat.katan.controller.SimpleCliInputController
 import io.github.petvat.katan.model.KatanModel
-import io.github.petvat.katan.view.cli.SimpleCliView
+import io.github.petvat.katan.ui.cli.SimpleCliView
 
 
 fun main() {

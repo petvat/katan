@@ -15,9 +15,9 @@ sealed class BuildKind {
 }
 
 @Serializable
-enum class VillageKind(val productionNumber: Int, val cost: ResourceMap) {
-    SETTLEMENT(1, ResourceMap(1, 0, 1, 1, 1)),
-    CITY(2, ResourceMap(0, 3, 2, 0, 0))
+enum class VillageKind(val productionNumber: Int, val cost: ResourceMap, val vp: Int) {
+    SETTLEMENT(1, ResourceMap(1, 0, 1, 1, 1), 1),
+    CITY(2, ResourceMap(0, 3, 2, 0, 0), 2)
 }
 
 @Serializable

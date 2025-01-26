@@ -293,6 +293,8 @@ class AuthBoardManager(
                     Village(villageKind, player)
                 )
             )
+            // Update victory points
+            player.victoryPoints += VillageKind.SETTLEMENT.vp
         }
     }
 

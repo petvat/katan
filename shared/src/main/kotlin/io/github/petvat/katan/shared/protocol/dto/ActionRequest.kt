@@ -4,6 +4,7 @@ import io.github.petvat.katan.shared.protocol.ActionCode
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -13,6 +14,14 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 sealed class ActionRequest() : Request(), ActionDTO {
+
+    /**
+     * TODO: Register!
+     */
+    @Serializable
+    data object RollDice : ActionRequest() {
+        override val actionCode = ActionCode.ROLL_DICE
+    }
 
     @Serializable
     data class Build(
@@ -26,6 +35,7 @@ sealed class ActionRequest() : Request(), ActionDTO {
      * Request to initiate a new trade offer.
      */
     @Serializable
+    @SerialName("InitTrade")
     data class InitiateTrade(
         val tradeID: Int,
         val targetPlayersID: Set<Int>,
@@ -131,7 +141,7 @@ sealed class ActionRequest() : Request(), ActionDTO {
 //
 //    data class StealCard(
 //        val stealCardVictim: Int,
-//        val publicGameState: PublicGameState // Check diff in client
+//        val privateGameState: PublicGameState // Check diff in client
 //    ) : ActionRequestDTO, Response() {
 //        override val actionCode = ActionCode.STEAL_CARD
 //    }

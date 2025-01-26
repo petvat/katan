@@ -12,8 +12,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PrivateGameState(
     val player: Player,
-    val otherPlayers: List<PublicPlayerView>,
+    val otherPlayers: List<OtherPlayerView>,
     val turnOrder: List<Int>,
+    var turnPlayer: Int,
     val board: BoardView
 )
 
@@ -23,7 +24,7 @@ data class PrivateGameState(
 @Serializable
 data class PublicGameState(
     val gameId: String,
-    val players: List<PublicPlayerView>,
+    val players: List<OtherPlayerView>,
     val turnOrder: List<Int>,
     val board: BoardView
 )
@@ -34,6 +35,7 @@ data class PublicGameState(
  */
 @Serializable
 data class PublicSessionInfo(
+    val groupId: String,
     val hostId: Int,
     val settings: Settings,
     val users: Set<PublicUserView>,
@@ -57,8 +59,9 @@ data class PrivateSessionInfo(
  * NOTE: Color is assigned by client, will not be consistent across clients
  */
 @Serializable
-data class PublicPlayerView(
+data class OtherPlayerView(
     val id: String,
+    val playerNumber: Int,
     var victoryPoints: Int,
     var cardCount: Int,
     var settlementCount: Int,

@@ -26,7 +26,11 @@ class MoveRobber(
 
         // Check if nearby players, if true, go to steal state
 
-        val moveRobberDTO = ActionResponse.MoveRobber(tileCoordinate, true)
+        val moveRobberDTO = ActionResponse.MoveRobber(
+            playerNumber,
+            tileCoordinate,
+            true
+        )
         game.players.forEach { player ->
             if (player.playerNumber == playerNumber) {
                 responses[playerNumber] =

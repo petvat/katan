@@ -47,7 +47,6 @@ abstract class NioClient<T> {
 //            }
 
             listenForResponses()
-
         } catch (io: IOException) {
             logger.error { "${io.message}" }
             return false
@@ -73,8 +72,6 @@ abstract class NioClient<T> {
                         readBuffer.flip()
                         logger.info { "Message from server." }
                         processResponse(String(readBuffer.array(), 0, bytesRead))
-                    } else {
-                        logger.debug { "Something happened" }
                     }
                     readBuffer.clear()
                 } catch (e: Exception) {

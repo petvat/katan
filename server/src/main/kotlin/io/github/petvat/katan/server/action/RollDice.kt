@@ -45,6 +45,7 @@ class RollDice(
         // TODO: Better approach regarding player resource diff.
         game.players.forEach { player ->
             val actionDTO = ActionResponse.RollDice(
+                playerNumber,
                 diceRoll.first,
                 diceRoll.second,
                 player.inventory,
