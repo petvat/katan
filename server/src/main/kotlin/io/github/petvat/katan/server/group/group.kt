@@ -1,19 +1,16 @@
 package io.github.petvat.katan.server.group
 
-import io.github.petvat.katan.server.api.GameState
-import io.github.petvat.katan.server.api.RollDiceState
-import io.github.petvat.katan.server.api.SetUpState
+import io.github.petvat.katan.server.api.GameStates
 import io.github.petvat.katan.shared.protocol.PermissionLevel
 import io.github.petvat.katan.shared.protocol.SessionId
 import io.github.petvat.katan.shared.model.board.BoardGenerator
-import io.github.petvat.katan.shared.model.board.AuthBoardManager
+import io.github.petvat.katan.shared.model.board.BoardManager
 import io.github.petvat.katan.shared.model.board.Player
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.model.game.Turn
 import io.github.petvat.katan.shared.model.session.PrivateGameState
-import io.github.petvat.katan.shared.protocol.dto.PrivateGroupView
 import kotlinx.coroutines.sync.Mutex
 
 
@@ -23,13 +20,15 @@ value class GroupId(val value: String)
 
 /**
  * Represents a group member, an interface for the [Group].
+ *
+ * TODO: WEIRD!
  */
-// interface GroupMember<T>
 data class GroupMember(
     val id: SessionId, // String or something
     val name: String
 )
 
+// DON'T LIKE THIS!
 
 /**
  * Represents a group of users/guests/players.
@@ -40,18 +39,16 @@ interface Group {
     val host: SessionId
     val mutex: Mutex
     val level: PermissionLevel
-    val chatLog: MutableMap<String, String>
+    val chatLog: MutableList<Pair<String, String>>
     val settings: Settings
 
     suspend fun add(client: GroupMember) {
         clients[client.id] = client
     }
 
-    suspend fun remove(client: GroupMember) {
-        clients.remove(client.id)
+    suspend fun remove(clientId: SessionId) {
+        clients.remove(clientId)
     }
-
-    suspend fun view(excluding: SessionId): PrivateGroupView
 }
 
 data class UserGroup(
@@ -62,17 +59,7 @@ data class UserGroup(
     override val settings: Settings
 ) : Group {
     override val mutex = Mutex()
-    override val chatLog = mutableMapOf<String, String>()
-    override suspend fun view(excluding: SessionId): PrivateGroupView {
-        return PrivateGroupView(
-            id.value,
-            clients.filter { (s, _) -> s != excluding }.map { (sid, mem) -> sid.value to mem.name }.toMap()
-                .toMutableMap(),
-            level,
-            chatLog,
-            settings
-        )
-    }
+    override val chatLog = mutableListOf<Pair<String, String>>()
 }
 
 data class GuestGroup(
@@ -84,46 +71,47 @@ data class GuestGroup(
 ) : Group {
     override val mutex = Mutex()
 
-    override val chatLog = mutableMapOf<String, String>()
-
-    override suspend fun view(excluding: SessionId): PrivateGroupView {
-        return PrivateGroupView(
-            id.value,
-            clients.filter { (s, _) -> s != excluding }.map { (sid, mem) -> sid.value to mem.name }.toMap()
-                .toMutableMap(),
-            level,
-            chatLog,
-            settings
-        )
-    }
+    override val chatLog = mutableListOf<Pair<String, String>>()
 }
 
 
 /**
  * A Group elevated to a game.
+ *
+ * Should be different from game!
  */
 data class Game(
     val base: Group, // FIX: readonly!
 ) : Group by base {
     private val _players = mutableListOf<Player>()
-    var gameState: GameState =
-        SetUpState(this)
+
+    var state = GameStates.SETUP
 
     private val _turns = mutableListOf<Turn>()
+
     private val _turnOrder = mutableListOf<Int>()
+
     private val _activeTrades = mutableListOf<Trade>()
+
     private val _unactiveTrades = mutableListOf<Trade>()
+
     var turnIndex = 0
+        private set
+
     private var _tradeCounter = 0
 
-    val boardManager: AuthBoardManager = AuthBoardManager(BoardGenerator.generateBoard(base.settings))
+    val boardManager: BoardManager = BoardManager(BoardGenerator.generateBoard(base.settings))
 
     val turns get() = _turns.toList()
+
     val players get() = _players.toList()
+
     val tradeCounter get() = _tradeCounter
 
     val turnOrder: List<Int>
+
     var currentTurn: Turn
+
     var setupTurnOrder: MutableList<Int>
 
     // Initialize _turnOrder before setting gameState
@@ -132,10 +120,8 @@ data class Game(
             _players.add(Player(groupMember.id.value, index, base.settings))
         }
         _turnOrder.addAll(initializeTurnOrder())
-        turnIndex = 0
         currentTurn = Turn(id.value, playerInTurn(), turnIndex)
         turnOrder = _turnOrder.toList()
-        gameState = SetUpState(this)
         val reversed = turnOrder.toMutableList().reversed()
         setupTurnOrder = turnOrder.toMutableList()
         setupTurnOrder.addAll(reversed)
@@ -145,8 +131,8 @@ data class Game(
      * The [GameState] can only be changed through calling this function.
      * This ensures that we always perform valid state transitions.
      */
-    fun transitionToState(gameState: GameState) {
-        this.gameState = gameState // We trust the impl.
+    fun transitionToState(state: GameStates) {
+        this.state = state // We trust the impl.
     }
 
 
@@ -188,25 +174,22 @@ data class Game(
         return _turnOrder[turnIndex]
     }
 
-    fun setNextTurn(nextPlayer: Int) {
-        turnIndex = nextPlayer
-    }
-
     /**
      * Change to next player turn.
-     * Change to RollDiceState.
      */
     fun nextTurn(): Int {
-        gameState = RollDiceState(this)
-
+        if (state == GameStates.SETUP) {
+            return setupTurnOrder[turnIndex++ % setupTurnOrder.size]
+        }
         return turnOrder[turnIndex++ % turnOrder.size]
     }
 
     fun viewGame(sessionId: SessionId): PrivateGameState {
         return PrivateGameState(
-            player = getPlayer(getPlayerId(sessionId))!!,
+            player = getPlayer(getPlayerNumber(sessionId))!!,
             otherPlayers = players.map { it.toPublic() },
             turnOrder = turnOrder,
+            turnPlayer = playerInTurn(),
             board = boardManager.board.fromDomain()
         )
     }
@@ -216,7 +199,7 @@ data class Game(
         return _players.find { it.playerNumber == playerNumber }
     }
 
-    fun getPlayerId(sessionId: SessionId): Int {
+    fun getPlayerNumber(sessionId: SessionId): Int {
         return _players.find { it.id == sessionId.value }?.playerNumber
             ?: throw IllegalArgumentException("No player with this ID in game.")
     }
@@ -226,6 +209,17 @@ data class Game(
     }
 
 
+}
+
+fun main() {
+    val group = UserGroup(
+        GroupId(""),
+        mutableMapOf(),
+        SessionId(""),
+        PermissionLevel.USER,
+        Settings()
+    )
+    val game = Game(group)
 }
 
 

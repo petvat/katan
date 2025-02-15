@@ -11,11 +11,13 @@ object UserService {
      * Returns user id if can be authenticated.
      *
      * @throws IllegalArgumentException If no user matches username and password
+     *
+     * TODO: Instead of throw, return nullable.
      */
     fun authenticate(username: String, password: String): UserId {
         val targetUser =
             _users.values.find { user -> user.password == password && user.username == username }
-                ?: throw IllegalArgumentException("No user matches username and password.")
+                ?: throw IllegalArgumentException("No user matches username and password.") // TODO: Return null
         targetUser.active = true
         return targetUser.id
     }

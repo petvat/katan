@@ -1,7 +1,12 @@
 package io.github.petvat.katan.server.group
 
 import io.github.petvat.katan.server.client.*
+import io.github.petvat.katan.shared.User
 import io.github.petvat.katan.shared.model.game.Settings
+import io.github.petvat.katan.shared.protocol.PermissionLevel
+import io.github.petvat.katan.shared.protocol.SessionId
+import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
+import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -20,42 +25,84 @@ object GroupService {
         return group
     }
 
-    fun addGroup(clientState: ClientState, settings: Settings): Group {
-        when (clientState) {
-            is LoggedInState -> {
-                return addGroup(
-                    UserGroup(
-                        GroupId(generateGroupId()),
-                        mutableMapOf(
-                            clientState.sessionId to GroupMember(
-                                clientState.sessionId,
-                                UserService.getUser(clientState.userId).username
-                            )
-                        ),
-                        clientState.sessionId,
-                        level = clientState.level,
-                        settings = settings
+    fun getGroupsPublic(): List<PublicGroupDTO> {
+        return groups.values.map { toPublic(it) }
+    }
 
-                    )
-                )
-            }
-            // TODO: Refactor
-            is GuestState -> {
-                return addGroup(
-                    UserGroup(
-                        GroupId(generateGroupId()),
-                        mutableMapOf(clientState.sessionId to GroupMember(clientState.sessionId, "Guest")),
-                        clientState.sessionId,
-                        level = clientState.level,
-                        settings = settings
+    fun toPrivate(group: Group, excluding: SessionId): PrivateGroupDTO {
+        return PrivateGroupDTO(
+            id = group.id.value,
+            clients = group.clients
+                .filter { (s, _) -> s != excluding }
+                .map { (sid, mem) -> sid.value to mem.name }
+                .toMap()
+                .toMutableMap(),
+            level = group.level,
+            chatLog = group.chatLog,
+            settings = group.settings
+        )
+    }
 
-                    )
-                )
-            }
+    fun toPublic(group: Group): PublicGroupDTO {
+        return PublicGroupDTO(
+            id = group.id.value,
+            numClients = group.clients.size,
+            maxClients = group.settings.maxPlayers,
+            level = group.level,
+            mode = group.settings.gameMode
+        )
+    }
 
-            is InGroupState -> throw IllegalArgumentException("Already in a group!")
-            is PlayingState -> throw IllegalArgumentException("Already in a group!")
+    suspend fun removeFromGroup(sessionId: SessionId, groupId: GroupId) {
+        _groups[groupId]?.remove(sessionId) // Some assertion here maybe!
+    }
+
+    suspend fun addToGroup(clientState: ConnectedClient, group: Group) {
+        if (clientState.activity !is Idle) {
+            throw IllegalArgumentException("This client is already in a group")
         }
+
+        if (clientState.auth.level != group.level) {
+            throw IllegalArgumentException("Permission levels mismatch.")
+        }
+
+        val groupMember = GroupMember(
+            clientState.sessionId,
+            when (clientState.auth) {
+                is LoggedInAuth -> UserService.getUser(clientState.auth.userId).username
+                is GuestAuth -> clientState.auth.tempName
+                else -> throw IllegalStateException("Unauth.")
+            }
+        )
+
+        group.add(groupMember)
+    }
+
+    fun addGroup(clientState: ConnectedClient, settings: Settings): Group {
+        if (clientState.activity !is Idle) {
+            throw IllegalArgumentException("This client is already in group.")
+        }
+
+        val name: String = when (clientState.auth) {
+            is GuestAuth -> clientState.auth.tempName
+            is LoggedInAuth -> UserService.getUser(clientState.auth.userId).username
+            else -> throw IllegalStateException("Unauth.")
+        }
+
+        return addGroup(
+            UserGroup(
+                id = GroupId(generateGroupId()),
+                clients = mutableMapOf(
+                    clientState.sessionId to GroupMember(
+                        clientState.sessionId,
+                        name
+                    )
+                ),
+                host = clientState.sessionId,
+                level = clientState.auth.level,
+                settings = settings
+            )
+        )
     }
 
     private fun updateGroup(group: Group) {

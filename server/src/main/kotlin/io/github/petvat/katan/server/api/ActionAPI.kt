@@ -1,12 +1,10 @@
 package io.github.petvat.katan.server.api
 
 
+import io.github.petvat.katan.server.api.action.BuildAction
+import io.github.petvat.katan.server.api.action.RollDice
 import io.github.petvat.katan.server.group.Game
-import io.github.petvat.katan.shared.protocol.ActionCode
-import io.github.petvat.katan.shared.protocol.SessionId
-import io.github.petvat.katan.shared.protocol.Payload
-import io.github.petvat.katan.shared.protocol.dto.ActionRequest
-import io.github.petvat.katan.shared.protocol.dto.ActionResponse
+import io.github.petvat.katan.shared.protocol.*
 
 /**
  * Responsible for translating client requests into game actions and performing them.
@@ -14,20 +12,46 @@ import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 object ActionAPI {
 
 
+    private val acceptedRequests = mapOf(
+        Request.RollDice to GameStates.ROLL_DICE,
+        Request.Build to GameStates.BUILD_TRADE
+    )
+
     /**
      * Services request by performing the action, then returning the response payload.
      */
-    fun serviceRequest(
+    suspend fun serviceRequest(
         sessionId: SessionId,
-        request: ActionRequest,
+        request: Request, // NOTE: Maybe back to ActionRequest
         game: Game
-    ): Map<SessionId, Payload<ActionResponse>> {
-        val actorId = game.getPlayerId(sessionId)
-        val responses: Map<Int, Payload<ActionResponse>> =
-            performAction(actorId, request, game) // TODO: add Id
+    ): Map<SessionId, Response> {
 
-        return responses.mapKeys { (pid, _) ->
-            game.getSessionId(pid)
+        if (request.type != MTypes.REQ_GAMEACTION) {
+            return handleError(
+                sessionId,
+                requestId = request.requestId,
+                code = ErrorCode.DENIED,
+                "Server error. DEBUG: Tried to handle non-game action with game API."
+            )
+        }
+
+        val playerNumber = game.getPlayerNumber(sessionId)
+
+        val result =
+            performAction(playerNumber, request, game)
+
+        return when (result) {
+            is ExecutionResult.Failure -> handleError(
+                sid = sessionId,
+                requestId = request.requestId,
+                code = result.code,
+                description = result.description
+            )
+
+            is ExecutionResult.Success -> {
+                result.data
+                    .mapKeys { (pid, _) -> game.getSessionId(pid) }
+            }
         }
     }
 
@@ -35,67 +59,48 @@ object ActionAPI {
      * Tries to execute an action. If the action throws an exeception, returns a generic failed request messasage.
      */
     private fun performAction(
-        actorId: Int,
-        actionRequest: ActionRequest,
+        playerNumber: Int,
+        actionRequest: Request,
         game: Game
-    ): Map<Int, Payload<ActionResponse>> {
+    ): ExecutionResult<Response> {
 
-        // TODO: Use ExecutionResult
+        return try {
+            when (actionRequest) {
+                is Request.RollDice -> {
+                    val command = RollDice(game, playerNumber)
+                    // TODO: This is cleaner:
+                    // processIf(actionRequest, playerNumber, game, ::command)
+                    runCommandIf(actionRequest, game, command::execute)
+                }
 
-        // Success: Map<Int, ActionResponse>
-        // Failure: reason, actionCode or a nonce
+                is Request.Build -> {
+                    val command = BuildAction(game, playerNumber, actionRequest.coordinates, actionRequest.buildkind)
+                    runCommandIf(actionRequest, game, command::execute)
+                }
 
-        val response: ExecutionResult<ActionResponse>
-        try {
-            response = when (actionRequest.actionCode) {
-                ActionCode.ROLL_DICE -> game.gameState.rollDice(actorId)
-
-                ActionCode.INIT_TRADE -> game.gameState.initiateTrade(
-                    actorId,
-                    actionRequest as ActionRequest.InitiateTrade
+                else -> ExecutionResult.Failure(
+                    ErrorCode.SERVER_ERROR,
+                    "A processor for this request is not implemented."
                 )
-
-                ActionCode.RESPOND_TRADE -> game.gameState.respondTrade(
-                    actorId,
-                    actionRequest as ActionRequest.RespondTrade
-                )
-
-                ActionCode.BUILD -> game.gameState.build(
-                    actorId,
-                    actionRequest as ActionRequest.Build
-                )
-
-                ActionCode.MOVE_ROBBER -> game.gameState.moveRobber(
-                    actorId,
-                    actionRequest as ActionRequest.MoveRobber
-                )
-
-                ActionCode.TURN_END -> game.gameState.endTurn(actorId)
-
-                ActionCode.SETUP_END -> TODO("???")
-
-                ActionCode.STEAL_CARD -> game.gameState.stealCard(
-                    actorId,
-                    actionRequest as ActionRequest.StealCard
-                )
-
-                ActionCode.CLAIM_VICTORY -> TODO()
-
-                ActionCode.INIT_SETTL -> TODO()
-            }
-            return when (response) {
-                is ExecutionResult.Failure -> mapOf(actorId to Payload(false, response.description, null))
-                is ExecutionResult.Success -> response.data
-                    .mapValues { (_, res) -> Payload(true, response.description, res) }
             }
         } catch (e: RuntimeException) {
-            return mapOf(
-                actorId to Payload<ActionResponse>(
-                    false,
-                    "Unsuccessful request. Error occured of type ${e::class}. ${e.message ?: "Unknown exception occurred."} ",
-                    null
-                )
-            )
+            ExecutionResult.Failure(code = ErrorCode.SERVER_ERROR, "Server error. Could not handle request.")
+        }
+    }
+
+
+    /**
+     * Run the command if the game is in accepting state.
+     */
+    private fun runCommandIf(
+        request: Request,
+        game: Game,
+        command: () -> ExecutionResult<Response>
+    ): ExecutionResult<Response> {
+        return if (game.state != acceptedRequests[request]) {
+            ExecutionResult.Failure(ErrorCode.DENIED, "Cannot perform request in the current state.")
+        } else {
+            command()
         }
     }
 
