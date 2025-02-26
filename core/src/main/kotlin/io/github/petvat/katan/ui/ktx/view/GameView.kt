@@ -1,4 +1,4 @@
-package io.github.petvat.core.ui.ktx.view
+package io.github.petvat.katan.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Button
@@ -101,7 +101,7 @@ class GameView(
 
         viewModel.onPropertyChange(GameViewModel::chatLogProperty) {
             // chat.addMessage(it.last().first, it.last().second) TODO: USE
-            chat.update(it)
+            chat.addAll(it)
         }
 
         viewModel.onPropertyChange(GameViewModel::thisPlayerViewModelProperty) {

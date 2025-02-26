@@ -1,17 +1,14 @@
-package io.github.petvat.core.controller
+package io.github.petvat.katan.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.core.client.NioKatanClient
+import io.github.petvat.katan.client.NioKatanClient
 
 /**
  * This class listens on the message queue of a [NioKatanClient] and forwards any polled message to a [ResponseProcessor].
  *
  * NOTE: Runs in separate thread.
  */
-class ResponseDispatcher(
-    private val client: io.github.petvat.core.client.NioKatanClient,
-    private val responseProcessor: ResponseProcessor
-) :
+class ResponseDispatcher(private val client: NioKatanClient, private val responseProcessor: ResponseProcessor) :
     Runnable {
     private val logger = KotlinLogging.logger { }
     override fun run() {

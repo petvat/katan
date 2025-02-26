@@ -1,16 +1,14 @@
-package io.github.petvat.core.model
+package io.github.petvat.katan.model
 
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
 import io.github.petvat.katan.shared.hexlib.ICoordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
-import io.github.petvat.katan.shared.model.board.Player
 import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.session.PrivateGameState
-import io.github.petvat.katan.shared.model.session.PrivateUserDTO
+import io.github.petvat.katan.shared.model.dto.*
 import io.github.petvat.katan.shared.protocol.PermissionLevel
 import io.github.petvat.katan.shared.protocol.dto.*
 
@@ -59,8 +57,14 @@ class KatanModel {
 
     // TODO: More fields, don't store DTOs
 
-    var game = PrivateGameState(
-        player = Player("", -1, Settings()),
+    var game = GameStateDTO(
+        player = PlayerDTO(
+            -1,
+            PlayerColor.RED,
+            -1,
+            ResourceMap(0, 0, 0, 0, 0),
+            -1, -1, -1
+        ),
         otherPlayers = emptyList(),
         turnOrder = emptyList(),
         turnPlayer = -1,
@@ -102,9 +106,9 @@ class KatanModel {
      * Delta update on dice rolled.
      */
     fun diceRolled(playerResource: ResourceMap, otherPlayersResources: Map<Int, ResourceMap>, moveRobber: Boolean) {
-        game.player.inventory = playerResource
+        game.player.resources = playerResource
         game.otherPlayers.forEach {
-            it.cardCount = otherPlayersResources[it.playerNumber]!!.count()
+            it.resources = otherPlayersResources[it.playerNumber]!!
         }
         // TODO: add MoveRobber. LocalGameState class?
     }

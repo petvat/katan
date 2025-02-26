@@ -1,4 +1,4 @@
-package io.github.petvat.core.event
+package io.github.petvat.katan.event
 
 import com.badlogic.gdx.scenes.scene2d.Stage
 import io.github.petvat.katan.ui.ktx.view.View

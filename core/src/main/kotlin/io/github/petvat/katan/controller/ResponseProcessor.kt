@@ -1,4 +1,4 @@
-package io.github.petvat.core.controller
+package io.github.petvat.katan.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.event.EventBus

@@ -1,4 +1,4 @@
-package io.github.petvat.core.ui.ktx.screen
+package io.github.petvat.katan.ui.ktx.screen
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputMultiplexer
@@ -35,6 +35,10 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
      * TODO: Might be possible to do EventBus += this, have not checked.
      */
     override fun show() {
+
+        // EventBus += this
+        // EventBus += viewModel
+
         val multiplexer = InputMultiplexer();
         multiplexer.addProcessor(stage)
         Gdx.input.inputProcessor = multiplexer;

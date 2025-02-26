@@ -1,4 +1,4 @@
-package io.github.petvat.core.ui.ktx.view
+package io.github.petvat.katan.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import io.github.petvat.katan.ui.model.GameViewModel

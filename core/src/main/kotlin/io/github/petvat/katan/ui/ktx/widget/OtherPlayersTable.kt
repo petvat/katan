@@ -1,4 +1,4 @@
-package io.github.petvat.core.ui.ktx.widget
+package io.github.petvat.katan.ui.ktx.widget
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
@@ -15,8 +15,7 @@ class OtherPlayersTable(
     otherPlayers: List<OtherPlayerViewModel>,
     skin: Skin
 ) : Table(skin), KGroup {
-
-
+    
     private val otherPlayersWidget: Map<Int, OtherPlayerWidget>
 
     init {

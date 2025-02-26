@@ -1,10 +1,10 @@
-package io.github.petvat.core.ui.ktx
+package io.github.petvat.katan.ui.ktx
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.kotcrab.vis.ui.VisUI
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.core.controller.KtxInputController
+import io.github.petvat.katan.controller.NioController
 import io.github.petvat.katan.model.KatanModel
 import io.github.petvat.katan.ui.Assets
 import io.github.petvat.katan.ui.ktx.screen.*
@@ -31,21 +31,15 @@ class KtxKatan(val model: KatanModel) :
 
     lateinit var batch: SpriteBatch
 
-    private lateinit var _controller: io.github.petvat.core.controller.KtxInputController
+    private lateinit var _controller: NioController
 
-    init {
-        logger.debug { "test" }
-    }
-
-    var controller: io.github.petvat.core.controller.KtxInputController
+    var controller: NioController
         get() = _controller
         set(value) {
             _controller = value
         }
 
     val transitionService: ViewTransitionService = { screenType: ScreenType ->
-        logger.debug { "Main entry transitionService." }
-
         Gdx.app.postRunnable {
             when (screenType) {
                 ScreenType.MENU -> setScreen<MenuScreen>()
@@ -63,8 +57,6 @@ class KtxKatan(val model: KatanModel) :
         logger.debug { "Start screen init." }
         assets = Assets()
         batch = SpriteBatch()
-
-        currentScreen
 
         // loadJsonSkin()
         loadVisUISkin()

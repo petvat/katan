@@ -1,4 +1,4 @@
-package io.github.petvat.core.client
+package io.github.petvat.katan.client
 
 import io.github.petvat.katan.shared.NioClient
 import io.github.petvat.katan.shared.protocol.Request

@@ -1,4 +1,4 @@
-package io.github.petvat.core.ui.ktx.view
+package io.github.petvat.katan.ui.ktx.view
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
@@ -14,7 +14,7 @@ import kotlin.math.sqrt
 
 
 /**
- * Board renderer for LibGDX gameState.
+ * Board renderer for LibGDX.
  */
 class BoardGraphic(
     override val viewModel: GameViewModel,
@@ -289,10 +289,10 @@ class BoardGraphic(
 //        if (event is BuildUiEvent) {
 //            if (event.buildKind is BuildKind.Village) {
 //                villageRenderMap[intersectionMap[event.coordinates as ICoordinates]!!] =
-//                    assets.villageTextureMap[event.playerColor]!!
+//                    assets.villageTextureMap[event.color]!!
 //            } else if (event.buildKind is BuildKind.Road) {
 //                roadRenderMap[edgeMap[event.coordinates as EdgeCoordinates]!!] =
-//                    assets.villageTextureMap[event.playerColor]!!
+//                    assets.villageTextureMap[event.color]!!
 //            }
 //        }
 //        if (event is PlaceBuildingUiEvent) {

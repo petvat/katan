@@ -1,4 +1,4 @@
-package io.github.petvat.core.ui.model
+package io.github.petvat.katan.ui.model
 
 import io.github.petvat.katan.event.EventListener
 import kotlin.properties.Delegates

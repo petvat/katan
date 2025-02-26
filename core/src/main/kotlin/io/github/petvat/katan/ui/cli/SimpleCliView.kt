@@ -1,6 +1,6 @@
-package io.github.petvat.core.ui.cli
+package io.github.petvat.katan.ui.cli
 
-import io.github.petvat.core.controller.SimpleCliInputController
+import io.github.petvat.katan.controller.SimpleCliInputController
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.event.EventListener
 import io.github.petvat.katan.model.KatanModel
@@ -12,7 +12,7 @@ import java.util.*
  */
 class SimpleCliView(val model: KatanModel) {
 
-    private lateinit var _controller: io.github.petvat.core.controller.SimpleCliInputController // Backing property
+    private lateinit var _controller: SimpleCliInputController // Backing property
 
 
     fun prompt(message: String): String {

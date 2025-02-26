@@ -1,4 +1,4 @@
-package io.github.petvat.core.ui.ktx.screen
+package io.github.petvat.katan.ui.ktx.screen
 
 import io.github.petvat.katan.event.EventBus
 import io.github.petvat.katan.ui.ktx.KtxKatan

@@ -1,6 +1,6 @@
-package io.github.petvat.core.ui.model
+package io.github.petvat.katan.ui.model
 
-import io.github.petvat.core.controller.RequestController
+import io.github.petvat.katan.controller.RequestController
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.game.Settings
@@ -12,16 +12,14 @@ data class GroupModel(val id: String, val mode: GameMode, val numClients: Int, v
 
 
 data class LobbyViewModel(
-    val requestController: io.github.petvat.core.controller.RequestController,
+    val requestController: RequestController,
     val transitionService: ViewTransitionService,
     val groups: MutableList<PublicGroupDTO>,
 ) : ViewModel() {
 
-//    private val _groupModels = MutableStateFlow<Map<String, GroupModel>>(emptyMap())
-//
-//    val groupModels: StateFlow<Map<String, GroupModel>> = _groupModels.asStateFlow()
-
-    var groupModels: Map<String, GroupModel> by propertyNotify(emptyMap())
+    var groupModels: Map<String, GroupModel> by propertyNotify(
+        groups.associate { it.id to GroupModel(it.id, it.mode, it.numClients, it.level) }
+    )
 
     private fun addGroup(key: String, group: GroupModel) {
         groupModels += (key to group)

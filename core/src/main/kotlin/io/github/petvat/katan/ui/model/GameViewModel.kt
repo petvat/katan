@@ -1,11 +1,11 @@
-package io.github.petvat.core.ui.model
+package io.github.petvat.katan.ui.model
 
-import io.github.petvat.core.controller.RequestController
+import io.github.petvat.katan.controller.RequestController
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.board.*
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.session.PrivateGameState
+import io.github.petvat.katan.shared.model.dto.GameStateDTO
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 
 enum class PlayerColor {
@@ -32,9 +32,9 @@ data class ThisPlayerViewModel(
  * Interface between Model and view. Holds data that is updated on events.
  */
 class GameViewModel(
-    private val outController: io.github.petvat.core.controller.RequestController,
+    private val outController: RequestController,
     group: PrivateGroupDTO,
-    game: PrivateGameState,
+    game: GameStateDTO,
 ) : ViewModel() {
 
     val tiles = game.board.tiles.toList()
@@ -97,7 +97,7 @@ class GameViewModel(
 
     var thisPlayerViewModelProperty: ThisPlayerViewModel by propertyNotify(
         ThisPlayerViewModel(
-            game.player.inventory, game.player.victoryPoints
+            game.player.resources, game.player.victoryPoints
         )
     )
 

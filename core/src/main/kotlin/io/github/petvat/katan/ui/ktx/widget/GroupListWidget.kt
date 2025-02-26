@@ -1,17 +1,19 @@
-package io.github.petvat.core.ui.ktx.widget
+package io.github.petvat.katan.ui.ktx.widget
 
-import com.badlogic.gdx.scenes.scene2d.ui.Label
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane
-import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.Table
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton
-import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup
+import com.badlogic.gdx.scenes.scene2d.Actor
+import com.badlogic.gdx.scenes.scene2d.ui.*
+import com.badlogic.gdx.utils.Align
 import io.github.petvat.katan.ui.model.GroupModel
-import io.github.petvat.katan.ui.model.LobbyViewModel
 import ktx.actors.onChangeEvent
-import ktx.actors.onClick
 import ktx.scene2d.*
 
+private typealias GdxList<T> = com.badlogic.gdx.scenes.scene2d.ui.List<T>
+
+
+/**
+ *
+ * NOTE: Tested.
+ */
 @Scene2dDsl
 class GroupListElementWidget(
     groupName: String,
@@ -28,8 +30,8 @@ class GroupListElementWidget(
     private var joinButton: TextButton
 
     init {
-        setFillParent(true)
         nameL = label(groupName) {
+            setAlignment(Align.center)
             it.growX()
             it.padRight(4f)
             it.padLeft(4f)
@@ -38,15 +40,18 @@ class GroupListElementWidget(
             it.expand()
         }
         modeL = label(mode) {
+            setAlignment(Align.center)
             it.growX()
             it.padRight(4f)
             it.padLeft(4f)
         }
         joinButton = textButton("Join") {
             it.growX()
-            it.padRight(2f)
-            it.padLeft(2f)
-            onChangeEvent { callback() }
+            it.padRight(4f)
+            it.padLeft(4f)
+            onChangeEvent {
+                callback()
+            }
         }
     }
 
@@ -58,69 +63,152 @@ class GroupListElementWidget(
 }
 
 
-class GroupListWidget(
-    private val lobbyViewModel: LobbyViewModel, // <- TODO use callback
-    private val skin: Skin
-) : Table(skin), KTable {
-
-    private var groupLabel: Label
-    private var groupList: VerticalGroup
-    private var scroll: ScrollPane
+/**
+ * TODO: Move this to separate file.
+ */
+class ScrollPaneWidget<T : Actor>(val skin: Skin) : ScrollPane(null, skin), KGroup {
+    private val contentTable: Table
 
     init {
-        groupLabel = label("Groups")
-        row().growY()
-        scroll = scrollPane {
-            this@GroupListWidget.groupList = verticalGroup { }
-            actor = this@GroupListWidget.groupList
+        fadeScrollBars = false
+        setScrollingDisabled(true, false)
+        contentTable = scene2d.table {
+
         }
+        actor = contentTable
     }
 
+    fun modify(element: T) {
+        TODO("Should modify the element if it exists in the table.")
+    }
 
-    fun updateGroupList(groups: List<GroupModel>) {
+    fun add(element: T) {
+        val cell = contentTable.add(element)
+        cell
+            .growX()
+            .row()
+    }
+}
 
-        groupList.clear()
 
-        // val elements = groupList.items
+class GroupListWidget(skin: Skin, val callback: (String, String) -> Unit) : Table(skin), KTable {
+    private val scrollPaneWidget: ScrollPaneWidget<GroupListElementWidget>
+    private val widgetLabel: Label
+
+    init {
+        // setFillParent(true)
+        align(Align.center)
+
+        widgetLabel = scene2d.label("Lobby") {
+            setAlignment(Align.center)
+        }
+        scrollPaneWidget = scene2d.scrollWidget(skin) { }
+
+        add(widgetLabel)
+        row()
+        add(scrollPaneWidget).growX()
+
+    }
+
+    fun update(groups: List<GroupModel>) {
         groups.forEach { group ->
             val name = "name"
-            val element = groupElement(
+            val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
                 name,
                 group.mode.name,
                 group.numClients.toString(),
                 "?",
                 skin,
-                { this@GroupListWidget.lobbyViewModel.handleJoin(group.id, name) },
-            )
-            groupList.addActor(element)
+                { this@GroupListWidget.callback(group.id, name) })
+
+            scrollPaneWidget.add(element)
         }
-        // scroll = scrollPane { actor = this@GroupListWidget.groupList } // NOTE: Necessary?
-        // groupList.setItems(elements)
     }
 
-    /**
-     * TODO: Use id for dynamic rendering. Iterate through the list and update. Annoyed!
-     */
-//    fun updateGroup(id: String, mode: String, groupName: String = "null", numClients: Int, level: String) {
-//        val label = Label(mode, skin)
-//        label.onClick {
-//            lobbyViewModel.handleJoin(numClients.toString(), groupName)
-//        }
-//        val groups = groupList.items
-//        groups.add(label)
-//        groupList.setItems(groups)
-//    }
-
-//    fun addGroup(mode: String, groupName: String = "null", members: Int) {
-//        val label = Label(mode, skin)
-//        label.onClick {
-//            lobbyViewModel.handleJoin(members.toString(), groupName)
-//        }
-//        val groups = groupList.items
-//        groups.add(label)
-//        groupList.setItems(label)
-//    }
 }
+
+
+/**
+ * NOTE: Tested. Alignment problems when wrapped in Table.
+ */
+class GroupListTable(val skin: Skin, val callback: (String, String) -> Unit) : ScrollPane(null, skin), KGroup {
+    private val contentTable: Table
+
+    init {
+        setFillParent(true)
+        fadeScrollBars = false
+        setScrollingDisabled(true, false)
+
+        contentTable = scene2d.table(skin) {
+
+        }
+        actor = contentTable
+    }
+
+    fun update(groups: List<GroupModel>) {
+        contentTable.clear()
+        groups.forEach { group ->
+            val name = "name"
+            val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
+                name,
+                group.mode.name,
+                group.numClients.toString(),
+                "?",
+                skin,
+                { this@GroupListTable.callback(group.id, name) })
+
+            val cell = contentTable.add(element)
+            cell.growX()
+            cell.row()
+        }
+    }
+}
+
+
+//
+//class GroupListWidget(
+//    private val callback: (String, String) -> Unit,
+//    private val skin: Skin
+//) : Table(skin), KTable {
+//
+//    private var groupList = Table(skin)
+//
+//    init {
+//
+//        scrollPane {
+//            this@GroupListWidget.groupList
+//        }
+//    }
+//
+//    fun updateGroupList(groups: List<GroupModel>) {
+//        groupList.clear()
+//        // val elements = groupList.items
+//        // elements.clear()
+//        groups.forEach { group ->
+//            val name = "name"
+//            val element = GroupListElementWidget(
+//                name,
+//                group.mode.name,
+//                group.numClients.toString(),
+//                "?",
+//                skin,
+//            ) { this@GroupListWidget.callback(group.id, name) }
+//            val cell = groupList.add(element)
+//            cell.row()
+//            // elements.add(element)
+//        }
+//        // scroll = scrollPane { actor = this@GroupListWidget.groupList } // NOTE: Necessary?
+//        // groupList.setItems(elements)
+//    }
+//
+//}
+
+
+@Scene2dDsl
+fun <S, T : Actor> KWidget<S>.scrollWidget(
+    skin: Skin = Scene2DSkin.defaultSkin,
+    init: ScrollPaneWidget<T>.(S) -> Unit = {}
+): ScrollPaneWidget<T> = actor(ScrollPaneWidget(skin), init)
 
 
 @Scene2dDsl
@@ -137,7 +225,7 @@ fun <S> KWidget<S>.groupElement(
 
 @Scene2dDsl
 fun <S> KWidget<S>.groupsWidget(
-    viewModel: LobbyViewModel,
-    skin: Skin,
+    callback: (String, String) -> Unit,
+    skin: Skin = Scene2DSkin.defaultSkin,
     init: GroupListWidget.(S) -> Unit = {}
-): GroupListWidget = actor(GroupListWidget(viewModel, skin), init)
+): GroupListWidget = actor(GroupListWidget(skin, callback), init)

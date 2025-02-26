@@ -1,4 +1,4 @@
-package io.github.petvat.core.event
+package io.github.petvat.katan.event
 
 
 import io.github.petvat.katan.shared.hexlib.Coordinates

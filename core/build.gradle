@@ -16,15 +16,33 @@ dependencies {
   api "io.github.libktx:ktx-math:$ktxVersion"
   api "io.github.libktx:ktx-log:$ktxVersion"
   api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-  api 'com.google.code.gson:gson:2.10.1'
   api "com.kotcrab.vis:vis-ui:1.5.3"
-  testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
-  implementation(project(":shared"))
+
+  implementation project(":shared")
+
+  // testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+
+  implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+  implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  testImplementation 'org.jetbrains.kotlin:kotlin-test'
+  // implementation "io.mockk:mockk:$mockkVersion"
+
+
+//  testImplementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+//  testImplementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+//  testImplementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+//  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  // testImplementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+  testImplementation files(rootProject.file('assets').path)
+  testImplementation "io.mockk:mockk:$mockkVersion"
 }
 
 
-tasks.test {
+test {
   useJUnitPlatform()
+  //testLogging.showStandardStreams = true
+  //debug = true
 }
 
 

@@ -1,9 +1,8 @@
-package io.github.petvat.core.ui.model
+package io.github.petvat.katan.ui.model
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.core.controller.RequestController
+import io.github.petvat.katan.controller.RequestController
 import io.github.petvat.katan.event.Event
-import io.github.petvat.katan.event.LobbyEvent
 import io.github.petvat.katan.event.LoginEvent
 
 /**
@@ -12,7 +11,7 @@ import io.github.petvat.katan.event.LoginEvent
  * - LobbyView
  */
 class LoginViewModel(
-    private val outController: io.github.petvat.core.controller.RequestController,
+    private val outController: RequestController,
     private val transitionService: ViewTransitionService
 ) : ViewModel() {
 

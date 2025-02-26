@@ -1,19 +1,88 @@
-package io.github.petvat.core.controller
+package io.github.petvat.katan.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.client.*
 import io.github.petvat.katan.event.ConnectionEvent
 import io.github.petvat.katan.event.EventBus
-import io.github.petvat.katan.event.LoginEvent
-import io.github.petvat.katan.model.KatanModel
 import io.github.petvat.katan.shared.hexlib.Coordinates
-import io.github.petvat.katan.shared.hexlib.HexCoordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.protocol.Request
 import io.github.petvat.katan.ui.cli.SimpleCliView
-import io.github.petvat.katan.ui.ktx.KtxKatan
 import java.util.concurrent.atomic.AtomicInteger
+
+interface RequestController {
+
+    fun handleInit()
+
+    fun handleCreate(settings: Settings)
+
+    fun handleJoin(sessionId: String)
+
+    fun handleGetGroup(pagination: Int)
+
+    fun connectClient(host: String?, port: Int?): Boolean
+
+    fun handleChat(message: String, recipients: Set<String>?)
+
+    fun handleLogin(username: String, password: String)
+
+    fun handleClose()
+
+    fun handleRollDice()
+
+    fun handleBuild(buildKind: BuildKind, coordinates: Coordinates)
+
+    fun handleRegister(name: String)
+}
+
+//
+//class MockController : RequestController {
+//    override fun handleInit() {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleCreate(settings: Settings) {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleJoin(sessionId: String) {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleGetGroup(pagination: Int) {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun connectClient(host: String?, port: Int?): Boolean {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleChat(message: String, recipients: Set<String>?) {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleLogin(username: String, password: String) {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleClose() {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleRollDice() {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) {
+//        TODO("Not yet implemented")
+//    }
+//
+//    override fun handleRegister(name: String) {
+//        TODO("Not yet implemented")
+//    }
+//
+//}
 
 
 /**
@@ -21,12 +90,12 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * Handles user input by creating requests and forwarding them to client socket.
  */
-open class MainController(
-    val model: KatanModel,
-    val responseController: io.github.petvat.core.controller.ResponseProcessor
-) : io.github.petvat.core.controller.RequestController {
+class NioController(
+    private val responseController: ResponseProcessor
+) : RequestController {
     private val logger = KotlinLogging.logger { }
-    private lateinit var client: io.github.petvat.core.client.NioKatanClient
+
+    private lateinit var client: NioKatanClient
 
     private var messageCount = AtomicInteger(0)
 
@@ -38,7 +107,7 @@ open class MainController(
      * @param port Server port
      */
     override fun connectClient(host: String?, port: Int?): Boolean {
-        client = io.github.petvat.core.client.NioKatanClient()
+        client = NioKatanClient()
 
         val success: Boolean = if (host != null) {
             client.start(address = host, portNumber = port ?: 1234)
@@ -54,7 +123,8 @@ open class MainController(
         EventBus.fire(ConnectionEvent) // Maybe a little hacky?
 
         // Initializes the response middleware
-        val responseHandler = Thread(io.github.petvat.core.controller.ResponseDispatcher(client, responseController))
+        val responseHandler = Thread(ResponseDispatcher(client, responseController))
+        responseHandler.isDaemon = true // Kill on main exit.
         responseHandler.start()
 
         return true
@@ -65,14 +135,8 @@ open class MainController(
      */
     private fun nextRequest() = messageCount.incrementAndGet()
 
-    // ?
+
     private fun forwardRequest(data: Request) {
-//        val request = MessageFactory.create(
-//            messageId = messageCount++,
-//            groupId = groupId,
-//            messageType = type,
-//            data = data
-//        )
         responseController.requests += data // NOTE: Currenlty leaking.
         client.forwardRequest(data)
     }
@@ -121,82 +185,57 @@ open class MainController(
     }
 }
 
-
-interface RequestController {
-
-    fun handleInit()
-
-    fun handleCreate(settings: Settings)
-
-    fun handleJoin(sessionId: String)
-
-    fun handleGetGroup(pagination: Int)
-
-    fun connectClient(host: String?, port: Int?): Boolean
-
-    fun handleChat(message: String, recipients: Set<String>?)
-
-    fun handleLogin(username: String, password: String)
-
-    fun handleClose()
-
-    fun handleRollDice()
-
-    fun handleBuild(buildKind: BuildKind, coordinates: Coordinates)
-
-    fun handleRegister(name: String)
-}
-
 // NOTE: This is totally Useless!
-class KtxInputController(
-    private val base: io.github.petvat.core.controller.MainController,
-    val view: KtxKatan
-) : io.github.petvat.core.controller.RequestController {
-    override fun handleInit() {
-        base.handleInit()
-    }
-
-    override fun handleCreate(settings: Settings) {
-        base.handleCreate(settings)
-    }
-
-    override fun handleJoin(sessionId: String) {
-        base.handleJoin(sessionId)
-    }
-
-    override fun handleGetGroup(pagination: Int) {
-        base.handleGetGroup(pagination)
-    }
-
-    override fun connectClient(host: String?, port: Int?): Boolean {
-        return base.connectClient(host, port)
-    }
-
-    override fun handleChat(message: String, recipients: Set<String>?) {
-        base.handleChat(message, null)
-    }
-
-    override fun handleLogin(username: String, password: String) {
-        base.handleLogin(username, password)
-    }
-
-    override fun handleClose() {
-        base.handleClose()
-    }
-
-    override fun handleRollDice() {
-        base.handleRollDice()
-    }
-
-    override fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) {
-        base.handleBuild(buildKind, coordinates)
-    }
-
-    override fun handleRegister(name: String) {
-        base.handleRegister(name)
-    }
-
-}
+// TODO: REMOVE THIS
+//class KtxInputController(
+//    private val base: MainController,
+//    val view: KtxKatan
+//) : RequestController {
+//    override fun handleInit() {
+//        base.handleInit()
+//    }
+//
+//    override fun handleCreate(settings: Settings) {
+//        base.handleCreate(settings)
+//    }
+//
+//    override fun handleJoin(sessionId: String) {
+//        base.handleJoin(sessionId)
+//    }
+//
+//    override fun handleGetGroup(pagination: Int) {
+//        base.handleGetGroup(pagination)
+//    }
+//
+//    override fun connectClient(host: String?, port: Int?): Boolean {
+//        return base.connectClient(host, port)
+//    }
+//
+//    override fun handleChat(message: String, recipients: Set<String>?) {
+//        base.handleChat(message, null)
+//    }
+//
+//    override fun handleLogin(username: String, password: String) {
+//        base.handleLogin(username, password)
+//    }
+//
+//    override fun handleClose() {
+//        base.handleClose()
+//    }
+//
+//    override fun handleRollDice() {
+//        base.handleRollDice()
+//    }
+//
+//    override fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) {
+//        base.handleBuild(buildKind, coordinates)
+//    }
+//
+//    override fun handleRegister(name: String) {
+//        base.handleRegister(name)
+//    }
+//
+//}
 
 /**
  * TODO: Update so that it works.
@@ -208,7 +247,7 @@ class KtxInputController(
  * @property run Starts listening
  */
 class SimpleCliInputController(
-    private val base: io.github.petvat.core.controller.MainController,
+    private val base: NioController,
     val view: SimpleCliView,
 ) {
     val logger = KotlinLogging.logger { }

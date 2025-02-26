@@ -1,10 +1,10 @@
-package io.github.petvat.core.ui.ktx.view
+package io.github.petvat.katan.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.TextField
 import com.badlogic.gdx.utils.Align
 import io.github.petvat.katan.ui.model.LoginViewModel
-import io.github.petvat.katan.ui.model.StartMenuViewModel
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
@@ -16,25 +16,28 @@ class LoginView(
 
     // private val  settingsWidget
 
-    private val textField: TextField
+    private val nameInput: TextField
+
+    private val registerBtn: TextButton
 
     init {
         setFillParent(true)
         align(Align.center)
 
-        textField = textField { }
-
-        textButton("Register as Guest") {
+        nameInput = scene2d.textField { }
+        registerBtn = textButton("Register as Guest") {
             onChangeEvent {
                 this@LoginView.viewModel.registerAsGuest(
-                    this@LoginView.textField.text // With input text
+                    this@LoginView.nameInput.text // With input text
                 )
-            } // inlined
+            }
         }
+        add(nameInput)
+        row().grow()
+        add(registerBtn)
     }
 
     override fun registerOnPropertyChanges() {}
-
 }
 
 @Scene2dDsl
