@@ -50,7 +50,3 @@ class EdgeCoordinates(
     @SerialName("edge_r") override val r: Int
 ) : Coordinates(q, r)
 
-
-enum class CoordinateTypes {
-    HEX, EDGE, INTERSECT
-}

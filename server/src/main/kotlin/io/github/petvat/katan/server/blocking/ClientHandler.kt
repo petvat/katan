@@ -1,4 +1,4 @@
-package io.github.petvat.katan.blocking
+package io.github.petvat.katan.server.blocking
 
 //import com.google.gson.JsonObject
 //import com.google.gson.JsonParser

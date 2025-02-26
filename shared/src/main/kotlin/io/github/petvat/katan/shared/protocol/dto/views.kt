@@ -4,15 +4,16 @@ import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
 import io.github.petvat.katan.shared.hexlib.ICoordinates
 import io.github.petvat.katan.shared.model.board.*
+import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.protocol.PermissionLevel
 import kotlinx.serialization.Serializable
 
 /**
- * Accesssable members of this group.
+ * Accessible to members of this group.
  */
 @Serializable
-open class PrivateGroupView(
+open class PrivateGroupDTO(
     open val id: String,
     open val clients: MutableMap<String, String>,
     open val level: PermissionLevel,
@@ -20,60 +21,49 @@ open class PrivateGroupView(
     open val settings: Settings
 )
 
-
 /**
- * Accessable to all users.
+ * Accessible to all users.
  */
 @Serializable
-data class PublicGroupView(
+data class PublicGroupDTO(
     val id: String,
     val numClients: Int,
+    val maxClients: Int,
     val level: PermissionLevel,
-    val settings: Settings
+    val mode: GameMode,
 )
 
-
 @Serializable
-data class VillageView(
-    val villageKind: VillageKind,
+data class VillageDTO(
+    var villageKind: VillageKind,
     val owner: Int,
 ) : DomainDTO
 
 @Serializable
-data class RoadView(
+data class RoadDTO(
     val roadKind: RoadKind,
     val owner: Int
 ) : DomainDTO
 
 @Serializable
-data class IntersectionView(
+data class IntersectionDTO(
     val coordinate: ICoordinates,
-    val village: VillageView
+    val village: VillageDTO
 ) : DomainDTO
 
 @Serializable
-data class EdgeView(
+data class EdgeDTO(
     val coordinate: EdgeCoordinates,
-    val road: RoadView
+    val road: RoadDTO
 ) : DomainDTO
-
-//@Serializable
-//data class SessionDTO(
-//    val id: PublicPlayerInfo,
-//    val hostId: Int,
-//    val settings: Settings,
-//    val members: Set<PublicUserInfo>,
-//    val chatLog: List<Pair<Int, String>>,
-//    val joinable: Boolean
-//) : DomainDTO
 
 /**
- * Data Transfer Object of [InternalBoard] that hides sensitive information.
+ * Data Transfer Object of [Board] that hides sensitive information.
  */
 @Serializable
-data class BoardView(
+data class BoardDTO(
     var tiles: List<Tile>,
-    val intersections: MutableList<IntersectionView>,
-    val paths: List<EdgeView>,
+    val intersections: MutableList<IntersectionDTO>,
+    val paths: MutableList<EdgeDTO>,
     val robberLocation: HexCoordinates
-) : DomainDTO, Board
+) : DomainDTO

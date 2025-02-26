@@ -1,10 +1,6 @@
 package io.github.petvat.katan.shared.model.game
 
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
-import io.github.petvat.katan.shared.protocol.MessageFactory
-import io.github.petvat.katan.shared.protocol.MessageType
-import io.github.petvat.katan.shared.protocol.dto.Request
-import io.github.petvat.katan.shared.protocol.json.KatanJson
 import kotlinx.serialization.Serializable
 
 enum class GameMode {
@@ -105,19 +101,6 @@ data class Settings(
         result = 31 * result + initRobberLocation.hashCode()
         return result
     }
-}
-
-
-fun main() {
-    println(Settings())
-    val json = KatanJson.messageToJson(
-        MessageFactory.create(
-            messageType = MessageType.CREATE,
-            data = Request.Create(Settings(), true)
-        )
-    )
-    println(json)
-
 }
 
 //

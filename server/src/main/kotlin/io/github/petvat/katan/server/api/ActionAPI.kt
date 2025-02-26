@@ -1,8 +1,8 @@
 package io.github.petvat.katan.server.api
 
 
-import io.github.petvat.katan.server.api.action.BuildAction
-import io.github.petvat.katan.server.api.action.RollDice
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.petvat.katan.server.api.action.*
 import io.github.petvat.katan.server.group.Game
 import io.github.petvat.katan.shared.protocol.*
 
@@ -11,10 +11,18 @@ import io.github.petvat.katan.shared.protocol.*
  */
 object ActionAPI {
 
+    private val logger = KotlinLogging.logger { }
 
+    /**
+     * Map of what requests are allowed for each game state.
+     */
     private val acceptedRequests = mapOf(
+        Request.BuildInitSettl to GameStates.SETUP,
         Request.RollDice to GameStates.ROLL_DICE,
-        Request.Build to GameStates.BUILD_TRADE
+        Request.Build to GameStates.BUILD_TRADE,
+        Request.MoveRobber to GameStates.MOVE_ROBBER,
+        Request.Steal to GameStates.STEAL,
+        Request.EndTurn to GameStates.BUILD_TRADE
     )
 
     /**
@@ -27,7 +35,7 @@ object ActionAPI {
     ): Map<SessionId, Response> {
 
         if (request.type != MTypes.REQ_GAMEACTION) {
-            return handleError(
+            return KatanApi.handleError(
                 sessionId,
                 requestId = request.requestId,
                 code = ErrorCode.DENIED,
@@ -41,7 +49,7 @@ object ActionAPI {
             performAction(playerNumber, request, game)
 
         return when (result) {
-            is ExecutionResult.Failure -> handleError(
+            is ExecutionResult.Failure -> KatanApi.handleError(
                 sid = sessionId,
                 requestId = request.requestId,
                 code = result.code,
@@ -56,7 +64,9 @@ object ActionAPI {
     }
 
     /**
-     * Tries to execute an action. If the action throws an exeception, returns a generic failed request messasage.
+     * Tries to execute an action. If the action throws an exception, returns a generic failed request messasage.
+     *
+     * @param playerNumber The player number of the requesting player ref. game
      */
     private fun performAction(
         playerNumber: Int,
@@ -65,32 +75,65 @@ object ActionAPI {
     ): ExecutionResult<Response> {
 
         return try {
-            when (actionRequest) {
+            val command = when (actionRequest) {
+                is Request.BuildInitSettl -> {
+                    PlaceFirstSettlements(game, playerNumber, actionRequest.coordinates)
+                }
+
                 is Request.RollDice -> {
-                    val command = RollDice(game, playerNumber)
-                    // TODO: This is cleaner:
-                    // processIf(actionRequest, playerNumber, game, ::command)
-                    runCommandIf(actionRequest, game, command::execute)
+                    RollDice(game, playerNumber)
                 }
 
                 is Request.Build -> {
-                    val command = BuildAction(game, playerNumber, actionRequest.coordinates, actionRequest.buildkind)
-                    runCommandIf(actionRequest, game, command::execute)
+                    BuildAction(game, playerNumber, actionRequest.coordinates, actionRequest.buildkind)
                 }
 
-                else -> ExecutionResult.Failure(
-                    ErrorCode.SERVER_ERROR,
-                    "A processor for this request is not implemented."
-                )
+                is Request.MoveRobber -> {
+                    MoveRobber(game, playerNumber, actionRequest.coordinates)
+                }
+
+                is Request.Steal -> {
+                    StealCard(game, playerNumber, actionRequest.playerNumber)
+                }
+
+                is Request.InitTrade -> {
+                    InitiateTrade(
+                        game,
+                        playerNumber,
+                        actionRequest.targetPlayers,
+                        actionRequest.offer,
+                        actionRequest.inReturn
+                    )
+                }
+
+                is Request.EndTurn -> {
+                    EndTurn(game, playerNumber)
+                }
+
+                is Request.ClaimVictory -> {
+                    ClaimVictory(game, playerNumber)
+                }
+
+                else -> {
+                    // NOTE: Consider again to have distinction between game and non-game requests.
+                    logger.error { "A non-game request was routed to game API." }
+                    throw IllegalArgumentException("Internal error.")
+                }
             }
+            return runCommandIf(actionRequest, game) { command.execute() }
         } catch (e: RuntimeException) {
-            ExecutionResult.Failure(code = ErrorCode.SERVER_ERROR, "Server error. Could not handle request.")
+            // NOTE: Could be interesting to have more fine-grained error codes.
+            logger.error { "Unhandled exception." }
+            ExecutionResult.Failure(
+                code = ErrorCode.SERVER_ERROR,
+                "Server error. Could not handle request. ${e.message}"
+            )
         }
     }
 
-
     /**
      * Run the command if the game is in accepting state.
+     *
      */
     private fun runCommandIf(
         request: Request,

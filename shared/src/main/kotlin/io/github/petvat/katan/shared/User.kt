@@ -1,7 +1,7 @@
 package io.github.petvat.katan.shared
 
-import io.github.petvat.katan.shared.model.session.PrivateUserView
-import io.github.petvat.katan.shared.model.session.PublicUserView
+import io.github.petvat.katan.shared.model.dto.PrivateUserDTO
+import io.github.petvat.katan.shared.model.dto.PublicUserDTO
 
 @JvmInline
 value class UserId(val value: String)
@@ -12,12 +12,12 @@ data class User(
     val password: String,
     var active: Boolean
 ) {
-    fun toPublic(): PublicUserView {
-        return PublicUserView(id.value, username)
+    fun toPublic(): PublicUserDTO {
+        return PublicUserDTO(id.value, username)
     }
 
-    fun toPrivate(): PrivateUserView {
-        return PrivateUserView(id.value, username, password)
+    fun toPrivate(): PrivateUserDTO {
+        return PrivateUserDTO(username, password)
     }
 }
 

@@ -5,7 +5,6 @@ import io.github.petvat.katan.server.group.Game
 import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.protocol.ErrorCode
 import io.github.petvat.katan.shared.protocol.Response
-import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 
 /**
  * Action to respond to an existing trade.
@@ -21,11 +20,6 @@ class RespondTrade(
         return (trade.targets.contains(playerNumber))
     }
 
-    /**
-     * Note the subtle difference between accept and success; response is successful if it sucessfully
-     * responds to a existing request. So a response can be successful even though it was declined by the target.
-     * If false, something wrong happened during the processing of the request (indicating bad request), causing the success flag to return false.
-     */
     override fun execute(): ExecutionResult<Response.TradeResponse> {
 
         if (validate()) return ExecutionResult.Failure(

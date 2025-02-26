@@ -1,4 +1,4 @@
-package io.github.petvat.katan.client
+package io.github.petvat.katan.server.client
 
 import io.github.petvat.katan.server.group.GroupId
 import io.github.petvat.katan.shared.protocol.PermissionLevel

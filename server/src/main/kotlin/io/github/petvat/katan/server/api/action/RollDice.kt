@@ -29,7 +29,7 @@ class RollDice(
         val moveRobber: Boolean = diceRoll.first + diceRoll.second == 7
         val newCardCounts = mutableMapOf<Int, Int>()
         game.players.forEach { player ->
-            newCardCounts[player.playerNumber] = player.cardCount
+            newCardCounts[player.playerNumber] = player.inventory.count()
         }
         // newCardCounts.filterNot { (pid, count) -> pid == player.playerNumber },
 
@@ -94,11 +94,11 @@ class RollDice(
     private fun discardResources() {
         val players = game.players
         players.forEach { player ->
-            val cards = player.cardCount
+            val cards = player.inventory.count()
             if (cards >= game.settings.cardLimit) {
                 val removes = cards.floorDiv(2)
                 repeat(removes) {
-                    Random.nextInt(0, player.cardCount)
+                    Random.nextInt(0, player.inventory.count())
                     val inventory = player.inventory.get()
                     if (inventory.isNotEmpty()) {
                         // TODO: inventory.filter prob not working

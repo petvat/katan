@@ -2,8 +2,7 @@ package io.github.petvat.katan.shared.model.board
 
 import io.github.petvat.katan.shared.User
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.session.PlayerColor
-import io.github.petvat.katan.shared.model.session.PlayerDTO
+import io.github.petvat.katan.shared.model.dto.PlayerColor
 
 
 /**
@@ -27,16 +26,4 @@ data class Player(
     var roadCount = 0
 }
 
-
-fun Player.toDTO(): PlayerDTO {
-    return PlayerDTO(
-        playerNumber = playerNumber,
-        resources = inventory,
-        settlementCount = settlementCount,
-        cityCount = cityCount,
-        roadCount = roadCount,
-        victoryPoints = victoryPoints,
-        color = color
-    )
-}
 

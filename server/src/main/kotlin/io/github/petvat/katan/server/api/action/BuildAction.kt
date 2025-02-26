@@ -14,7 +14,7 @@ import io.github.petvat.katan.shared.protocol.Response
 class BuildAction(
     override val game: Game,
     override val playerNumber: Int,
-    val coordinate: Coordinates,
+    private val coordinate: Coordinates,
     private val buildKind: BuildKind
 ) : Action {
 

@@ -1,4 +1,4 @@
-package io.github.petvat.katan.nio
+package io.github.petvat.katan.server.nio
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -10,6 +10,4 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * By storing partial messages and assembling them when all parts arrive,
  * it makes sure that no message is lost.
  */
-class MessageReader {
-
-}
+class MessageReader

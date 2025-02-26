@@ -9,7 +9,6 @@ import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.protocol.ErrorCode
 import io.github.petvat.katan.shared.protocol.Response
-import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 
 
 /**

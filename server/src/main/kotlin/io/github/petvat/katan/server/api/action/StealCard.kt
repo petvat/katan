@@ -4,7 +4,6 @@ import io.github.petvat.katan.server.api.ExecutionResult
 import io.github.petvat.katan.server.api.GameStates
 import io.github.petvat.katan.server.group.Game
 import io.github.petvat.katan.shared.protocol.Response
-import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 
 class StealCard(
     override val game: Game,

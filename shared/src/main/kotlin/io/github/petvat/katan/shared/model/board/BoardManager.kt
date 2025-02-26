@@ -5,6 +5,8 @@ import io.github.petvat.katan.shared.model.game.ResourceMap
 import java.util.List.copyOf
 
 /**
+ * TODO: MOVE TO SERVER MODULE
+ *
  * Manages all logical operations on board.
  */
 class BoardManager(
@@ -194,7 +196,6 @@ class BoardManager(
         return coordinateOffsets
     }
 
-
     /**
      * Get adjacent edges to an edge.
      */
@@ -300,7 +301,6 @@ class BoardManager(
      * Checks if there is an intersection on an intersection coordinate, i.e. if this intersection is occupied.
      */
     fun intersectionAt(coordinate: ICoordinates): Boolean = intersectionAt(coordinate.q, coordinate.r)
-
 
     fun intersectionAt(x: Int, y: Int): Boolean {
         return intersections.map { i -> i.coordinate }.contains(ICoordinates(x, y))

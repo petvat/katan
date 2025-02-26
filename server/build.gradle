@@ -2,8 +2,8 @@ apply plugin: 'application'
 apply plugin: 'org.jetbrains.kotlin.jvm'
 
 
-java.sourceCompatibility = 21
-java.targetCompatibility = 21
+java.sourceCompatibility = 11
+java.targetCompatibility = 11
 mainClassName = 'io.github.petvat.katan.server.ServerLauncher'
 application.setMainClass(mainClassName)
 eclipse.project.name = appName + '-server'
@@ -12,6 +12,11 @@ dependencies {
   implementation(project(":shared"))
   api 'com.google.code.gson:gson:2.10.1'
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+  implementation "io.ktor:ktor-server-websockets:$ktorVersion"
+  implementation "io.ktor:ktor-server-core:$ktorVersion"
+  implementation("io.ktor:ktor-server-netty:$ktorVersion")
+  implementation("io.ktor:ktor-server-auth:$ktorVersion")
+  implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
 }
 
 jar {

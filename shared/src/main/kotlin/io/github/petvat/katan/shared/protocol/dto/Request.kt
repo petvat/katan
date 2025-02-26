@@ -13,7 +13,7 @@ sealed class Request() : PayloadDTO {
 
     @Serializable
     data class Join(
-        val sessionId: String
+        val groupId: String
     ) : Request()
 
     @Serializable
@@ -34,6 +34,9 @@ sealed class Request() : PayloadDTO {
         val recipients: Set<String>
     ) : Request()
 
+    /**
+     * NOTE: Not used?
+     */
     @Serializable
     data class Groups(
         val pagination: Int

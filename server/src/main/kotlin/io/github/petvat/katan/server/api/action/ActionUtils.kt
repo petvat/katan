@@ -11,7 +11,7 @@ object ActionUtils {
 
     /**
      * Generic execution procedure for build actions.
-     * HACK: diff PlaceFirstSettlements
+     * @param buildAction Function for the specific build action.
      */
     fun executeBuildAction(
         game: Game,
@@ -27,7 +27,7 @@ object ActionUtils {
 
 
         // TODO: CHECK LONGEST ROAD!
-        //  Both because build settlement can ruin longest road!
+        //  Both because build settlement and road can affect longest road!
 
         val dto =
             Response.Build(

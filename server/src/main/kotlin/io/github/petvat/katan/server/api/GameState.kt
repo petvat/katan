@@ -5,7 +5,6 @@ import io.github.petvat.katan.server.group.Game
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
 import io.github.petvat.katan.shared.protocol.ErrorCode
 import io.github.petvat.katan.shared.protocol.dto.ActionRequest
-import io.github.petvat.katan.shared.protocol.dto.ActionResponse
 import io.github.petvat.katan.shared.protocol.Request
 import io.github.petvat.katan.shared.protocol.Response
 

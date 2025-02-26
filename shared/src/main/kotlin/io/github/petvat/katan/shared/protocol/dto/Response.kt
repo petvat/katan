@@ -1,68 +1,94 @@
 package io.github.petvat.katan.shared.protocol.dto
-
-
-import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.session.*
-import io.github.petvat.katan.shared.protocol.PermissionLevel
-import kotlinx.serialization.Serializable
-
-/**
- * This class encapsules all responses that are not related to a specific game of Katan.
- */
-@Serializable
-sealed class Response() : PayloadDTO {
-
-    @Serializable
-    data class Chat(
-        val senderId: String,
-        val message: String
-    ) : Response()
-
-    @Serializable
-    data class Create(
-        // val groupView: RestrictedGroupView
-        val groupId: String,
-        val level: PermissionLevel,
-        val settings: Settings
-    ) : Response()
-
-    @Serializable
-    data class Join(
-        val groupView: PrivateGroupView? = null,
-        val joinedUser: PublicUserView? = null
-    ) : Response()
-
-    @Serializable
-    data class Login(
-        val userInfo: PrivateUserView,
-        val token: String
-    ) : Response()
-
-    @Serializable
-    data class Groups(
-        val groups: Collection<PublicGroupView>
-    ) : Response()
-
+//
+//
+//import io.github.petvat.katan.shared.model.game.GameMode
+//import io.github.petvat.katan.shared.model.game.Settings
+//import io.github.petvat.katan.shared.model.session.*
+//import io.github.petvat.katan.shared.protocol.PermissionLevel
+//import kotlinx.serialization.SerialName
+//import kotlinx.serialization.Serializable
+//
+///**
+// * This class encapsules all responses that are not related to a specific game of Katan.
+// */
+//@Serializable
+//sealed class Response() : PayloadDTO {
+//
 //    @Serializable
-//    data class SessionDTO(
-//        val settings: Settings,
-//        val hostId: Int,
-//        val playersCount: Int,
-//        val joinable: Boolean
+//    data class ConnectAck(val sessionId: String) : Response()
+//
+//    @Serializable
+//    data class Chat(
+//        val senderId: String,
+//        val message: String
 //    ) : Response()
-
-    @Serializable
-    data class Init(
-        val privateGameState: PrivateGameState
-    ) : Response()
-
-    @Serializable
-    data object Empty : Response()
-
-    @Serializable
-    data class ConnectionAccept(val sessionId: String) : Response()
-
-}
+//
+//    /**
+//     * NOTE: If the client has a request queue,
+//     *  then it can identify responses based on messageID and the server can send minimal responses.
+//     *
+//     *  NOTE: For now, keep it simple.
+//     */
+//    @Serializable
+//    data class Create(
+//        // val groupView: RestrictedGroupView
+//        val groupId: String,
+//        val level: PermissionLevel, // Remove
+//        val settings: Settings // Remove
+//    ) : Response()
+//
+//    /**
+//     * Works for now. Could eventually create a Join and Create Push.
+//     *
+//     * TODO: Use PublicGroupDTO!
+//     */
+//    @SerialName("push_group")
+//    @Serializable
+//    data class GroupPush(
+//        val group: PublicGroupDTO
+//    ) : Response()
+//
+//
+//    /**
+//     * TODO: Modify this to be dynamic, i.e. it can be used both for this player and any other player.
+//     * It should be able to
+//     *
+//     */
+//    @Serializable
+//    data class Join(
+//        val groupView: PrivateGroupDTO? = null,
+//        val joinedUser: PublicUserDTO? = null
+//    ) : Response()
+//
+//    @Serializable
+//    data class Login(
+//        val userInfo: PrivateUserDTO,
+//        val token: String
+//    ) : Response()
+//
+//    @Serializable
+//    data class Groups(
+//        val groups: Collection<PublicGroupDTO>
+//    ) : Response()
+//
+////    @Serializable
+////    data class SessionDTO(
+////        val settings: Settings,
+////        val hostId: Int,
+////        val playersCount: Int,
+////        val joinable: Boolean
+////    ) : Response()
+//
+//    @Serializable
+//    data class Init(
+//        val privateGameState: PrivateGameState
+//    ) : Response()
+//
+//    @Serializable
+//    data object Empty : Response()
+//
+//
+//}
 
 
 //

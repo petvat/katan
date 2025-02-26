@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@SerialName("LEVEL")
+@SerialName("lvl")
 enum class PermissionLevel {
-    USER, GUEST
+    USER, GUEST, UNAUTH
 }

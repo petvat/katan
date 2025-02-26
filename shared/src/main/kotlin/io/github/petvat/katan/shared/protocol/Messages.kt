@@ -9,43 +9,42 @@ import kotlinx.serialization.Serializable
  * RecordId: current -> proc = false -> RecordId: current
  * RecordId: current -> proc = true -> RecordId: current + 1
  *
- * TODO: Use recordId to identify request -> response
  *
  * New incoming, not req/res -> current + 1
  * New incoming, not req/res -> <=current -> Discard
  */
-@Serializable
-data class Header(
-    val recordId: Int? = null,
-    val groupId: String? = null,
-    val messageType: MessageType,
-    val version: String = PROTOCOL_VERSION,
-    val timestamp: Long = System.currentTimeMillis(),
-    val token: String? = null
-)
-
-
-@Serializable
-data class Payload<out R : PayloadDTO>( // TODO: Review
-    val success: Boolean? = null,
-    val description: String? = null,
-    val data: R? = null // Todo: Rename to delta
-)
-
-
-@Serializable
-data class Message<out R : PayloadDTO>(
-    val header: Header,
-    val payload: Payload<R>
-)
-
-data class RequestMessage(
-    val header: Header,
-    val payload: Payload<Request>
-)
+//@Serializable
+//data class Header(
+//    val messageId: Int? = null,
+//    val groupId: String? = null,
+//    val messageType: MessageType,
+//    val version: String = PROTOCOL_VERSION,
+//    val timestamp: Long = System.currentTimeMillis(),
+//    val token: String? = null
+//)
+//
+//
+//@Serializable
+//data class Payload<out R : PayloadDTO>( // TODO: Review
+//    val success: Boolean? = null,
+//    val description: String? = null,
+//    val data: R? = null // Todo: Rename to delta
+//)
+//
+//
+//@Serializable
+//data class Message<out R : PayloadDTO>(
+//    val header: Header,
+//    val payload: Payload<R>
+//)
+//
+//data class RequestMessage(
+//    val header: Header,
+//    val payload: Payload<Request>
+//)
 
 //abstract class RequestMessage2<out Request>(
-//    open val recordId: Int? = null,
+//    open val messageId: Int? = null,
 //    open val groupId: String? = null,
 //    open val messageType: MessageType,
 //    open val version: String = PROTOCOL_VERSION,
@@ -55,7 +54,7 @@ data class RequestMessage(
 //)
 //
 //open class ResponseMessage2<out Response>(
-//    open val recordId: Int? = null,
+//    open val messageId: Int? = null,
 //    open val groupId: String? = null,
 //    open val messageType: MessageType,
 //    open val version: String = PROTOCOL_VERSION,
@@ -66,12 +65,12 @@ data class RequestMessage(
 //data class ChatRequest(
 //    override val data: Request.Chat,
 //    override val groupId: String,
-//    override val recordId: Int?,
+//    override val messageId: Int?,
 //    override val token: String,
 //
 //    ) :
 //    RequestMessage2<Request.Chat>(
-//        recordId = recordId,
+//        messageId = messageId,
 //        token = token,
 //        groupId = groupId,
 //        messageType = MessageType.CHAT,
@@ -79,10 +78,10 @@ data class RequestMessage(
 //    )
 //
 //data class InitRequest(
-//    override val recordId: Int?,
+//    override val messageId: Int?,
 //    override val token: String,
 //) : RequestMessage2<Nothing>(
-//    recordId = recordId,
+//    messageId = messageId,
 //    token = token,
 //    messageType = MessageType.CHAT,
 //    data = null
@@ -95,10 +94,10 @@ data class RequestMessage(
 //
 //data class ChatResponse(
 //    override val payload: Payload<Response.Chat>,
-//    override val recordId: Int?,
+//    override val messageId: Int?,
 //
 //    ) : ResponseMessage2<Response.Chat>(
-//    recordId = recordId,
+//    messageId = messageId,
 //    messageType = MessageType.CHAT,
 //    payload = payload
 //)

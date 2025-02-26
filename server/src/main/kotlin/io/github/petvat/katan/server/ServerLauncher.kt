@@ -3,6 +3,7 @@
 package io.github.petvat.katan.server
 
 import io.github.petvat.katan.server.nio.NioServer
+import io.github.petvat.katan.server.nio.ServerConstants
 import io.github.petvat.katan.shared.protocol.SessionId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,9 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.nio.channels.SocketChannel
 
-
 /**
- * Launches the server application.
+ * Launches the TCP server application.
  */
 fun main() = runBlocking<Unit> {
 

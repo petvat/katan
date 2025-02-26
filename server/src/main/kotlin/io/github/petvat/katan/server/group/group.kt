@@ -1,4 +1,4 @@
-package io.github.petvat.katan.group
+package io.github.petvat.katan.server.group
 
 import io.github.petvat.katan.server.api.GameStates
 import io.github.petvat.katan.shared.protocol.PermissionLevel
@@ -10,7 +10,9 @@ import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.model.game.Turn
-import io.github.petvat.katan.shared.model.session.PrivateGameState
+import io.github.petvat.katan.shared.model.dto.GameStateDTO
+import io.github.petvat.katan.shared.model.dto.PlayerColor
+import io.github.petvat.katan.shared.model.dto.fromDomain
 import kotlinx.coroutines.sync.Mutex
 
 
@@ -118,8 +120,12 @@ data class Game(
 
     // Initialize _turnOrder before setting gameState
     init {
+
+
         clients.values.forEachIndexed { index, groupMember ->
-            _players.add(Player(groupMember.id.value, index, base.settings))
+            _players.add(
+                Player(groupMember.id.value, index, PlayerColor.entries[index])
+            )
         }
         _turnOrder.addAll(initializeTurnOrder())
         currentTurn = Turn(id.value, playerInTurn(), turnIndex)
@@ -186,16 +192,15 @@ data class Game(
         return turnOrder[turnIndex++ % turnOrder.size]
     }
 
-    fun viewGame(sessionId: SessionId): PrivateGameState {
-        return PrivateGameState(
-            player = getPlayer(getPlayerNumber(sessionId))!!,
-            otherPlayers = players.map { it.toPublic() },
+    fun viewGame(sessionId: SessionId): GameStateDTO {
+        return GameStateDTO(
+            player = players.find { it.id == sessionId.value }!!.fromDomain(),
+            otherPlayers = players.map { it.fromDomain() },
             turnOrder = turnOrder,
             turnPlayer = playerInTurn(),
             board = boardManager.board.fromDomain()
         )
     }
-
 
     fun getPlayer(playerNumber: Int): Player? {
         return _players.find { it.playerNumber == playerNumber }

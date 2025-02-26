@@ -1,6 +1,8 @@
 package io.github.petvat.katan.shared.model.board
 
 
+import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
+import io.github.petvat.katan.shared.hexlib.ICoordinates
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.protocol.dto.RoadDTO
@@ -23,8 +25,9 @@ enum class VillageKind(val productionNumber: Int, val cost: ResourceMap, val vp:
 @Serializable
 enum class RoadKind(val cost: ResourceMap) {
     ROAD(ResourceMap(1, 0, 0, 0, 1))
-    // SHIP(ResourceMap(1, 0, 0, 1, 0))
 }
+
+// TODO: MOVE TO SERVER MODULE
 
 /**
  * Represents a settlement or a city on the board.
@@ -36,21 +39,29 @@ enum class RoadKind(val cost: ResourceMap) {
 class Village(
     val villageKind: VillageKind,
     val owner: Player,
-) : Transmittable {
+) {
     fun harvest(resource: Resource) {
         owner.inventory.transaction(resource, villageKind.productionNumber)
-    }
-
-    override fun fromDomain(): VillageDTO {
-        return VillageDTO(villageKind, owner.playerNumber)
     }
 }
 
 class Road(
     val roadKind: RoadKind,
     val owner: Player
-) : Transmittable {
-    override fun fromDomain(): RoadDTO {
-        return RoadDTO(roadKind, owner.playerNumber)
-    }
-}
+)
+
+/**
+ * Active edge, i.e. an edge with a road.
+ */
+data class Edge(
+    val coordinate: EdgeCoordinates,
+    val road: Road
+)
+
+/**
+ * Active intersection, i.e. an intersection with a village.
+ */
+data class Intersection(
+    val coordinate: ICoordinates,
+    val village: Village
+)

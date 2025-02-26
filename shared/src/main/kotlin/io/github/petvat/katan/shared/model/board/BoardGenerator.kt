@@ -57,17 +57,6 @@ object BoardGenerator {
 
 }
 
-fun main() {
-
-    val board = BoardGenerator.generateBoard(Settings())
-
-    val boardDTO = board.fromDomain()
-
-    // Serialization
-    val json = Json { prettyPrint = true }.encodeToString(boardDTO)
-    println(json)
-}
-
 
 //
 //import io.github.petvat.katan.server.Settings

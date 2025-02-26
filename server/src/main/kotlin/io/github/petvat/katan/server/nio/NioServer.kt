@@ -1,8 +1,8 @@
-package io.github.petvat.katan.nio
+package io.github.petvat.katan.server.nio
 
 import io.github.petvat.katan.shared.protocol.SessionId
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.server.api.Api
+import io.github.petvat.katan.server.api.KatanApi
 import io.github.petvat.katan.server.client.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -106,7 +106,7 @@ class NioServer(
                             // echo
                             responseCallback(mapOf(client to req))
                         } else {
-                            Api.handleRequest(req, client, ::responseCallback)
+                            KatanApi.handleRequest(req, client, ::responseCallback)
                         }
                     }
                 }
@@ -180,7 +180,7 @@ class NioServer(
 
         // Response with SID
         // TODO: Mutex!
-        logger.debug { "Send back ACK." }
+        // logger.debug { "Send back ACK." }
 
         // TODO: Send as sessionID only! Decouple Katan-specific logic
 

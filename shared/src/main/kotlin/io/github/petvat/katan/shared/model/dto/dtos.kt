@@ -1,6 +1,5 @@
-package io.github.petvat.katan.shared.model.session
+package io.github.petvat.katan.shared.model.dto
 
-import io.github.petvat.katan.shared.model.board.Player
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.protocol.dto.BoardDTO
 import kotlinx.serialization.Serializable

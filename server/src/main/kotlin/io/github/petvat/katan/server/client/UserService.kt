@@ -29,6 +29,10 @@ object UserService {
         return targetUser
     }
 
+    fun addUser(user: User) {
+        _users += (user.id to user)
+    }
+
     fun getUser(id: UserId): User {
         return _users[id]!!
     }

@@ -1,4 +1,4 @@
-package io.github.petvat.katan.group
+package io.github.petvat.katan.server.group
 
 import io.github.petvat.katan.server.client.*
 import io.github.petvat.katan.shared.User

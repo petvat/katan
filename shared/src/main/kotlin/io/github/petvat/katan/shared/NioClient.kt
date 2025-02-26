@@ -57,7 +57,7 @@ abstract class NioClient<T> {
 
     private fun listenForResponses() {
         // Should work because SocketChannel is thread-safe for 1 writer and 1 reader.
-        Thread {
+        val runner = Thread {
             //selector.select()
 
             while (true) {
@@ -105,7 +105,9 @@ abstract class NioClient<T> {
 //                    readBuffer.clear()
 //                }
 //            }
-        }.start()
+        }
+        runner.isDaemon = true // Kill on main exit.
+        runner.start()
     }
 
     private fun processResponse(response: String) {

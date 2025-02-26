@@ -9,6 +9,7 @@ import io.github.petvat.katan.shared.protocol.Response
 /**
  * Command to initiate a new trade.
  * Currently only the player in tun can initiate a trade.
+ *
  * FUTURE: Turn player and anyone *to* turn player.
  */
 class InitiateTrade(
