@@ -45,7 +45,7 @@ class Assets {
     // Raw images
     val tileTextureMap = mapOf<Asset, TextureRegion>(
         Asset.MOUNTAINS to boardAtlas.findRegion("mountain-katan"),
-        Asset.PASTURE to boardAtlas.findRegion("katan-tile-pasture"),
+        Asset.PASTURE to boardAtlas.findRegion("katan-pasture"),
         Asset.GRAIN to boardAtlas.findRegion("katan_grain_110px"),
         Asset.FOREST to boardAtlas.findRegion("katan-tile-forest"),
         Asset.SEA to boardAtlas.findRegion("sea"),
@@ -82,11 +82,12 @@ class Assets {
 
     companion object {
         const val PATH_PREFIX = "assets/"
+        const val KATAN_GRAPHICS_F = "./katan-graphics-v2.atlas"
 
         // val BOARD_ATLAS = TextureAtlas(Gdx.files.internal("assets/katan-board.atlas"))
 
         private val ASSET_PATHS = mapOf(
-            Asset.PASTURE to "${PATH_PREFIX}katan-tile-pasture.png",
+            Asset.PASTURE to "${PATH_PREFIX}katan-pasture.png",
             Asset.GRAIN to "${PATH_PREFIX}katan_grain_110px.png",
             Asset.FOREST to "${PATH_PREFIX}katan-tile-forest.png",
             Asset.SEA_DAL to "${PATH_PREFIX}sea_dal.png",
@@ -118,9 +119,9 @@ class Assets {
 
     private fun load() {
         // ASSET_DESCRIPTORS.values.forEach { manager.load(it) }
-        manager.load("./katan-board.atlas", TextureAtlas::class.java)
+        manager.load(KATAN_GRAPHICS_F, TextureAtlas::class.java)
         manager.finishLoading()
-        boardAtlas = manager.get("./katan-board.atlas")
+        boardAtlas = manager.get(KATAN_GRAPHICS_F)
     }
 
     fun dispose() {
