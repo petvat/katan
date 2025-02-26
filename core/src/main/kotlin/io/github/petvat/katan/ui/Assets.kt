@@ -1,4 +1,4 @@
-package io.github.petvat.katan.ui
+package io.github.petvat.core.ui
 
 import com.badlogic.gdx.assets.AssetDescriptor
 import com.badlogic.gdx.assets.AssetManager

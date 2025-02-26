@@ -1,4 +1,4 @@
-package io.github.petvat.katan.ui.ktx.widget
+package io.github.petvat.core.ui.ktx.widget
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
@@ -12,7 +12,7 @@ import ktx.scene2d.*
 
 @Scene2dDsl
 class BuildTable(
-    val skin: Skin,
+    skin: Skin,
     val callback: (Event) -> Unit, // TODO: Command
 ) : Table(skin), KTable {
 

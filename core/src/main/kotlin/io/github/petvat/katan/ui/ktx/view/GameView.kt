@@ -1,20 +1,12 @@
-package io.github.petvat.katan.ui.ktx.view
+package io.github.petvat.core.ui.ktx.view
 
-import com.badlogic.gdx.Game
 import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Button
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.Table
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.controller.RequestController
-import io.github.petvat.katan.event.*
-import io.github.petvat.katan.shared.model.game.ResourceMap
+import io.github.petvat.katan.ui.ktx.widget.*
 import io.github.petvat.katan.ui.model.GameViewModel
-import io.github.petvat.katan.ui.ktx.widget.buildTable
-import io.github.petvat.katan.ui.ktx.widget.chat
-import io.github.petvat.katan.ui.ktx.widget.playersInfo
-import io.github.petvat.katan.ui.ktx.widget.thisPlayerInfo
-import io.github.petvat.katan.ui.model.View
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
@@ -27,99 +19,55 @@ import ktx.scene2d.*
 @Scene2dDsl
 class GameView(
     viewModel: GameViewModel,
-    val skin: Skin
+    skin: Skin
 ) : KTable, View<GameViewModel>(skin, viewModel) {
 
-    private val rollDiceBtn = textButton("Roll dice") {
-        onChangeEvent { this@GameView.viewModel.handleRollDice() }
-    }
+    private val rollDiceBtn: TextButton
 
-    private val buildBtn = textButton("Build") {
-        onChangeEvent { this@GameView.buildTable.isVisible = true }
-        isDisabled = true
-    }
+    private val buildBtn: TextButton
 
-    private val chat = chat(skin = skin) {
-        it.bottom()
-        it.left()
-        it.padRight(10f)
-    }
+    private val chat: ChatWidget
 
-    private val buildTable = buildTable(skin, { cmd -> viewModel.onEvent(cmd) }) {
-        isVisible = false
-    }
+    private val buildTable: BuildTable
 
     // TODO: Use Player model?
-    private val playersInfoWidget = playersInfo(viewModel.otherPlayersModel, skin) {
-        it.top()
-        it.center()
-    }
+    private val playersInfoWidget: OtherPlayersTable
 
-    private val thisPlayerInfoTable = thisPlayerInfo(
-        viewModel.thisPlayer.inventory,
-        viewModel.thisPlayer.victoryPoints,
-        skin
-    )
+    private val thisPlayerInfoTable: ThisPlayerTable
 
     init {
+        setFillParent(true)
         align(Align.center)
-        playersInfoWidget
+        playersInfoWidget = playersTable(viewModel.otherPlayersViewModelProperty, skin) {
+            it.top()
+            it.center()
+        }
         row()
+        chat = chat(callback = { message: String -> viewModel.handleChat(message) }, skin = skin) {
+            it.bottom()
+            it.left()
+            it.padRight(10f)
+        }
         row()
-        chat
 
-        buildBtn
-        buildTable
+        buildTable = buildTable(skin, { cmd -> viewModel.onEvent(cmd) }) {
+            isVisible = false
+        }
 
-        thisPlayerInfoTable
+        buildBtn = textButton("Build") {
+            onChangeEvent { this@GameView.buildTable.isVisible = true }
+            isDisabled = true
+        }
 
-        rollDiceBtn
+        thisPlayerInfoTable = thisPlayerTable(
+            viewModel.thisPlayerViewModelProperty,
+            skin
+        )
+
+        rollDiceBtn = textButton("Roll dice") {
+            onChangeEvent { this@GameView.viewModel.handleRollDice() }
+        }
     }
-
-
-    fun onUiEvent(event: UiEvent) {
-
-    }
-
-    // On property change instead.
-//    override fun onEvent(event: Event) {
-//        when (event) {
-//            is ChatEvent -> {
-//                chat.update(this@GameView.viewModel.chatLog)
-//            }
-//
-//            is NextTurnEvent -> {
-//                // TODO: player
-//            } // Infer player, then move graphic
-//            is BuildEvent -> {
-//                updateVPs(
-//                    viewModel.thisPlayer.victoryPoints,
-//                    viewModel.otherPlayers.associate { it.playerNumber to it.victoryPoints }
-//                )
-//            }
-//
-//            is RolledDiceEvent -> {
-//                updateResources(
-//                    viewModel.thisPlayer.inventory,
-//                    viewModel.otherPlayers.associate { it.playerNumber to it.cardCount }
-//                )
-//                // TODO: Current player
-//
-//                // More of a model thing.
-//                if (viewModel.currentTurnPlayer == viewModel.thisPlayer.playerNumber) {
-//                    deactiveRollButton()
-//                }
-//            }
-//
-//            is TurnStartEvent -> {
-//                if (!viewModel.setupPhase) {
-//                    activateRollButton()
-//                }
-//            }
-//
-//            else -> Unit
-//        }
-//    }
 
 
     private fun toggle(btn: Button, value: Boolean) {
@@ -127,67 +75,43 @@ class GameView(
         btn.touchable = if (value) Touchable.enabled else Touchable.disabled
     }
 
-
-    override fun onEvent(event: Event) {
-
-    }
-
-    /**
-     * Update player resources display.
-     */
-//    private fun updateResources(
-//        playerInventory: ResourceMap,
-//        otherPlayersCardCounts: Map<Int, Int>,
-//    ) {
-//        otherPlayersCardCounts.forEach { (pnum, cc) ->
-//            playersInfoWidget.updatePlayerStats(
-//                pnum,
-//                vp = null,
-//                cardCount = cc
-//            )
-//        }
-//        thisPlayerInfoTable.update(
-//            playerInventory,
-//            null
-//        )
-//    }
-
-//    private fun updateVPs(
-//        thisPlayerVPs: Int,
-//        otherPlayersVPs: Map<Int, Int>
-//    ) {
-//        thisPlayerInfoTable.update(
-//            null,
-//            thisPlayerVPs
-//        )
-//
-//        otherPlayersVPs.forEach { (pnum, vp) ->
-//            playersInfoWidget.updatePlayerStats(pnum, vp = vp, null)
-//        }
-//
-//    }
-
     override fun registerOnPropertyChanges() {
 
-        viewModel.onPropertyChange(GameViewModel::buildMode) {
+        viewModel.onPropertyChange(GameViewModel::currentTurnPlayer) {
+            if (viewModel.thisPlayerTurn) {
+                thisPlayerInfoTable.activateTurn()
+            } else {
+                thisPlayerInfoTable.deactivateTurn()
+                playersInfoWidget.activateTurn(it)
+            }
+        }
+
+        viewModel.onPropertyChange(GameViewModel::buildModeProperty) {
             toggle(buildBtn, it)
         }
 
-        viewModel.onPropertyChange(GameViewModel::rollDiceMode) {
+        viewModel.onPropertyChange(GameViewModel::rollDiceModeProperty) {
             toggle(rollDiceBtn, it)
         }
 
-        viewModel.onPropertyChange(GameViewModel::chatLog) {
-            chat.addMessage(it.last().first, it.last().second)
+        viewModel.onPropertyChange(GameViewModel::diceRollProperty) {
+            // TODO: Rolldice widget start
+            // This should start an animation and display the dice roll.
         }
 
-        viewModel.onPropertyChange(GameViewModel::thisPlayerModel) {
+        viewModel.onPropertyChange(GameViewModel::chatLogProperty) {
+            // chat.addMessage(it.last().first, it.last().second) TODO: USE
+            chat.update(it)
+        }
+
+        viewModel.onPropertyChange(GameViewModel::thisPlayerViewModelProperty) {
             thisPlayerInfoTable.update(it.inventory, it.victoryPoints)
         }
 
-        viewModel.onPropertyChange(GameViewModel::otherPlayersModel) {
+        viewModel.onPropertyChange(GameViewModel::otherPlayersViewModelProperty) {
             it.forEach { player ->
-                playersInfoWidget.updatePlayerStats(player.playerNumber, player.victoryPoints, player.cardCount)
+                // TODO: Use function?
+                playersInfoWidget.update(player.playerNumber, player.victoryPoints, player.cardCount)
             }
         }
     }

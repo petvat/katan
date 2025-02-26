@@ -1,10 +1,11 @@
-package io.github.petvat.katan.ui.ktx.screen
+package io.github.petvat.core.ui.ktx.screen
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.utils.viewport.ExtendViewport
+import io.github.petvat.katan.event.EventBus
 import io.github.petvat.katan.shared.hexlib.PCoordinate
 import io.github.petvat.katan.shared.hexlib.Layout
 import io.github.petvat.katan.ui.ktx.view.BoardGraphic
@@ -19,6 +20,9 @@ import kotlin.math.sqrt
 class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     companion object {
+        /**
+         * Hexagon height and width.
+         */
         const val TEX_HEIGHT = 86.0
         const val TEX_WIDTH = 110.0
     }
@@ -42,32 +46,30 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     private lateinit var boardRenderer: BoardGraphic
 
-    lateinit var viewModel: GameViewModel
-
+    override lateinit var viewModel: GameViewModel
 
     override fun show() {
-
-        viewModel = GameViewModel(game.controller, game.model.group!!, game.model.game!!)
-
         super.show()
+        EventBus += viewModel
+        EventBus += this
+    }
+
+    override fun buildStage() {
+
         layout = Layout(
             PCoordinate(TEX_WIDTH / sqrt(3.0), (TEX_HEIGHT / 2) + 2), // Inradius width and height
             PCoordinate(0.0, 0.0) // Origin hex relative to viewport
         )
-        // TODO: Alert through Listener system?
 
+        viewModel = GameViewModel(game.controller, game.model.group, game.model.game)
 
         boardRenderer = BoardGraphic(
             viewModel,
-            game.batch,
-            game.assets,
+            batch,
+            assets,
             layout
         )
-        // TODO: Might be needed somewhere: tiles = game.model.gameManager!!.board.tiles.toMutableList()
-    }
-
-    // TODO: Is this needed? Can't this just be done in the show() method?
-    override fun buildStage() {
+        // TODO: Might be needed somewhere: tiles = game.model.gameManager!!.board.tiles.toMutableList() Break reason?
 
         stage.actors {
             tradeView(viewModel, Scene2DSkin.defaultSkin) { isVisible = false } // Overlay of trade system

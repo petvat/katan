@@ -1,11 +1,8 @@
-package io.github.petvat.katan.ui.ktx.view
+package io.github.petvat.core.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.event.Event
 import io.github.petvat.katan.ui.model.StartMenuViewModel
-import io.github.petvat.katan.ui.model.View
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
@@ -32,7 +29,6 @@ class StartMenuView(
 
     override fun registerOnPropertyChanges() {}
 
-    override fun onEvent(event: Event) {}
 }
 
 @Scene2dDsl

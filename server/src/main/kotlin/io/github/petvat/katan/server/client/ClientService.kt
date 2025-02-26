@@ -1,4 +1,4 @@
-package io.github.petvat.katan.server.client
+package io.github.petvat.katan.client
 
 import io.github.petvat.katan.shared.protocol.SessionId
 import java.util.concurrent.ConcurrentHashMap

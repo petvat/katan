@@ -1,21 +1,10 @@
-package io.github.petvat.katan.ui.model
+package io.github.petvat.core.ui.model
 
-import io.github.petvat.katan.ui.KatanUI
 
 enum class ScreenType {
-    MENU, GAME, GROUP, LOBBY
+    MENU, GAME, GROUP, LOBBY, LOGIN
 }
 
 
-interface ViewTransitionService {
-    fun transition(to: ScreenType)
-}
+typealias ViewTransitionService = (ScreenType) -> Unit
 
-//abstract class ViewTransitionService<T : KatanUI>(
-//    val ui: T
-//) {
-//
-//    fun transition(to: ScreenType) {
-//        ui.showScreen(to)
-//    }
-//}

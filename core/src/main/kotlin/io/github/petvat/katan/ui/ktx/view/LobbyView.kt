@@ -1,13 +1,14 @@
-package io.github.petvat.katan.ui.ktx.view
+package io.github.petvat.core.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.event.Event
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.petvat.katan.ui.ktx.widget.GroupListWidget
 import io.github.petvat.katan.ui.ktx.widget.createWidget
 import io.github.petvat.katan.ui.ktx.widget.groupsWidget
 import io.github.petvat.katan.ui.model.LobbyViewModel
-import io.github.petvat.katan.ui.model.View
 import ktx.actors.onChange
+import ktx.actors.onChangeEvent
 import ktx.scene2d.KTable
 import ktx.scene2d.textButton
 
@@ -16,32 +17,37 @@ class LobbyView(
     skin: Skin
 ) : KTable, View<LobbyViewModel>(skin, viewModel) {
 
-    private val groupWidget = groupsWidget(viewModel, skin)
+    private val logger = KotlinLogging.logger { }
+
+    private val groupsWidget: GroupListWidget
 
     init {
         setFillParent(true)
         //background("area")
         align(Align.center)
-        debug = true
 
-        groupWidget
+        groupsWidget = groupsWidget(viewModel, skin) { /*it.expand()*/ }
         createWidget(viewModel, skin)
-
+        row()
+        textButton("Refresh") {
+            it.expandX()
+            onChangeEvent {
+                println("CLICKED GET GROUPS")
+                viewModel.handleGetGroups()
+            }
+        }
         row()
             //.growX()
             .colspan(2)
         textButton("Back").onChange { print("Back - not impl.") }
-    }
 
-    fun addGroup(displayText: String, id: String) {
-        groupWidget.addGroup(displayText, id = id)
-    }
-
-    override fun onEvent(event: Event) {
-        TODO("Not yet implemented")
+        registerOnPropertyChanges()
     }
 
     override fun registerOnPropertyChanges() {
-        TODO("Not yet implemented")
+        viewModel.onPropertyChange(LobbyViewModel::groupModels) {
+            logger.debug { "groups update" }
+            groupsWidget.updateGroupList(it.values.toList())
+        }
     }
 }

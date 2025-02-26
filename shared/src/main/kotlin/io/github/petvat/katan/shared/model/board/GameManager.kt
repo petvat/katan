@@ -3,10 +3,11 @@ package io.github.petvat.katan.shared.model.board
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.session.PrivateGameState
-import io.github.petvat.katan.shared.protocol.dto.BoardView
 
 /**
  * TODO: Move to core.
+ *
+ * TODO: REMOVE!
  */
 open class GameManager(
     game: PrivateGameState

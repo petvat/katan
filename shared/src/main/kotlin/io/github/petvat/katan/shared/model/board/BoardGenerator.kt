@@ -3,11 +3,13 @@ package io.github.petvat.katan.shared.model.board
 import io.github.petvat.katan.shared.hexlib.HexUtils
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.model.game.Settings
+import json.KatanJson
+import kotlinx.serialization.json.Json
 
 /**
- * Provides functions to generate [InternalBoard] objects.
+ * Provides functions to generate [Board] objects.
  *
- * @see [InternalBoard]
+ * @see [Board]
  */
 object BoardGenerator {
 
@@ -17,7 +19,7 @@ object BoardGenerator {
      * @return List of tiles
      *
      */
-    fun generateBoard(settings: Settings): InternalBoard {
+    fun generateBoard(settings: Settings): Board {
         // Generate logical coordinates
         val hexes = HexUtils.generateHexagonalMap(settings.boardSize) as MutableList
 
@@ -41,7 +43,7 @@ object BoardGenerator {
                 tiles.add(Tile(hex, randomTile(terrainCounts), numbers.removeFirst()))
             }
         }
-        return InternalBoard(tiles, emptyList(), emptyList(), settings.initRobberLocation)
+        return Board(tiles, emptyList(), emptyList(), settings.initRobberLocation)
     }
 
     /**
@@ -53,6 +55,17 @@ object BoardGenerator {
         return randomTerrain
     }
 
+}
+
+fun main() {
+
+    val board = BoardGenerator.generateBoard(Settings())
+
+    val boardDTO = board.fromDomain()
+
+    // Serialization
+    val json = Json { prettyPrint = true }.encodeToString(boardDTO)
+    println(json)
 }
 
 

@@ -6,9 +6,10 @@ import kotlinx.serialization.Serializable
 
 /**
  * Represents a hexagonal tile on the board.
+ *
  * @param hexCoordinate board coordinates
  * @param resource May produce a resource
- * @param rollListenValue Will produce a resource if on this value
+ * @param rollListenValue Will produce a resource on this value
  */
 @Serializable
 data class Tile(

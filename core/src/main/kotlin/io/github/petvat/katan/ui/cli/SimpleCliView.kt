@@ -1,24 +1,27 @@
-package io.github.petvat.katan.ui.cli
+package io.github.petvat.core.ui.cli
 
-import io.github.petvat.katan.controller.SimpleCliInputController
+import io.github.petvat.core.controller.SimpleCliInputController
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.event.EventListener
 import io.github.petvat.katan.model.KatanModel
-import io.github.petvat.katan.ui.KatanUI
 import io.github.petvat.katan.ui.model.ScreenType
 import java.util.*
 
 /**
  * NOTE: Not implemented.
  */
-class SimpleCliView(val model: KatanModel) : KatanUI {
+class SimpleCliView(val model: KatanModel) {
 
-    private lateinit var _controller: SimpleCliInputController // Backing property
+    private lateinit var _controller: io.github.petvat.core.controller.SimpleCliInputController // Backing property
 
-    override fun showScreen(screen: ScreenType) {
-        TODO("Not yet implemented")
+
+    fun prompt(message: String): String {
+        TODO()
     }
 
+    fun promptResponse(message: String): String {
+        TODO()
+    }
 }
 
 /**

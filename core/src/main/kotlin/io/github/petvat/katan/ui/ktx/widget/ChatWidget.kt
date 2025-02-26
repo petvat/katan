@@ -1,82 +1,68 @@
-package io.github.petvat.katan.ui.ktx.widget
+package io.github.petvat.core.ui.ktx.widget
 
+import com.badlogic.gdx.Input
+import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.ui.List
-import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.Table
+import ktx.actors.onKeyUp
 import ktx.scene2d.*
-
-
-//abstract class ListWidget<S, T>(
-//    list: kotlin.collections.List<S>?,
-//    skin: Skin
-//) : Table(skin), KTable where T : Actor {
-//
-//    private val elements = List<Type>(skin)
-//
-//    init {
-//
-//        debug = true
-//        // setFillParent(true)
-//        scrollPane {
-//            actor = this@ListWidget.elements
-//        }
-//
-//        list?.forEach {
-//            //addElement(it)
-//        }
-//    }
-
-//    fun addElement(element: S) {
-//        val elements = this.elements.items
-//        elements.add(ElementWidget<S>(element, skin))
-//    }
-//}
-
-//@Scene2dDsl
-//abstract class ElementWidget<S>(
-//    value: S,
-//    skin: Skin
-//) : Table(skin), KGroup
-
 
 @Scene2dDsl
 class ChatWidget(
-    messages: kotlin.collections.List<Pair<String, String>>?,
+    messages: kotlin.collections.List<Pair<String, String>>?, // TODO: Use! Some day.
+    callback: (String) -> Unit,
     skin: Skin
 ) : Table(skin), KTable {
 
-    private val messageList = List<MessageWidget>(skin) // TODO: init with messages
+    private val scroll: ScrollPane
+    private val messageList: VerticalGroup
+    private val textField: TextField
 
     init {
-
         debug = true
         // setFillParent(true)
-        scrollPane {
+        scroll = scrollPane {
+            this@ChatWidget.messageList = verticalGroup { }
             actor = this@ChatWidget.messageList
         }
 
-        messages?.forEach {
-            addMessage(it.first, it.second)
+        textField = textField {
+            onKeyUp {
+                if (it == Input.Keys.ENTER) {
+                    println(text)
+                    callback(text)
+                    text = "" // reset
+                }
+            }
         }
+
+        messages?.let { update(it) }
     }
 
-    fun addMessage(from: String, message: String) {
-        // TODO: Capacity!
-
-        val messages = messageList.items
-        messages.add(MessageWidget(from, message, skin))
-        messageList.setItems(messages)
-    }
+//    fun addMessage(from: String, message: String) {
+//        // TODO: Capacity!
+//
+//        val messages = messageList.items
+//        messages.add(MessageWidget(from, message, skin))
+//        messageList.setItems(messages)
+//    }
 
     /**
      * Testing version. Update whole message list at once.
      */
     fun update(messages: kotlin.collections.List<Pair<String, String>>) {
-        val msgs = messageList.items
-        messages.forEach {
-            msgs.add(MessageWidget(it.first, it.second, skin))
+
+        messageList.clear()
+
+        // val elements = groupList.items
+        messages.forEach { message ->
+            val name = "name"
+            val element = MessageWidget(
+                from = message.first,
+                message = message.second,
+                skin,
+            )
+            messageList.addActor(element)
         }
-        messageList.setItems(msgs)
     }
 }
 
@@ -101,8 +87,9 @@ class MessageWidget(
 fun <S> KWidget<S>.chat(
     messages: kotlin.collections.List<Pair<String, String>> = mutableListOf(),
     skin: Skin,
+    callback: (String) -> Unit,
     init: ChatWidget.(S) -> Unit = {}
-): ChatWidget = actor(ChatWidget(messages, skin), init)
+): ChatWidget = actor(ChatWidget(messages, callback, skin), init)
 
 
 

@@ -1,4 +1,4 @@
-package io.github.petvat.katan.ui.ktx.widget
+package io.github.petvat.core.ui.ktx.widget
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
@@ -9,7 +9,7 @@ import ktx.scene2d.*
 /**
  *
  */
-class OtherPlayerStatsWidget(
+class OtherPlayerWidget(
     displayName: String,
     color: PlayerColor,
     victoryPoints: Int,
@@ -69,9 +69,9 @@ fun <S> KWidget<S>.otherPlayerStats(
     roads: Int? = null,
     villages: Int? = null,
     skin: Skin,
-    init: OtherPlayerStatsWidget.(S) -> Unit = {}
-): OtherPlayerStatsWidget = actor(
-    OtherPlayerStatsWidget(
+    init: OtherPlayerWidget.(S) -> Unit = {}
+): OtherPlayerWidget = actor(
+    OtherPlayerWidget(
         displayName, color, victoryPoints, cardCount, roads, villages, skin
     ), init
 )

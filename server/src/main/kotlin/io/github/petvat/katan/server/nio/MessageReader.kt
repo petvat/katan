@@ -1,4 +1,4 @@
-package io.github.petvat.katan.server.nio
+package io.github.petvat.katan.nio
 
 import java.util.concurrent.ConcurrentLinkedQueue
 

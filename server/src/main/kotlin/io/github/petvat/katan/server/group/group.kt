@@ -1,4 +1,4 @@
-package io.github.petvat.katan.server.group
+package io.github.petvat.katan.group
 
 import io.github.petvat.katan.server.api.GameStates
 import io.github.petvat.katan.shared.protocol.PermissionLevel
@@ -49,6 +49,8 @@ interface Group {
     suspend fun remove(clientId: SessionId) {
         clients.remove(clientId)
     }
+
+    fun isFull() = clients.keys.size >= settings.maxPlayers
 }
 
 data class UserGroup(

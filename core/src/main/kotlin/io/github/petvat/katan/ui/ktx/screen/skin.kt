@@ -1,4 +1,4 @@
-package io.github.petvat.katan.ui.ktx.screen
+package io.github.petvat.core.ui.ktx.screen
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont

@@ -1,4 +1,4 @@
-package io.github.petvat.katan.server.group
+package io.github.petvat.katan.group
 
 import io.github.petvat.katan.server.client.*
 import io.github.petvat.katan.shared.User
@@ -64,6 +64,10 @@ object GroupService {
 
         if (clientState.auth.level != group.level) {
             throw IllegalArgumentException("Permission levels mismatch.")
+        }
+
+        if (group.isFull()) {
+            throw IllegalArgumentException("Group is full.")
         }
 
         val groupMember = GroupMember(

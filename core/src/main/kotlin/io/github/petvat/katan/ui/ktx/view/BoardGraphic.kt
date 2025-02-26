@@ -1,16 +1,16 @@
-package io.github.petvat.katan.ui.ktx.view
+package io.github.petvat.core.ui.ktx.view
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import io.github.petvat.katan.event.*
 import io.github.petvat.katan.ui.Assets
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.board.BuildKind
+import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.util.requireValues
 import io.github.petvat.katan.ui.model.GameViewModel
-import io.github.petvat.katan.ui.model.Graphic
-import io.github.petvat.katan.ui.model.PlayerColor
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 
 /**
@@ -24,6 +24,7 @@ class BoardGraphic(
 ) : Graphic<GameViewModel> {
 
     private var settlementFrontierMap: Map<ICoordinates, PCoordinate> = mapOf()
+
     private var cityFrontierMap: Map<ICoordinates, PCoordinate> = mapOf()
 
     private var roadFrontierMap: Map<EdgeCoordinates, PCoordinate> = mapOf()
@@ -58,41 +59,68 @@ class BoardGraphic(
     private var roadRenderMap = mutableMapOf<PCoordinate, TextureRegion>()
 
     /**
-     * TODO: Find way to add villages
+     * TODO: Find way to add villages <- DONE
      */
     private var villageRenderMap = mutableMapOf<PCoordinate, TextureRegion>()
 
     private var robberLocation: Pair<HexCoordinates, PCoordinate> =
         viewModel.robberLocation to HexUtils.hexToPixel(layout, viewModel.robberLocation)
 
+    /**
+     * The texture that is rendered on highligthed intersections.
+     */
+    private lateinit var intersectionHighLightTex: TextureRegion
 
-    lateinit var intersectionHighLightTex: TextureRegion
+    /**
+     * The radius of the intersection hightlight clickable area in pixels.
+     */
+    private val intersectionHighLightTextRadius = 20
 
 
     init {
-        val hexes = viewModel.tiles.map { it.hexCoordinate }
-        intersectionMap = mapIntersectionCoordinates(layout, hexes)
         val mapIslandText = mapIslandTextures()
         tileRenderMap =
             (mapIslandText + mapSeaShoreTextures(3) + mapSeaTextures(4)) as MutableMap<PCoordinate, TextureRegion>
 
-        // Transform tiles to doubled. We need to do this to work with edges/intersections.
-        // NOTE: ViewModel does this.
+        // NOTE: Uses doubled coordinates
+        val hexes = viewModel.tilesDoubled.map { it.hexCoordinate }
+        intersectionMap = mapIntersectionCoordinates(layout, hexes)
 
-
-//        board.tiles = board.tiles
-//            .map {
-//                Tile(
-//                    HexUtils.transformToDoubled(it.hexCoordinate),
-//                    it.resource,
-//                    it.rollListenValue
-//                )
-//            }.toList()
+        registerOnPropertyChanges()
     }
 
+    private fun circleContains(xc: Int, yc: Int, radius: Int, xp: Int, yp: Int): Boolean {
+        val distance = sqrt((xp - xc).toFloat().pow(2) + (yp - yc).toFloat().pow(2))
+        return distance < radius
+    }
 
+    /**
+     * TODO: Implement for roads!
+     */
     fun handleTouch(x: Int, y: Int) {
-        TODO()
+        println("TOUCH: $x, $y")
+
+        val checkContains: (Map<out Coordinates, PCoordinate>) -> Coordinates? = { map ->
+            map.entries.find { (_, phys) ->
+                circleContains(
+                    phys.x.toInt(),
+                    phys.y.toInt(),
+                    intersectionHighLightTextRadius,
+                    x,
+                    y
+                )
+            }?.key
+        }
+
+        if (viewModel.settlementPlacingMode) {
+            checkContains(settlementFrontierMap).let {
+                viewModel.handleBuild(BuildKind.Village(VillageKind.CITY), it as Coordinates)
+            }
+        } else if (viewModel.cityPlacingMode) {
+            checkContains(cityFrontierMap).let {
+                viewModel.handleBuild(BuildKind.Village(VillageKind.CITY), it as Coordinates)
+            }
+        }
     }
 
     private fun drawAll(coordinates: List<PCoordinate>, texture: TextureRegion) {
@@ -157,6 +185,9 @@ class BoardGraphic(
         return HexUtils.intersectionCoordinates(layout, hexCoordinates)
     }
 
+    /**
+     * Maps Island textures. Tiles as well as tokens.
+     */
     private fun mapIslandTextures(): Map<PCoordinate, TextureRegion> {
         val hexTextures = mutableMapOf<PCoordinate, TextureRegion>()
 
@@ -182,7 +213,8 @@ class BoardGraphic(
     }
 
     /**
-     * Returns a map of textures of surrounding sea shore tiles.
+     * Returns a map of textures of surrounding sea shore tiles,
+     * i.e., a ring of sea tiles representing the shore around the island.
      *
      * Algorithm
      * R x 1,
@@ -239,6 +271,9 @@ class BoardGraphic(
         return seaShoretextures
     }
 
+    /**
+     * Returns a map of physical coordinates to sea texture regions, representing the sea beyond the sea shore.
+     */
     private fun mapSeaTextures(width: Int): Map<PCoordinate, TextureRegion> {
         val seaTextureMap = mutableMapOf<PCoordinate, TextureRegion>()
         for (j in 0..<5) {
@@ -250,73 +285,54 @@ class BoardGraphic(
         return seaTextureMap
     }
 
-    fun onUiEvent(event: UiEvent) {
-        if (event is BuildUiEvent) {
-            if (event.buildKind is BuildKind.Village) {
-                villageRenderMap[intersectionMap[event.coordinates as ICoordinates]!!] =
-                    assets.villageTextureMap[event.playerColor]!!
-            } else if (event.buildKind is BuildKind.Road) {
-                roadRenderMap[edgeMap[event.coordinates as EdgeCoordinates]!!] =
-                    assets.villageTextureMap[event.playerColor]!!
-            }
-        }
-        if (event is PlaceBuildingUiEvent) {
-            settlementFrontierMap = intersectionMap
-                .filterKeys { key -> key in viewModel.settlementFrontier }
-
-            cityFrontierMap = intersectionMap
-                .filterKeys { key -> key in viewModel.cityFrontier }
-
-            roadFrontierMap = edgeMap
-                .filterKeys { key -> key in viewModel.roadFrontier }
-
-            setupFrontierMap = intersectionMap
-                .filterKeys { key -> key in viewModel.setUpFrontier }
-        }
-    }
-
-
-    override fun onEvent(event: Event) {
-
-        when (event) {
-
-//            is PlaceBuildingCommand<*> -> {
-//                // Update the frontier hightlights.
-//                settlementFrontierMap = intersectionMap
-//                    .filterKeys { key -> key in viewModel.settlementFrontier }
-//
-//                cityFrontierMap = intersectionMap
-//                    .filterKeys { key -> key in viewModel.cityFrontier }
-//
-//                roadFrontierMap = edgeMap
-//                    .filterKeys { key -> key in viewModel.roadFrontier }
-//
-//                setupFrontierMap = intersectionMap
-//                    .filterKeys { key -> key in viewModel.setUpFrontier }
+//    fun onUiEvent(event: UiEvent) {
+//        if (event is BuildUiEvent) {
+//            if (event.buildKind is BuildKind.Village) {
+//                villageRenderMap[intersectionMap[event.coordinates as ICoordinates]!!] =
+//                    assets.villageTextureMap[event.playerColor]!!
+//            } else if (event.buildKind is BuildKind.Road) {
+//                roadRenderMap[edgeMap[event.coordinates as EdgeCoordinates]!!] =
+//                    assets.villageTextureMap[event.playerColor]!!
 //            }
-
-            is BuildEvent -> {
-
-                // Building animation. Difficult because we need to fetch information about the player and such.
-                // Annoying - don't do that.
-
-            }
-
-            else -> Unit
-        }
-    }
+//        }
+//        if (event is PlaceBuildingUiEvent) {
+//            settlementFrontierMap = intersectionMap
+//                .filterKeys { key -> key in viewModel.settlementFrontier }
+//
+//            cityFrontierMap = intersectionMap
+//                .filterKeys { key -> key in viewModel.cityFrontier }
+//
+//            roadFrontierMap = edgeMap
+//                .filterKeys { key -> key in viewModel.roadFrontier }
+//
+//            setupFrontierMap = intersectionMap
+//                .filterKeys { key -> key in viewModel.setUpFrontier }
+//        }
+//    }
 
     override fun registerOnPropertyChanges() {
+
+        viewModel.onPropertyChange(GameViewModel::diceRollProperty) {
+            val roll1 = it.first
+            val roll2 = it.second
+            // Prefer not. Instead some map.
+            viewModel.tiles
+                .filter { t -> t.rollListenValue == roll1 + roll2 }
+
+            println("Animation!")
+            // TODO: Do animation from hex pos with texture from t.resource
+        }
+
         viewModel.onPropertyChange(GameViewModel::intersections) {
             val newIntersect = it.last()
-            // TODO: Infer the PlayerColor!
-            villageRenderMap[intersectionMap[newIntersect.coordinate]!!] = assets.villageTextureMap[PlayerColor.RED]!!
+            val color = viewModel.playerColors[newIntersect.village.owner]
+            villageRenderMap[intersectionMap[newIntersect.coordinate]!!] = assets.villageTextureMap[color]!!
         }
 
         viewModel.onPropertyChange(GameViewModel::paths) {
             val newPath = it.last()
-            // TODO: Infer the PlayerColor!
-            villageRenderMap[edgeMap[newPath.coordinate]!!] = assets.roadTexture[PlayerColor.RED]!!
+            val color = viewModel.playerColors[newPath.road.owner]
+            villageRenderMap[edgeMap[newPath.coordinate]!!] = assets.roadTexture[color]!!
         }
 
         viewModel.onPropertyChange(GameViewModel::robberLocation) {

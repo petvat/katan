@@ -1,4 +1,4 @@
-package io.github.petvat.katan.event
+package io.github.petvat.core.event
 
 import com.badlogic.gdx.scenes.scene2d.Stage
 import io.github.petvat.katan.ui.ktx.view.View
@@ -7,7 +7,7 @@ import io.github.petvat.katan.ui.ktx.view.View
  * Loop-back
  * Event bus for incoming responses from server.
  */
-object InEventBus {
+object EventBus {
 
     private val listeners = mutableListOf<EventListener>()
 
@@ -21,15 +21,6 @@ object InEventBus {
 
     operator fun plusAssign(listener: EventListener) {
         listeners += listener
-    }
-
-    // NOTE: EHH
-    operator fun plusAssign(listenerGroup: Stage) {
-        listenerGroup.actors
-            .filterIsInstance<View<*>>()
-            .forEach {
-                this += it.viewModel
-            }
     }
 
     operator fun minusAssign(listener: EventListener) {

@@ -1,4 +1,4 @@
-package io.github.petvat.katan.ui.ktx.widget
+package io.github.petvat.core.ui.ktx.widget
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
@@ -11,13 +11,13 @@ import ktx.scene2d.actor
 
 
 @Scene2dDsl
-class OtherPlayersInfoTable(
+class OtherPlayersTable(
     otherPlayers: List<OtherPlayerViewModel>,
     skin: Skin
 ) : Table(skin), KGroup {
 
 
-    private val otherPlayersWidget: Map<Int, OtherPlayerStatsWidget>
+    private val otherPlayersWidget: Map<Int, OtherPlayerWidget>
 
     init {
         debug = true
@@ -73,11 +73,11 @@ class OtherPlayersInfoTable(
 }
 
 @Scene2dDsl
-fun <S> KWidget<S>.playersInfo(
+fun <S> KWidget<S>.playersTable(
     otherPlayers: List<OtherPlayerViewModel>,
     skin: Skin,
-    init: OtherPlayersInfoTable.(S) -> Unit = {}
-): OtherPlayersInfoTable = actor(OtherPlayersInfoTable(otherPlayers, skin), init)
+    init: OtherPlayersTable.(S) -> Unit = {}
+): OtherPlayersTable = actor(OtherPlayersTable(otherPlayers, skin), init)
 
 
 

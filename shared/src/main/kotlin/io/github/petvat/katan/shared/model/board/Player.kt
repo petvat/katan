@@ -2,46 +2,41 @@ package io.github.petvat.katan.shared.model.board
 
 import io.github.petvat.katan.shared.User
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.session.OtherPlayerViewModel
-import kotlinx.serialization.Serializable
+import io.github.petvat.katan.shared.model.session.PlayerColor
+import io.github.petvat.katan.shared.model.session.PlayerDTO
 
 
 /**
  * This class represents the player in a game.
  *
- * TODO: Consistency model DTO
+ * TODO: Move to server.
  *
  * TODO: PlayerViewInterface
  *
  * @property id The id of this class should be the same as the [User]-id associated with this player.
  */
-@Serializable
 data class Player(
     val id: String,
     val playerNumber: Int,
-    val settings: Settings,
+    val color: PlayerColor
 ) {
     var inventory = ResourceMap(0, 0, 0, 0, 0)
-    var victoryPoints: Int = 0
-    var settlementCount: Int = settings.maxSettlements
-    var cityCount: Int = settings.maxCities
-    var roadCount: Int = settings.maxRoads
-    val cardCount: Int = inventory.get().values.sum()
-    // TODO: devCards
-
-
-    fun toPublic(): OtherPlayerViewModel {
-        return OtherPlayerViewModel(
-            playerNumber = playerNumber,
-            id = id,
-            cardCount = cardCount,
-            settlementCount = settlementCount,
-            cityCount = cityCount,
-            roadCount = roadCount,
-            victoryPoints = victoryPoints
-        )
-    }
-
-
+    var victoryPoints = 0
+    var settlementCount = 0
+    var cityCount = 0
+    var roadCount = 0
 }
+
+
+fun Player.toDTO(): PlayerDTO {
+    return PlayerDTO(
+        playerNumber = playerNumber,
+        resources = inventory,
+        settlementCount = settlementCount,
+        cityCount = cityCount,
+        roadCount = roadCount,
+        victoryPoints = victoryPoints,
+        color = color
+    )
+}
+

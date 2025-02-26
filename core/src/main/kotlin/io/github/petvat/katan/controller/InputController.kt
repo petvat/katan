@@ -1,16 +1,20 @@
-package io.github.petvat.katan.controller
+package io.github.petvat.core.controller
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.client.*
+import io.github.petvat.katan.event.ConnectionEvent
+import io.github.petvat.katan.event.EventBus
+import io.github.petvat.katan.event.LoginEvent
 import io.github.petvat.katan.model.KatanModel
+import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.protocol.*
-import io.github.petvat.katan.shared.protocol.dto.ActionRequest
-import io.github.petvat.katan.shared.protocol.dto.Request
+import io.github.petvat.katan.shared.protocol.Request
 import io.github.petvat.katan.ui.cli.SimpleCliView
 import io.github.petvat.katan.ui.ktx.KtxKatan
+import java.util.concurrent.atomic.AtomicInteger
+
 
 /**
  * The main request controller. Should only exist one.
@@ -19,11 +23,12 @@ import io.github.petvat.katan.ui.ktx.KtxKatan
  */
 open class MainController(
     val model: KatanModel,
-    val responseController: ResponseController
-) : RequestController {
+    val responseController: io.github.petvat.core.controller.ResponseProcessor
+) : io.github.petvat.core.controller.RequestController {
     private val logger = KotlinLogging.logger { }
-    private lateinit var client: NioKatanClient
-    // private lateinit var responseHandler: ResponseDispatcher // NOTE: breaks?
+    private lateinit var client: io.github.petvat.core.client.NioKatanClient
+
+    private var messageCount = AtomicInteger(0)
 
     /**
      * Open connection to server.
@@ -33,14 +38,12 @@ open class MainController(
      * @param port Server port
      */
     override fun connectClient(host: String?, port: Int?): Boolean {
-        client = NioKatanClient()
+        client = io.github.petvat.core.client.NioKatanClient()
 
-        val success: Boolean
-
-        if (host != null) {
-            success = client.start(address = host, portNumber = port ?: 1234)
+        val success: Boolean = if (host != null) {
+            client.start(address = host, portNumber = port ?: 1234)
         } else {
-            success = client.start(portNumber = port ?: 1234)
+            client.start(portNumber = port ?: 1234)
         }
 
         if (!success) {
@@ -48,32 +51,43 @@ open class MainController(
         }
         logger.debug { "Init client." }
 
+        EventBus.fire(ConnectionEvent) // Maybe a little hacky?
+
         // Initializes the response middleware
-        val responseHandler = ResponseDispatcher(client, responseController)
-        responseHandler.run()
+        val responseHandler = Thread(io.github.petvat.core.controller.ResponseDispatcher(client, responseController))
+        responseHandler.start()
+
         return true
     }
 
+    /**
+     * Hmm, could be done better.
+     */
+    private fun nextRequest() = messageCount.incrementAndGet()
+
     // ?
-    fun forwardRequest(request: Message<Request>) {
-        client.forwardRequest(request)
+    private fun forwardRequest(data: Request) {
+//        val request = MessageFactory.create(
+//            messageId = messageCount++,
+//            groupId = groupId,
+//            messageType = type,
+//            data = data
+//        )
+        responseController.requests += data // NOTE: Currenlty leaking.
+        client.forwardRequest(data)
     }
 
+    // NOTE: GUEST
+    override fun handleRegister(name: String) {
+        forwardRequest(Request.GuestRegister(nextRequest(), name))
+    }
 
     override fun handleJoin(sessionId: String) {
-        val request = MessageFactory.create(
-            messageType = MessageType.JOIN,
-            data = Request.Join(sessionId)
-        )
-        client.forwardRequest(request)
+        forwardRequest(Request.Join(nextRequest(), sessionId))
     }
 
     override fun handleLogin(username: String, password: String) {
-        val request = MessageFactory.create(
-            messageType = MessageType.LOGIN,
-            data = Request.Login(username, password)
-        )
-        client.forwardRequest(request)
+        TODO()
     }
 
     override fun handleClose() {
@@ -81,54 +95,29 @@ open class MainController(
     }
 
     override fun handleRollDice() {
-        val request = MessageFactory.create(
-            messageType = MessageType.ACTION,
-            data = ActionRequest.RollDice
-        )
-        client.forwardRequest(request)
+        forwardRequest(Request.RollDice(nextRequest()))
     }
 
-    override fun handleBuild(buildKind: BuildKind, coordinates: HexCoordinates) {
-        val request = MessageFactory.create(
-            messageType = MessageType.ACTION,
-            data = ActionRequest.Build(buildKind, coordinates)
-        )
-
-        client.forwardRequest(request)
+    override fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) {
+        forwardRequest(Request.Build(nextRequest(), buildKind, coordinates))
     }
 
     override fun handleGetGroup(pagination: Int) {
-        val request = MessageFactory.create(
-            messageType = MessageType.GET_GROUPS,
-            data = Request.Groups(pagination)
-        )
-        client.forwardRequest(request)
+        // forwardRequest(MessageType.GET_GROUPS, Request.Groups(pagination), null)
     }
 
     override fun handleInit() {
-        val request = MessageFactory.create(
-            groupId = model.group!!.id,
-            messageType = MessageType.INIT,
-            data = Request.Init
-        )
-        client.forwardRequest(request)
+        forwardRequest(Request.Init(nextRequest()))
     }
 
     override fun handleCreate(settings: Settings) {
-
-        val request = MessageFactory.create(
-            messageType = MessageType.CREATE,
-            data = Request.Create(settings, false)
-        )
-        client.forwardRequest(request)
+        forwardRequest(Request.Create(nextRequest(), settings))
     }
 
-    override fun handleChat(message: String, recipients: Set<String>) {
-        val request = MessageFactory.create(
-            messageType = MessageType.CHAT,
-            data = Request.Chat(message, recipients)
+    override fun handleChat(message: String, recipients: Set<String>?) {
+        forwardRequest(
+            Request.Chat(nextRequest(), message) // model.group.clients.values.filter { it != model.sessionId }.toSet()
         )
-        client.forwardRequest(request)
     }
 }
 
@@ -145,7 +134,7 @@ interface RequestController {
 
     fun connectClient(host: String?, port: Int?): Boolean
 
-    fun handleChat(message: String, recipients: Set<String>)
+    fun handleChat(message: String, recipients: Set<String>?)
 
     fun handleLogin(username: String, password: String)
 
@@ -153,13 +142,16 @@ interface RequestController {
 
     fun handleRollDice()
 
-    fun handleBuild(buildKind: BuildKind, coordinates: HexCoordinates)
+    fun handleBuild(buildKind: BuildKind, coordinates: Coordinates)
+
+    fun handleRegister(name: String)
 }
 
+// NOTE: This is totally Useless!
 class KtxInputController(
-    private val base: MainController,
+    private val base: io.github.petvat.core.controller.MainController,
     val view: KtxKatan
-) : RequestController {
+) : io.github.petvat.core.controller.RequestController {
     override fun handleInit() {
         base.handleInit()
     }
@@ -180,8 +172,8 @@ class KtxInputController(
         return base.connectClient(host, port)
     }
 
-    override fun handleChat(message: String, recipients: Set<String>) {
-        base.handleChat(message, recipients)
+    override fun handleChat(message: String, recipients: Set<String>?) {
+        base.handleChat(message, null)
     }
 
     override fun handleLogin(username: String, password: String) {
@@ -196,13 +188,19 @@ class KtxInputController(
         base.handleRollDice()
     }
 
-    override fun handleBuild(buildKind: BuildKind, coordinates: HexCoordinates) {
+    override fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) {
         base.handleBuild(buildKind, coordinates)
+    }
+
+    override fun handleRegister(name: String) {
+        base.handleRegister(name)
     }
 
 }
 
 /**
+ * TODO: Update so that it works.
+ *
  * Simple CLI Input Controller.
  * Listen for requests from the console. Does not keep track of client state and may therefore suggest
  * impossible requests.
@@ -210,7 +208,7 @@ class KtxInputController(
  * @property run Starts listening
  */
 class SimpleCliInputController(
-    private val base: MainController,
+    private val base: io.github.petvat.core.controller.MainController,
     val view: SimpleCliView,
 ) {
     val logger = KotlinLogging.logger { }
@@ -258,10 +256,10 @@ class SimpleCliInputController(
         val recipient = view.promptResponse("Type in the ID of the recipient or 'all':").trim()
         val message = view.promptResponse("Type your message:").trim()
 
-        base.handleChat(
-            message,
-            base.model.gameViewModel!!.otherPlayers.map { p -> p.id }.toSet() + base.model.gameViewModel!!.thisPlayer.id
-        )
+//        base.handleChat(
+//            message,
+//            base.model.gameViewModel!!.otherPlayers.map { p -> p.id }.toSet() + base.model.gameViewModel!!.thisPlayer.id
+//        )
         view.prompt("Chat request sent.")
     }
 

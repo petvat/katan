@@ -7,47 +7,45 @@ import java.util.List.copyOf
 /**
  * Manages all logical operations on board.
  */
-class AuthBoardManager(
+class BoardManager(
     val board: Board
 ) {
     /**
      * Contains only the intersections that are occupied. Unoccupied intersections are not tracked.
      */
     private val intersections = mutableListOf<Intersection>()
+
     private val paths = mutableListOf<Edge>()
 
     /**
      * Make a copy because we have to change this to use doubled coordinate system.
      */
     private var tiles = copyOf(board.tiles)
-    //val hexes = tiles.map { it.hexCoordinate }
 
+    // Transform tiles to doubled. We need to do this to work with edges/intersections.
+    private val tilesDoubled = tiles
+        .map {
+            Tile(
+                HexUtils.transformToDoubled(it.hexCoordinate),
+                it.resource,
+                it.rollListenValue
+            )
+        }.toMutableList()
 
     var robberLocation = board.robberLocation
 
-    init {
-
-        // Transform tiles to doubled. We need to do this to work with edges/intersections.
-        tiles = tiles
-            .map {
-                Tile(
-                    HexUtils.transformToDoubled(it.hexCoordinate),
-                    it.resource,
-                    it.rollListenValue
-                )
-            }.toMutableList()
-    }
-
     /**
      * Attempts to move robber to tile coordinate.
+     *
      * @return true if success
      */
-    fun moveRobber(hexCoordinate: HexCoordinates) {
+    fun moveRobber(hexCoordinate: HexCoordinates): Boolean {
         if (tiles.none { it.hexCoordinate == hexCoordinate } || robberLocation == hexCoordinate) {
-            throw IllegalArgumentException("Cannot move robber to coordinate $hexCoordinate")
+            return false
         } else {
             robberLocation = hexCoordinate
         }
+        return true
     }
 
 

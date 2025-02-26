@@ -1,22 +1,16 @@
-package io.github.petvat.katan.ui.model
+package io.github.petvat.core.ui.model
 
-import io.github.petvat.katan.controller.RequestController
+import io.github.petvat.core.controller.RequestController
 import io.github.petvat.katan.event.*
-import io.github.petvat.katan.model.KatanModel
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.board.*
-import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.session.PrivateGameState
-import io.github.petvat.katan.shared.protocol.dto.EdgeView
-import io.github.petvat.katan.shared.protocol.dto.IntersectionView
-import io.github.petvat.katan.shared.protocol.dto.PrivateGroupView
-
+import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 
 enum class PlayerColor {
     RED, BLUE, ORANGE, WHITE
 }
-
 
 data class OtherPlayerViewModel(
     val playerNumber: Int,
@@ -31,7 +25,6 @@ data class ThisPlayerViewModel(
     val victoryPoints: Int,
 )
 
-
 /**
  *
  * Implementers: BoardRenderer, GameView
@@ -39,8 +32,8 @@ data class ThisPlayerViewModel(
  * Interface between Model and view. Holds data that is updated on events.
  */
 class GameViewModel(
-    private val outController: RequestController,
-    group: PrivateGroupView,
+    private val outController: io.github.petvat.core.controller.RequestController,
+    group: PrivateGroupDTO,
     game: PrivateGameState,
 ) : ViewModel() {
 
@@ -76,31 +69,39 @@ class GameViewModel(
 
     val thisPlayerNumber = game.player.playerNumber
 
+    /**
+     * TODO: Update such that have colors.
+     */
     var paths = game.board.paths
 
     // private val turnOrder = game.turnOrder
 
     // private var turnIdx = 0
-    var currentTurnPlayer: Int = game.turnPlayer
+    var currentTurnPlayer: Int by propertyNotify(game.turnPlayer)
 
     /**
      * True if it's this player's turn.
      */
     var thisPlayerTurn = currentTurnPlayer == thisPlayerNumber
 
-    var buildMode = false
+    // TODO: Chat log view model.
+    var chatLogProperty: List<Pair<String, String>> by propertyNotify(group.chatLog)
+
+    var rollDiceModeProperty: Boolean by propertyNotify(false)
         private set
 
-    var rollDiceMode = false
+    var buildModeProperty: Boolean by propertyNotify(false)
         private set
 
-    var chatLog: List<Pair<String, String>> = group.chatLog
+    var diceRollProperty: Pair<Int, Int> by propertyNotify(Pair(-1, -1))
 
-    // Or just player?
-    var thisPlayerModel: ThisPlayerViewModel =
-        ThisPlayerViewModel(game.player.inventory, game.player.victoryPoints)
+    var thisPlayerViewModelProperty: ThisPlayerViewModel by propertyNotify(
+        ThisPlayerViewModel(
+            game.player.inventory, game.player.victoryPoints
+        )
+    )
 
-    var otherPlayersModel: List<OtherPlayerViewModel> = (
+    var otherPlayersViewModelProperty: List<OtherPlayerViewModel> by propertyNotify(
         game.otherPlayers.map {
             OtherPlayerViewModel(
                 playerNumber = it.playerNumber,
@@ -109,7 +110,12 @@ class GameViewModel(
                 cardCount = it.cityCount,
                 victoryPoints = it.victoryPoints
             )
-        })
+        }
+    )
+
+
+    // For card animation
+    var playerResourceDiff: ResourceMap = ResourceMap(0, 0, 0, 0, 0)
 
     var roadPlacingMode: Boolean = false
         private set
@@ -126,98 +132,77 @@ class GameViewModel(
     var setupPhase: Boolean = false
         private set
 
-
     private val setupTurnOrder: MutableList<Int>
-
-    // OLD
-
-    /**
-     * Contains only the intersections that are occupied. Unoccupied intersections are not tracked.
-     */
-//    private val intersections = game.board.intersections
-//    private val paths = game.board.paths
-//    private var tiles = game.board.tiles
-
-
-    val thisPlayer = game.player
-    val otherPlayers = game.otherPlayers
-    // var currentTurnPlayer = turnOrder[0]
-
-    // var roadPlacingMode = false
-    //   private set
-
-
-    // val setupTurnOrder = TODO()
-    //val board = game.board
-
-    // NOTE: NOT NEEDED.
-    // NOTE: REMEMBER TO IMPL!
-//    fun registerPropertyChanges() {
-//        model.onPropertyChange(KatanModel::game) {
-//            paths = it.board.paths
-//            intersections = it.board.intersections
-//            currentTurnPlayer = it.turnPlayer
-//            // settlementFrontier = getSettlementFrontier()
-//            // cityFrontier = getCityFrontier()
-//            // roadFrontier = getRoadFrontier()
-//            thisPlayerModel = ThisPlayerViewModel(
-//                it.player.inventory,
-//                it.player.victoryPoints
-//            )
-//            otherPlayersModel = it.otherPlayers.map { op ->
-//                OtherPlayerViewModel(
-//                    op.playerNumber,
-//                    "Name", // TODO: This
-//                    PlayerColor.RED, // TODO: This
-//                    victoryPoints = op.victoryPoints,
-//                    cardCount = op.cardCount
-//                )
-//            }
-//        }
-//        model.onPropertyChange(KatanModel::group) {
-//            chatLog = it.chatLog
-//        }
-//    }
 
 
     init {
-        // val hexes = tiles.map { it.hexCoordinate }
         val reversed = game.turnOrder.reversed()
         setupTurnOrder = game.turnOrder.toMutableList()
         setupTurnOrder.addAll(reversed)
 
     }
 
-    // USE Property delegates here!
     override fun onEvent(event: Event) {
         when (event) {
-//            is NextTurnEvent -> {
-////                turnIdx += 1 % turnOrder.size
-////                currentTurnPlayer = turnOrder[turnIdx]
-//            }
-            is PlaceInitialSettlementEvent -> {
-                // TODO: Use a special kind of frontier for initial settlement.
-                settlementFrontier = setupFrontier()
+            is NextTurnEvent -> {
+                currentTurnPlayer = event.playerNumber
             }
-////            is RolledDiceEvent -> {
-////                // TODO: move from Katan god to this.
-////                // NOTE: How to transfer data? use on properties
-////                // TODO: YEP, do properites changed!
-////            }
-            is BuildEvent -> {
-                // TODO: Check if the update changes the frontier by computing [getSettlementFrontier] again.
 
+            is PlaceInitialSettlementEvent -> {
+                settlementFrontier = updateSetupFrontier()
+            }
+
+            is RolledDiceEvent -> {
+                diceRollProperty = event.roll1 to event.roll2
+
+                // Update the resources of this player
+                thisPlayerViewModelProperty = thisPlayerViewModelProperty.copy(
+                    inventory = event.playerResources,
+                )
+
+                // Update the resources of other players
+                otherPlayersViewModelProperty.map {
+                    it.copy(
+                        cardCount = event.otherPlayersCardCounts[it.playerNumber]!!
+                    )
+                }
+            }
+
+            is BuildEvent -> {
                 when (event.buildKind) {
                     is BuildKind.Road -> {
-                        roadFrontier = getRoadFrontier()
+                        roadFrontier = updateRoadFrontier()
                     }
 
                     is BuildKind.Village -> {
                         if (event.buildKind.kind == VillageKind.SETTLEMENT) {
-                            cityFrontier = getCityFrontier()
+                            cityFrontier = updateCityFrontier()
                         }
                         if (event.buildKind.kind == VillageKind.CITY) {
-                            settlementFrontier = getSettlementFrontier()
+                            settlementFrontier = updateSettlementFrontier()
+                        }
+                        // Updates the victory points
+                        if (event.playerNumber == thisPlayerNumber) {
+                            thisPlayerViewModelProperty =
+                                thisPlayerViewModelProperty.copy(victoryPoints = thisPlayerViewModelProperty.victoryPoints + 1)
+
+//                            _thisPlayerModel.value =
+//                                _thisPlayerModel.value.copy(victoryPoints = _thisPlayerModel.value.victoryPoints + 1)
+                        } else {
+//                            _otherPlayerViewModels.forEach {
+//                                if (it.value.playerNumber == event.playerNumber) {
+//                                    it.value = it.value.copy(
+//                                        victoryPoints = it.value.victoryPoints + 1,
+//                                    )
+//                                }
+//                            }
+                            otherPlayersViewModelProperty.map {
+                                if (it.playerNumber == event.playerNumber) {
+                                    it.copy(victoryPoints = it.victoryPoints + 1)
+                                } else {
+                                    it
+                                }
+                            }
                         }
                     }
                 }
@@ -231,7 +216,6 @@ class GameViewModel(
                         if (event.buildKind.kind == VillageKind.SETTLEMENT) {
                             settlementPlacingMode = true
                         } else if (event.buildKind.kind == VillageKind.CITY) {
-                            // TODO: getCityFrontier
                             cityPlacingMode = true
                         }
                     }
@@ -247,29 +231,31 @@ class GameViewModel(
         }
     }
 
-//    fun getChatLog(): List<Pair<String, String>> {
-//        return group.chatLog
+//    fun getChatLogProperty(): List<Pair<String, String>> {
+//        return group.chatLogProperty
 //    }
+
+    fun handleChat(message: String) = outController.handleChat(message, null) // TODO: EH
 
     fun handleRollDice() = outController.handleRollDice()
 
+    fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) = outController.handleBuild(buildKind, coordinates)
 
-    fun getCityFrontier(): Set<ICoordinates> {
-
+    private fun updateCityFrontier(): Set<ICoordinates> {
         return intersections
             .filter { it.village.owner == thisPlayerNumber && it.village.villageKind == VillageKind.SETTLEMENT }
-            .map { it.coordinate }.toSet()
-
+            .map { it.coordinate }
+            .toSet()
     }
 
-    fun setupFrontier(): Set<ICoordinates> {
+    private fun updateSetupFrontier(): Set<ICoordinates> {
         // All minus (existing + distance rule)
 
         TODO("BIG FIX NEEDED")
 
     }
 
-    fun getSettlementFrontier(): Set<ICoordinates> {
+    private fun updateSettlementFrontier(): Set<ICoordinates> {
         // cache frontier, update ved ny build event
         // val playerBuildingCoordinates = intersections.filter { i -> i.hasBuilding && i.building?.owner == player }
         val frontier: MutableSet<ICoordinates> = mutableSetOf()
@@ -312,7 +298,7 @@ class GameViewModel(
      * Get all possible coordinates for placing a road.
      * @param player With respect to this player
      */
-    fun getRoadFrontier(): Set<EdgeCoordinates> {
+    private fun updateRoadFrontier(): Set<EdgeCoordinates> {
         // logic:
         // If sum is even: vertical
         // If sum is odd: horizontal
@@ -447,9 +433,9 @@ class GameViewModel(
 //            .map { i -> i.village }.toSet()
 //    }
 
-    private fun getAdjacentIntersections(tile: Tile): List<ICoordinates> {
-        return HexUtils.adjacentIntersections(tile.hexCoordinate)
-    }
+//    private fun getAdjacentIntersections(tile: Tile): List<ICoordinates> {
+//        return HexUtils.adjacentIntersections(tile.hexCoordinate)
+//    }
 
     /**
      * Get adjacents intersection coordinates to intersection
@@ -630,4 +616,43 @@ class GameViewModel(
 
 
 }
+
+
+// var currentTurnPlayer = turnOrder[0]
+
+// var roadPlacingMode = false
+//   private set
+
+
+// val setupTurnOrder = TODO()
+//val board = game.board
+
+// NOTE: NOT NEEDED.
+// NOTE: REMEMBER TO IMPL!
+//    fun registerPropertyChanges() {
+//        model.onPropertyChange(KatanModel::game) {
+//            paths = it.board.paths
+//            intersections = it.board.intersections
+//            currentTurnPlayer = it.turnPlayer
+//            // settlementFrontier = getSettlementFrontier()
+//            // cityFrontier = getCityFrontier()
+//            // roadFrontier = getRoadFrontier()
+//            thisPlayerModel = ThisPlayerViewModel(
+//                it.player.inventory,
+//                it.player.victoryPoints
+//            )
+//            otherPlayersModel = it.otherPlayers.map { op ->
+//                OtherPlayerViewModel(
+//                    op.playerNumber,
+//                    "Name", // TODO: This
+//                    PlayerColor.RED, // TODO: This
+//                    victoryPoints = op.victoryPoints,
+//                    cardCount = op.cardCount
+//                )
+//            }
+//        }
+//        model.onPropertyChange(KatanModel::group) {
+//            chatLogProperty = it.chatLogProperty
+//        }
+//    }
 

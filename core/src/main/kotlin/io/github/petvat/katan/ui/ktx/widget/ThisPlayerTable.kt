@@ -1,4 +1,4 @@
-package io.github.petvat.katan.ui.ktx.widget
+package io.github.petvat.core.ui.ktx.widget
 
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
@@ -8,37 +8,41 @@ import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.ui.model.ThisPlayerViewModel
 import ktx.scene2d.*
 
-class ThisPlayerInfoTable(
+class ThisPlayerTable(
     thisPlayerViewModel: ThisPlayerViewModel,
     skin: Skin
 ) : Table(skin), KTable {
 
-    private val ore = label("Ore: ${thisPlayerViewModel.inventory[Resource.ORE]}")
-    private val wood = label("Wood: ${thisPlayerViewModel.inventory[Resource.WOOD]}")
-    private val wool = label("Wool: ${thisPlayerViewModel.inventory[Resource.WOOL]}")
-    private val wheat = label("Lumber: ${thisPlayerViewModel.inventory[Resource.WHEAT]}")
-    private val brick = label("Lumber: ${thisPlayerViewModel.inventory[Resource.BRICK]}")
-    private val vp = label("Victory points: ${thisPlayerViewModel.victoryPoints}")
+    private val ore: Label
+    private val wood: Label
+    private val wool: Label
+    private val wheat: Label
+    private val brick: Label
+    private val vp: Label
 
-    private val turn = label("")
+    private val turn: Label
 
     init {
-        ore
-        wood
-        wool
-        wheat
-        brick
+        wood = label("Wood: ${thisPlayerViewModel.inventory[Resource.WOOD]}")
+        ore = label("Ore: ${thisPlayerViewModel.inventory[Resource.ORE]}")
+        wool = label("Wool: ${thisPlayerViewModel.inventory[Resource.WOOL]}")
+        wheat = label("Lumber: ${thisPlayerViewModel.inventory[Resource.WHEAT]}")
+        brick = label("Lumber: ${thisPlayerViewModel.inventory[Resource.BRICK]}")
         row()
-        vp
-        turn
+        vp = label("Victory points: ${thisPlayerViewModel.victoryPoints}")
+        turn = label("")
     }
 
-    private fun setText(label: Label, resource: Resource, map: ResourceMap) {
+    private fun setResource(label: Label, resource: Resource, map: ResourceMap) {
         label.setText("${resource.name}: ${map.get()[resource]}")
     }
 
+    private fun setVictoryPoints(victoryPoints: Int) {
+        vp.setText(victoryPoints.toString())
+    }
+
     fun activateTurn() {
-        turn.setText("TURN")
+        turn.setText("Your turn!")
     }
 
     fun deactivateTurn() {
@@ -47,20 +51,22 @@ class ThisPlayerInfoTable(
 
     fun update(resourceMap: ResourceMap?, victoryPoints: Int?) {
         resourceMap?.let {
-            setText(ore, Resource.ORE, resourceMap)
-            setText(wood, Resource.WOOD, resourceMap)
-            setText(wool, Resource.WOOL, resourceMap)
-            setText(wheat, Resource.WHEAT, resourceMap)
+            setResource(ore, Resource.ORE, resourceMap)
+            setResource(wood, Resource.WOOD, resourceMap)
+            setResource(wool, Resource.WOOL, resourceMap)
+            setResource(wheat, Resource.WHEAT, resourceMap)
 
         }
-        victoryPoints?.let { }
+        victoryPoints?.let {
+            setVictoryPoints(it)
+        }
     }
 }
 
 @Scene2dDsl
-fun <S> KWidget<S>.thisPlayerInfo(
+fun <S> KWidget<S>.thisPlayerTable(
     thisPlayerViewModel: ThisPlayerViewModel,
     skin: Skin,
-    init: ThisPlayerInfoTable.(S) -> Unit = {}
-): ThisPlayerInfoTable = actor(ThisPlayerInfoTable(thisPlayerViewModel, skin), init)
+    init: ThisPlayerTable.(S) -> Unit = {}
+): ThisPlayerTable = actor(ThisPlayerTable(thisPlayerViewModel, skin), init)
 

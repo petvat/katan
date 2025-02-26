@@ -1,4 +1,4 @@
-package io.github.petvat.katan.server.blocking
+package io.github.petvat.katan.blocking
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.*

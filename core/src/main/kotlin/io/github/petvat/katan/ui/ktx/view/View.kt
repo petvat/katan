@@ -1,13 +1,8 @@
-package io.github.petvat.katan.ui.model
+package io.github.petvat.core.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
-import io.github.petvat.katan.event.EventListener
-
-/**
- * NOTE: Could also use a reactive viewmodel -> views.upd
- */
-
+import io.github.petvat.katan.ui.model.ViewModel
 
 /**
  * Scene2d view.

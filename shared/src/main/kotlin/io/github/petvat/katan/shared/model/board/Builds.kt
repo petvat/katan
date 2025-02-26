@@ -3,9 +3,9 @@ package io.github.petvat.katan.shared.model.board
 
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.protocol.dto.RoadView
+import io.github.petvat.katan.shared.protocol.dto.RoadDTO
 import io.github.petvat.katan.shared.protocol.dto.Transmittable
-import io.github.petvat.katan.shared.protocol.dto.VillageView
+import io.github.petvat.katan.shared.protocol.dto.VillageDTO
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -35,14 +35,14 @@ enum class RoadKind(val cost: ResourceMap) {
  */
 class Village(
     val villageKind: VillageKind,
-    val owner: Player, // NOTE: Could use playerNumber here
+    val owner: Player,
 ) : Transmittable {
     fun harvest(resource: Resource) {
         owner.inventory.transaction(resource, villageKind.productionNumber)
     }
 
-    override fun fromDomain(): VillageView {
-        return VillageView(villageKind, owner.id)
+    override fun fromDomain(): VillageDTO {
+        return VillageDTO(villageKind, owner.playerNumber)
     }
 }
 
@@ -50,7 +50,7 @@ class Road(
     val roadKind: RoadKind,
     val owner: Player
 ) : Transmittable {
-    override fun fromDomain(): RoadView {
-        return RoadView(roadKind, owner.id)
+    override fun fromDomain(): RoadDTO {
+        return RoadDTO(roadKind, owner.playerNumber)
     }
 }

@@ -1,4 +1,4 @@
-package io.github.petvat.katan.server.nio
+package io.github.petvat.katan.nio
 
 import io.github.petvat.katan.shared.protocol.Message
 import io.github.petvat.katan.shared.protocol.dto.Response

@@ -1,4 +1,4 @@
-package io.github.petvat.katan.server.http
+package io.github.petvat.katan.http
 
 import io.github.petvat.katan.server.api.handleRequest
 import io.github.petvat.katan.server.client.*
