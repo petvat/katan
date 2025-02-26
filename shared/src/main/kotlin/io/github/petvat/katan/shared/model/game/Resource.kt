@@ -8,6 +8,9 @@ enum class Resource {
 }
 
 
+/**
+ * TODO: Use this instead because the current [ResourceMap] serialization is messy.
+ */
 @Serializable
 class ResourcesDTO(
     val wood: Int,

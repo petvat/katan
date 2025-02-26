@@ -1,6 +1,6 @@
 package io.github.petvat.katan.server.nio
 
-import io.github.petvat.katan.shared.protocol.SessionId
+import io.github.petvat.katan.shared.model.SessionId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.server.api.KatanApi
 import io.github.petvat.katan.server.client.*

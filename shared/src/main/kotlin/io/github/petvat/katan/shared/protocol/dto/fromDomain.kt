@@ -1,7 +1,6 @@
-package io.github.petvat.katan.shared.model.dto
+package io.github.petvat.katan.shared.protocol.dto
 
 import io.github.petvat.katan.shared.model.board.*
-import io.github.petvat.katan.shared.protocol.dto.*
 
 fun Board.fromDomain() =
     BoardDTO(

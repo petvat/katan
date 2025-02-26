@@ -5,7 +5,7 @@ import io.github.petvat.katan.event.*
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.board.*
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.dto.GameStateDTO
+import io.github.petvat.katan.shared.protocol.dto.GameStateDTO
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 
 enum class PlayerColor {

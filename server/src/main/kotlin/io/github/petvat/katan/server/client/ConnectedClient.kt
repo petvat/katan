@@ -2,6 +2,8 @@ package io.github.petvat.katan.server.client
 
 import io.github.petvat.katan.server.group.GroupId
 import io.github.petvat.katan.shared.UserId
+import io.github.petvat.katan.shared.model.PermissionLevel
+import io.github.petvat.katan.shared.model.SessionId
 import io.github.petvat.katan.shared.protocol.*
 
 data class ConnectedClient(

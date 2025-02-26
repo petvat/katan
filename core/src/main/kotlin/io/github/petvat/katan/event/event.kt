@@ -6,7 +6,7 @@ import io.github.petvat.katan.shared.hexlib.ICoordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.protocol.PermissionLevel
+import io.github.petvat.katan.shared.model.PermissionLevel
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 
 sealed interface Event

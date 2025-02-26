@@ -1,4 +1,4 @@
-package io.github.petvat.katan.shared.protocol
+package io.github.petvat.katan.shared.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

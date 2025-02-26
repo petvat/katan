@@ -2,11 +2,9 @@ package io.github.petvat.katan.server.http
 
 import io.github.petvat.katan.server.api.KatanApi
 import io.github.petvat.katan.server.client.*
-import io.github.petvat.katan.shared.protocol.*
+import io.github.petvat.katan.shared.model.SessionId
 import io.ktor.server.application.*
-import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import java.util.*

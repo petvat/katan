@@ -1,32 +1,15 @@
 package io.github.petvat.katan.lwjgl3
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.InputMultiplexer
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.Value.prefWidth
-import com.badlogic.gdx.utils.Align
-import com.badlogic.gdx.utils.viewport.ScreenViewport
-import io.github.petvat.katan.controller.NioController
-import io.github.petvat.katan.controller.RequestController
-import io.github.petvat.katan.shared.hexlib.Coordinates
-import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.GameMode
-import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.protocol.PermissionLevel
+import io.github.petvat.katan.shared.model.PermissionLevel
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
 import io.github.petvat.katan.ui.ktx.view.LobbyView
-import io.github.petvat.katan.ui.ktx.widget.GroupListTable
-import io.github.petvat.katan.ui.ktx.widget.GroupListWidget
-import io.github.petvat.katan.ui.ktx.widget.groupsWidget
-import io.github.petvat.katan.ui.model.GroupModel
 import io.github.petvat.katan.ui.model.LobbyViewModel
 //import io.mockk.every
 //import io.mockk.mockk
 import ktx.app.KtxGame
 import ktx.scene2d.Scene2DSkin
-import ktx.scene2d.actors
 
 fun main() = gdxTest("UI Lobby test", LobbyViewTest())
 

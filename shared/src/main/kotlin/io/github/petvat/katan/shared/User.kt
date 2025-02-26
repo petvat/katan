@@ -1,7 +1,7 @@
 package io.github.petvat.katan.shared
 
-import io.github.petvat.katan.shared.model.dto.PrivateUserDTO
-import io.github.petvat.katan.shared.model.dto.PublicUserDTO
+import io.github.petvat.katan.shared.protocol.dto.PrivateUserDTO
+import io.github.petvat.katan.shared.protocol.dto.PublicUserDTO
 
 @JvmInline
 value class UserId(val value: String)

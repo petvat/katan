@@ -1,6 +1,6 @@
 package io.github.petvat.katan.server.client
 
-import io.github.petvat.katan.shared.protocol.SessionId
+import io.github.petvat.katan.shared.model.SessionId
 import java.util.concurrent.ConcurrentHashMap
 
 object ClientRepository {

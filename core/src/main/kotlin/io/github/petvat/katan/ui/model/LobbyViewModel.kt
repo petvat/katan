@@ -4,7 +4,7 @@ import io.github.petvat.katan.controller.RequestController
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.protocol.PermissionLevel
+import io.github.petvat.katan.shared.model.PermissionLevel
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 
 // TODO: Rename to View?

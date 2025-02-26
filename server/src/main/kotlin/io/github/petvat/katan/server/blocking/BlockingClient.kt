@@ -4,28 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.*
 import java.net.Socket
 
-
-/**
- * This class is meant to be used for handling requests and responses
- *
- * Outdated.
- */
-//class KatanClient(
-//    socket: Socket,
-//    override val responseHandler: ResponseController
-//
-//) : AbstractClient<Message<Response>, Message<Request>>(socket) {
-//
-//    override fun processRequest(request: Message<Request>): String {
-//        return KatanJson.messageToJson(request)
-//    }
-//
-//    override fun processResponse(response: String): Message<Response> {
-//        return KatanJson.jsonToResponse(response)
-//    }
-//}
-
-
 interface ResponseHandler<T> {
     fun handleResponse(response: T)
 }

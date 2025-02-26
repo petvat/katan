@@ -4,7 +4,7 @@ package io.github.petvat.katan.server
 
 import io.github.petvat.katan.server.nio.NioServer
 import io.github.petvat.katan.server.nio.ServerConstants
-import io.github.petvat.katan.shared.protocol.SessionId
+import io.github.petvat.katan.shared.model.SessionId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel

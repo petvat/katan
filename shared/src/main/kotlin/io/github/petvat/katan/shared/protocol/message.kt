@@ -2,10 +2,11 @@ package io.github.petvat.katan.shared.protocol
 
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
+import io.github.petvat.katan.shared.model.PermissionLevel
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.dto.GameStateDTO
+import io.github.petvat.katan.shared.protocol.dto.GameStateDTO
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 import kotlinx.serialization.SerialName

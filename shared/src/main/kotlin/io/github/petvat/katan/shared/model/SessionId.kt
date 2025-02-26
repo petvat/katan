@@ -1,4 +1,4 @@
-package io.github.petvat.katan.shared.protocol
+package io.github.petvat.katan.shared.model
 
 /**
  * Unique Session identifier associated with a client connection.

@@ -5,7 +5,7 @@ import io.github.petvat.katan.server.client.*
 import io.github.petvat.katan.server.group.*
 import io.github.petvat.katan.server.nio.clientLockMap
 import io.github.petvat.katan.server.nio.wrapWithMutex
-import io.github.petvat.katan.shared.protocol.SessionId
+import io.github.petvat.katan.shared.model.SessionId
 import io.github.petvat.katan.shared.protocol.*
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 

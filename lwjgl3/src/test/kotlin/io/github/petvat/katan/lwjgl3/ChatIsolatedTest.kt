@@ -3,7 +3,7 @@ package io.github.petvat.katan.lwjgl3
 import io.github.petvat.katan.event.ChatEvent
 import io.github.petvat.katan.event.EventBus
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.protocol.PermissionLevel
+import io.github.petvat.katan.shared.model.PermissionLevel
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
 import io.github.petvat.katan.ui.ktx.view.GroupView

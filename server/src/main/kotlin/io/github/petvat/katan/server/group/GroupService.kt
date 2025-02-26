@@ -1,10 +1,8 @@
 package io.github.petvat.katan.server.group
 
 import io.github.petvat.katan.server.client.*
-import io.github.petvat.katan.shared.User
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.protocol.PermissionLevel
-import io.github.petvat.katan.shared.protocol.SessionId
+import io.github.petvat.katan.shared.model.SessionId
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 import java.util.*

@@ -4,6 +4,7 @@ package io.github.petvat.katan.server.api
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.server.api.action.*
 import io.github.petvat.katan.server.group.Game
+import io.github.petvat.katan.shared.model.SessionId
 import io.github.petvat.katan.shared.protocol.*
 
 /**
