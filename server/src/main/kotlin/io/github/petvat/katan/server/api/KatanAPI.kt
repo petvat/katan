@@ -234,6 +234,8 @@ object KatanApi {
 
         // TODO: Add off-radar mode (silent)
 
+        groupLockMap[newGroup.id] = Mutex() // Add lock a for this group.
+
         updateClient(sid) {
             client.copy(activity = InGroup(newGroup.id))
         }
@@ -300,6 +302,7 @@ object KatanApi {
                 } ?: handleError(sid, request.requestId, code = ErrorCode.NOT_FOUND, "Client does not exist")
 
             } catch (e: Exception) {
+                logger.error { e.printStackTrace() }
                 logger.error { "${e.cause}: ${e.message}" }
                 responses =
                     handleError(sid, request.requestId, code = ErrorCode.DENIED, "Internal error. DEBUG: ${e.message}")
