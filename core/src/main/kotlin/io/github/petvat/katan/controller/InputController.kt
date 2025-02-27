@@ -36,55 +36,6 @@ interface RequestController {
     fun handleRegister(name: String)
 }
 
-//
-//class MockController : RequestController {
-//    override fun handleInit() {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleCreate(settings: Settings) {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleJoin(sessionId: String) {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleGetGroup(pagination: Int) {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun connectClient(host: String?, port: Int?): Boolean {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleChat(message: String, recipients: Set<String>?) {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleLogin(username: String, password: String) {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleClose() {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleRollDice() {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun handleRegister(name: String) {
-//        TODO("Not yet implemented")
-//    }
-//
-//}
-
-
 /**
  * The main request controller. Should only exist one.
  *

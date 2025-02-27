@@ -9,17 +9,6 @@ import io.github.petvat.katan.shared.protocol.*
 
 typealias MessageHandler<PayloadDTO> = (response: PayloadDTO, model: KatanModel) -> Event
 
-//val ackHandler: MessageHandler<Response.ConnectAck> = { response, model ->
-//    model.sessionId = response.sessionId
-//    LobbyEvent
-//}
-
-//val loginHandler: MessageHandler<Response.Login> = { response, model ->
-//    model.userInfo = response.userInfo
-//    model.accessToken = response.token
-//    LoginEvent
-//}
-
 val groupPushHandler: MessageHandler<Response.LobbyUpdate> = { response, model ->
     // TODO: MODEL!
     val group = response.groupDTO
