@@ -1,8 +1,8 @@
 package io.github.petvat.katan.shared.model.board
 
 import io.github.petvat.katan.shared.User
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.protocol.dto.PlayerColor
 
 
 /**

@@ -11,6 +11,7 @@ import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 
 import json.KatanJson
 import kotlinx.coroutines.sync.Mutex
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KSuspendFunction1
 
 private typealias RequestHandler = suspend (client: ConnectedClient, request: Request) -> Map<SessionId, Response>
@@ -35,9 +36,9 @@ object KatanApi {
     private val logger = KotlinLogging.logger { }
 
     /**
-     * Avoid race conditions by aquiring its lock from this point. TODO: Use this!
+     * Avoid race conditions by aquiring its lock from this point.
      */
-    private val groupLockMap = mutableMapOf<GroupId, Mutex>()
+    private val groupLockMap = ConcurrentHashMap<GroupId, Mutex>()
 
 
 //@Suppress("UNCHECKED_CAST")
@@ -46,7 +47,6 @@ object KatanApi {
 //    val userId = UserService.authenticate(request.payload.data!!.username, request.payload.data!!.password)
 //    val user = UserService.getUser(userId)
 //
-//    // TODO: Client state! UPDATE
 //
 //    val response = mutableMapOf<SessionId, Message<Response.Login>>()
 //    response[sid] = MessageFactory.create(
@@ -86,7 +86,7 @@ object KatanApi {
         val gid = client.activity.groupId!!
         val game = GroupService.getGameFromGroupId(gid)!!
         wrapWithMutex(groupLockMap[gid]!!) {
-            ActionAPI.serviceRequest(sid, request, game)
+            ActionApi.serviceRequest(sid, request, game)
         }.invoke()
     }
 
@@ -274,11 +274,11 @@ object KatanApi {
 
 
     /**
-     * Handles a request from a user from a channel.
+     * Handles a request from a channel.
      *
      * @param json The request in JSON format
      * @param sid The session ID of the requester
-     * @param callback Callback function run with the
+     * @param callback Callback function run with the result of the request
      */
     suspend fun handleRequest(
         json: String,
@@ -315,28 +315,5 @@ object KatanApi {
 
         callback(responses.mapValues { (_, response) -> KatanJson.toJson(response) })
     }
-
-//suspend fun handleRequest(
-//    json: String,
-//    sid: SessionId,
-//    callback: suspend (Map<SessionId, Message<Response>>) -> Unit
-//) {
-//    try {
-//
-//        val request = KatanJson.jsonToRequest(json)
-//        val (validator, processor) = getValidatorAndProcessor(request.header.messageType)
-//        val stateToken = TokenManager.verifyToken(request.header.token!!)
-//        if (stateToken != null && !validator(stateToken)) {
-//            // return early
-//        }
-//        val responses = processor(clientID, stateToken?.groupId ?: "", request) // TODO: Fix ""
-//        callback(responses)
-//    } catch (e: Exception) {
-//
-//    }
-//
-//
-//}
-
 }
 
