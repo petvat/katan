@@ -35,10 +35,6 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
      * TODO: Might be possible to do EventBus += this, have not checked.
      */
     override fun show() {
-
-        // EventBus += this
-        // EventBus += viewModel
-
         val multiplexer = InputMultiplexer();
         multiplexer.addProcessor(stage)
         Gdx.input.inputProcessor = multiplexer;
@@ -46,6 +42,8 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
         logger.debug { "Building stage." }
         stage.clear()
         buildStage()
+        EventBus += this
+        EventBus += viewModel
     }
 
     override fun hide() {
@@ -82,6 +80,8 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
     }
 
     override fun dispose() {
+        EventBus -= viewModel
+        EventBus -= this
         stage.dispose()
     }
 }

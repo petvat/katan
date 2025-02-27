@@ -50,8 +50,6 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override fun show() {
         super.show()
-        EventBus += viewModel
-        EventBus += this
     }
 
     override fun buildStage() {

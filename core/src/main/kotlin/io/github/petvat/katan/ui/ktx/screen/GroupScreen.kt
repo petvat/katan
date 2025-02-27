@@ -19,8 +19,6 @@ class GroupScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override fun show() {
         super.show()
-        EventBus += this // To listen for errors.
-        EventBus += viewModel
     }
 
     override fun buildStage() {

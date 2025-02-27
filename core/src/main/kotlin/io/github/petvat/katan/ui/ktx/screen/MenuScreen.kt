@@ -13,8 +13,6 @@ class MenuScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override fun show() {
         super.show()
-        EventBus += this
-        EventBus += viewModel
     }
 
     override fun buildStage() {
