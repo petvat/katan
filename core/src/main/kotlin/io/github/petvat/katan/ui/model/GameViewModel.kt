@@ -4,13 +4,10 @@ import io.github.petvat.katan.controller.RequestController
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.board.*
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.protocol.dto.GameStateDTO
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
-
-enum class PlayerColor {
-    RED, BLUE, ORANGE, WHITE
-}
 
 data class OtherPlayerViewModel(
     val playerNumber: Int,
@@ -463,7 +460,7 @@ class GameViewModel(
         player: Player,
         cost: ResourceMap
     ): Boolean {
-        return player.inventory.difference(cost).get()
+        return player.inventory.difference(cost).getMap()
             .any { (_, x) -> x < 0 }
     }
 

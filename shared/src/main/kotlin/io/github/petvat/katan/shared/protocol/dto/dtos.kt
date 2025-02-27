@@ -11,12 +11,8 @@ import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.model.PermissionLevel
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import kotlinx.serialization.Serializable
-
-
-enum class PlayerColor {
-    YELLOW, BLUE, RED, WHITE
-}
 
 /**
  * Simplified game progress available to players from the perspective of client.

@@ -9,6 +9,7 @@ import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.model.PermissionLevel
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.protocol.dto.*
 
 /**

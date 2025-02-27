@@ -6,12 +6,8 @@ import io.github.petvat.katan.shared.model.SessionId
 import io.github.petvat.katan.shared.model.board.BoardGenerator
 import io.github.petvat.katan.shared.model.board.BoardManager
 import io.github.petvat.katan.shared.model.board.Player
-import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.game.Trade
-import io.github.petvat.katan.shared.model.game.Turn
+import io.github.petvat.katan.shared.model.game.*
 import io.github.petvat.katan.shared.protocol.dto.GameStateDTO
-import io.github.petvat.katan.shared.protocol.dto.PlayerColor
 import io.github.petvat.katan.shared.protocol.dto.fromDomain
 import kotlinx.coroutines.sync.Mutex
 

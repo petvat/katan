@@ -5,8 +5,8 @@ import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.Resource
-import io.github.petvat.katan.ui.model.PlayerColor
 
 
 /**
