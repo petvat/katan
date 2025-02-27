@@ -39,7 +39,6 @@ abstract class AbstractTestScreen : KtxScreen {
     }
 
     override fun render(delta: Float) {
-        clearScreen(0f, 0f, 0f, 1f)
         stage.act(delta)
         stage.draw()
     }

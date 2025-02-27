@@ -4,10 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.utils.Align
 import io.github.petvat.katan.ui.model.OtherPlayerViewModel
-import ktx.scene2d.KGroup
-import ktx.scene2d.KWidget
-import ktx.scene2d.Scene2dDsl
-import ktx.scene2d.actor
+import ktx.scene2d.*
 
 
 @Scene2dDsl
@@ -15,15 +12,14 @@ class OtherPlayersTable(
     otherPlayers: List<OtherPlayerViewModel>,
     skin: Skin
 ) : Table(skin), KGroup {
-    
+
     private val otherPlayersWidget: Map<Int, OtherPlayerWidget>
 
     init {
-        debug = true
         align(Align.center)
 
         otherPlayersWidget = otherPlayers.associate {
-            it.playerNumber to otherPlayerStats(
+            it.playerNumber to scene2d.otherPlayerStats(
                 it.name,
                 it.color,
                 it.victoryPoints,
@@ -32,6 +28,10 @@ class OtherPlayersTable(
             ) {
                 pad(5f)
             }
+        }
+
+        otherPlayersWidget.values.forEach {
+            add(it)
         }
     }
 

@@ -34,7 +34,7 @@ class ThisPlayerTable(
     }
 
     private fun setResource(label: Label, resource: Resource, map: ResourceMap) {
-        label.setText("${resource.name}: ${map.get()[resource]}")
+        label.setText("${resource.name}: ${map.getMap()[resource]}")
     }
 
     private fun setVictoryPoints(victoryPoints: Int) {

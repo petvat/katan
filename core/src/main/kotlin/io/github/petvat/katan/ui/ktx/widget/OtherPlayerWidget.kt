@@ -2,7 +2,7 @@ package io.github.petvat.katan.ui.ktx.widget
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
-import io.github.petvat.katan.ui.model.PlayerColor
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import ktx.scene2d.*
 
 
@@ -20,25 +20,21 @@ class OtherPlayerWidget(
 ) : Table(skin), KTable {
 
 
-    private val nameLabel = label(displayName, defaultStyle, skin) {
-        it.top()
-        it.left()
-    }
+    private val nameLabel = scene2d.label(displayName, defaultStyle, skin) { }
 
-    private val vpLabel = label("VP: $victoryPoints")
+    private val vpLabel = scene2d.label("VP: $victoryPoints")
 
-    private val cc = label("Cards: $cardCount")
+    private val cc = scene2d.label("Cards: $cardCount")
 
-    private val turnLabel = label("")
+    private val turnLabel = scene2d.label("")
 
     init {
-        debug = true
-        nameLabel
+        add(nameLabel).growX()
         row()
-        vpLabel
-        cc // rename
+        add(vpLabel)
+        add(cc)
         row()
-        turnLabel
+        add(turnLabel)
     }
 
     fun activateTurn() {

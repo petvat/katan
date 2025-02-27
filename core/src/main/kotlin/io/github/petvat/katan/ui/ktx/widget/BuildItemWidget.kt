@@ -30,7 +30,7 @@ class BuildItemWidget(
         // TODO: Replace with image!
         label(
             "${
-                cost.get().forEach { (resource, amount) ->
+                cost.getMap().forEach { (resource, amount) ->
                     if (amount > 0) {
                         "${resource.name} : $amount"
                     }

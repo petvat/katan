@@ -3,6 +3,7 @@ package io.github.petvat.katan.ui.ktx.view
 import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Button
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
+import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.utils.Align
 import io.github.petvat.katan.ui.ktx.widget.*
@@ -28,7 +29,9 @@ class GameView(
 
     private val chat: ChatWidget
 
-    private val buildTable: BuildTable
+    private val buildWidget: BuildTable
+
+    private val buildTable: Table
 
     // TODO: Use Player model?
     private val playersInfoWidget: OtherPlayersTable
@@ -38,35 +41,47 @@ class GameView(
     init {
         setFillParent(true)
         align(Align.center)
-        playersInfoWidget = playersTable(viewModel.otherPlayersViewModelProperty, skin) {
-            it.top()
-            it.center()
+        playersInfoWidget = scene2d.playersTable(viewModel.otherPlayersViewModelProperty, skin) {
+            this.top()
+            this.center()
         }
-        row()
-        chat = chat(callback = { message: String -> viewModel.handleChat(message) }, skin = skin) {
-            it.bottom()
-            it.left()
-            it.padRight(10f)
+        chat = scene2d.chat(callback = { message: String -> viewModel.handleChat(message) }, skin = skin) {
+            this.bottom()
+            this.left()
+            // padRight(50f)
         }
-        row()
-
-        buildTable = buildTable(skin, { cmd -> viewModel.onEvent(cmd) }) {
+        buildWidget = scene2d.buildTable(skin, { cmd -> viewModel.onEvent(cmd) }) {
             isVisible = false
         }
-
-        buildBtn = textButton("Build") {
-            onChangeEvent { this@GameView.buildTable.isVisible = true }
+        buildBtn = scene2d.textButton("Build") {
+            onChangeEvent { this@GameView.buildWidget.isVisible = true }
             isDisabled = true
         }
 
-        thisPlayerInfoTable = thisPlayerTable(
-            viewModel.thisPlayerViewModelProperty,
-            skin
-        )
+        buildTable = scene2d.table {
+            this.bottom()
+        }
 
-        rollDiceBtn = textButton("Roll dice") {
+        thisPlayerInfoTable = scene2d.thisPlayerTable(
+            this@GameView.viewModel.thisPlayerViewModelProperty,
+            skin
+        ) {
+            this.bottom()
+        }
+        rollDiceBtn = scene2d.textButton("Roll dice") {
             onChangeEvent { this@GameView.viewModel.handleRollDice() }
         }
+
+        buildTable.add(buildWidget)
+        buildTable.row()
+        buildTable.add(buildBtn)
+
+        add(playersInfoWidget).colspan(4).growX().maxWidth(1000f)
+        row().expand()
+        add(chat).growX().bottom()
+        add(thisPlayerInfoTable).growX().bottom()
+        add(buildTable).bottom()
+        add(rollDiceBtn).bottom()
     }
 
 
