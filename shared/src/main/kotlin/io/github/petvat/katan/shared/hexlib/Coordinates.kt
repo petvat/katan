@@ -2,6 +2,7 @@ package io.github.petvat.katan.shared.hexlib
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
  * Minimal physical coordinate on the screen.
@@ -9,28 +10,22 @@ import kotlinx.serialization.Serializable
  */
 data class PCoordinate(val x: Double, val y: Double)
 
+/**
+ * Represents a logical coordinate on the board.
+ */
 @Serializable
-sealed class Coordinates(open val q: Int, open val r: Int) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Coordinates) return false
-        return q == other.q && r == other.r
-    }
-
-    override fun hashCode(): Int {
-        var result = q
-        result = 31 * result + r
-        return result
-    }
+sealed interface Coordinates {
+    val q: Int
+    val r: Int
 }
 
 
 /**
- * Logical coordiantes.
+ * Logical hexagon/tile coordiantes.
  */
 @Serializable
 class HexCoordinates(@SerialName("hex_q") override val q: Int, @SerialName("hex_r") override val r: Int) :
-    Coordinates(q, r)
+    Coordinates
 
 /**
  * Logical intersection coordinates.
@@ -39,7 +34,7 @@ class HexCoordinates(@SerialName("hex_q") override val q: Int, @SerialName("hex_
 class ICoordinates(
     @SerialName("intersect_q") override val q: Int,
     @SerialName("intersect_r") override val r: Int
-) : Coordinates(q, r)
+) : Coordinates
 
 /**
  * Logical edge coordinates.
@@ -48,5 +43,11 @@ class ICoordinates(
 class EdgeCoordinates(
     @SerialName("edge_q") override val q: Int,
     @SerialName("edge_r") override val r: Int
-) : Coordinates(q, r)
+) : Coordinates
 
+
+fun main() {
+    val hex = HexCoordinates(1, 2)
+    val json = Json.encodeToString(hex)
+    println(json)
+}
