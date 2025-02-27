@@ -4,7 +4,6 @@ import io.github.petvat.katan.server.api.ExecutionResult
 import io.github.petvat.katan.server.api.GameStates
 import io.github.petvat.katan.server.group.Game
 import io.github.petvat.katan.shared.protocol.ErrorCode
-import io.github.petvat.katan.shared.protocol.Request
 import io.github.petvat.katan.shared.protocol.Response
 import kotlin.random.Random
 
@@ -99,7 +98,7 @@ class RollDice(
                 val removes = cards.floorDiv(2)
                 repeat(removes) {
                     Random.nextInt(0, player.inventory.count())
-                    val inventory = player.inventory.get()
+                    val inventory = player.inventory.getMap()
                     if (inventory.isNotEmpty()) {
                         // TODO: inventory.filter prob not working
                         inventory.filter { it.value > 0 }

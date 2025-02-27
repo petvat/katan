@@ -12,14 +12,13 @@ enum class Resource {
  * TODO: Use this instead because the current [ResourceMap] serialization is messy.
  */
 @Serializable
-class ResourcesDTO(
+data class ResourceMapData(
     val wood: Int,
     val ore: Int,
     val wheat: Int,
     val wool: Int,
     val brick: Int
 )
-
 
 class ResourceMap2(
     wood: Int,
@@ -37,15 +36,15 @@ class ResourceMap2(
     )
 
     private constructor(resourceMap: ResourceMap2) : this(
-        resourceMap.getAmount(Resource.WOOD),
-        resourceMap.getAmount(Resource.ORE),
-        resourceMap.getAmount(Resource.WHEAT),
-        resourceMap.getAmount(Resource.WOOL),
-        resourceMap.getAmount(Resource.BRICK)
+        resourceMap[Resource.WOOD],
+        resourceMap[Resource.ORE],
+        resourceMap[Resource.WHEAT],
+        resourceMap[Resource.WOOL],
+        resourceMap[Resource.BRICK]
     )
 
-    operator fun get(resource: Resource): Int? {
-        return resources[resource]
+    operator fun get(resource: Resource): Int {
+        return resources.getOrElse(resource) { 0 }
     }
 
     fun get(): HashMap<Resource, Int> {
@@ -95,9 +94,15 @@ class ResourceMap2(
         difference.minus(other);
         return difference
     }
-
-
 }
+
+fun ResourceMap2.fromDomain() = ResourceMapData(
+    this[Resource.WOOD],
+    this[Resource.ORE],
+    this[Resource.WHEAT],
+    this[Resource.WOOL],
+    this[Resource.BRICK]
+)
 
 /**
  * Logic to wrap resources. Hopefully makes it easier to work with.
@@ -122,24 +127,21 @@ class ResourceMap(
     )
 
     constructor(resourceMap: ResourceMap) : this(
-        resourceMap.getAmount(Resource.WOOD),
-        resourceMap.getAmount(Resource.ORE),
-        resourceMap.getAmount(Resource.WHEAT),
-        resourceMap.getAmount(Resource.WOOL),
-        resourceMap.getAmount(Resource.BRICK)
+        resourceMap[Resource.WOOD],
+        resourceMap[Resource.ORE],
+        resourceMap[Resource.WHEAT],
+        resourceMap[Resource.WOOL],
+        resourceMap[Resource.BRICK]
     )
 
-    operator fun get(resource: Resource): Int? {
-        return resources[resource]
+    operator fun get(resource: Resource): Int {
+        return resources.getOrElse(resource) { 0 }
     }
 
-    fun get(): HashMap<Resource, Int> {
+    fun getMap(): HashMap<Resource, Int> {
         return HashMap(resources)
     }
 
-    fun getAmount(resource: Resource): Int {
-        return resources.getOrElse(resource) { 0 }
-    }
 
     fun count(): Int {
         return resources.values.sum()
@@ -147,24 +149,24 @@ class ResourceMap(
 
     /**
      * Simple and can be used for all.
-     *
      */
     operator fun plus(other: ResourceMap): Boolean {
         resources.keys.forEach { key ->
             val current = resources[key] ?: 0
-            resources[key] = current + (other.get()[key] ?: 0)
+            resources[key] = current + (other.getMap()[key] ?: 0)
         }
         return true
     }
 
     /**
-     * Subtracts a resource map from this resource map
+     * Subtracts a resource map from this resource map *if* the subtraction results in no negative values.
+     *
+     * @return true if the subtraction could be performed.
      */
     operator fun minus(other: ResourceMap): Boolean {
         val result = HashMap<Resource, Int>()
-        for ((resource, amount) in resources) {
-            val otherAmount = other.getAmount(resource)
-            val remainingAmount = getAmount(resource) - otherAmount
+        for ((resource, _) in resources) {
+            val remainingAmount = this[resource] - other[resource]
             if (remainingAmount < 0) {
                 return false
             }
