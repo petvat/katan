@@ -6,6 +6,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.utils.Align
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.ui.ktx.widget.*
 import io.github.petvat.katan.ui.model.GameViewModel
 import ktx.actors.onChangeEvent
@@ -22,6 +23,8 @@ class GameView(
     viewModel: GameViewModel,
     skin: Skin
 ) : KTable, View<GameViewModel>(skin, viewModel) {
+
+    private val logger = KotlinLogging.logger { }
 
     private val rollDiceBtn: TextButton
 
@@ -45,7 +48,8 @@ class GameView(
             this.top()
             this.center()
         }
-        chat = scene2d.chat(callback = { message: String -> viewModel.handleChat(message) }, skin = skin) {
+        chat = scene2d.chat(callback = viewModel::handleChat, skin = skin) {
+            this.align(Align.bottomLeft)
             this.bottom()
             this.left()
             // padRight(50f)
@@ -78,10 +82,12 @@ class GameView(
 
         add(playersInfoWidget).colspan(4).growX().maxWidth(1000f)
         row().expand()
-        add(chat).growX().bottom()
+        add(chat).bottom()
         add(thisPlayerInfoTable).growX().bottom()
         add(buildTable).bottom()
         add(rollDiceBtn).bottom()
+
+        registerOnPropertyChanges()
     }
 
 
@@ -99,6 +105,11 @@ class GameView(
                 thisPlayerInfoTable.deactivateTurn()
                 playersInfoWidget.activateTurn(it)
             }
+        }
+
+        viewModel.onPropertyChange(GameViewModel::lastGroupMessage) {
+            logger.debug { "Reached game view property change!" }
+            chat.addMessage(it.first, it.second)
         }
 
         viewModel.onPropertyChange(GameViewModel::buildModeProperty) {

@@ -2,7 +2,9 @@ package io.github.petvat.katan.ui.ktx.widget
 
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.scenes.scene2d.ui.*
+import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import com.badlogic.gdx.utils.Align
+import ktx.actors.onChange
 import ktx.actors.onClick
 import ktx.actors.onKeyUp
 import ktx.scene2d.*
@@ -58,19 +60,30 @@ class ChatWidget(
     callback: (String) -> Unit,
     skin: Skin
 ) : Table(skin), KTable {
+    private val showToggle: TextButton
+    private var toggle = true
     private val scrollPaneWidget: ScrollPaneWidget<MessageWidget>
     private val txtField: TextField
     private val sendBtn: TextButton
 
     init {
         //setFillParent(true) ONLY Parent fills!
-        align(Align.center)
+        align(Align.bottomLeft)
 
-        scrollPaneWidget = scene2d.scrollWidget(skin) { }
+        scrollPaneWidget = scene2d.scrollWidget(skin) {
+
+        }
+
+        showToggle = scene2d.textButton("Toggle") {
+            onChange {
+                this@ChatWidget.toggle = !this@ChatWidget.toggle
+                this@ChatWidget.scrollPaneWidget.isVisible = this@ChatWidget.toggle
+            }
+        }
 
         txtField = scene2d.textField {
             onKeyUp {
-                if (it == Input.Keys.ENTER) {
+                if (it == Input.Keys.ENTER && text.isNotBlank()) {
                     println(text)
                     callback(text)
                     text = "" // reset
@@ -87,12 +100,19 @@ class ChatWidget(
         }
 
         // Fill table
+
+//        add(showToggle)
+//        row()
+
         add(scrollPaneWidget)
             .growX()
             .colspan(2) // Make room for 2 cells underneath
-        row()
-        add(txtField).growX().padRight(10f)
-        add(sendBtn).minWidth(150f)
+            //.minHeight(150f)
+            .maxHeight(150f)
+
+        row().padTop(5f)
+        add(txtField).growX().fillY().spaceRight(10f)
+        add(sendBtn).minWidth(50f)
 
         addAll(messages)
 
@@ -184,11 +204,13 @@ class MessageWidget(
 
     init {
         align(Align.left)
+        // TODO: Use smaller font
         messageLabel = scene2d.label("$from: $message") {
             wrap = true
+
         }
 
-        add(messageLabel).growX()
+        add(messageLabel).growX().pad(3f)
     }
 }
 

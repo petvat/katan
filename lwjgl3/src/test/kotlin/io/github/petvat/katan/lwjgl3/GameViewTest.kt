@@ -16,6 +16,7 @@ import io.github.petvat.katan.ui.Assets
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.screen.MainGameScreen.Companion.TEX_HEIGHT
 import io.github.petvat.katan.ui.ktx.screen.MainGameScreen.Companion.TEX_WIDTH
+import io.github.petvat.katan.ui.ktx.screen.loadUISkin
 import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
 import io.github.petvat.katan.ui.ktx.view.BoardGraphic
 import io.github.petvat.katan.ui.ktx.view.GameView
@@ -30,7 +31,7 @@ fun main() = gdxTest("UI Lobby test", GameViewTest())
 
 private class GameViewTest : KtxGame<GameTest>() {
     override fun create() {
-        loadVisUISkin()
+        loadUISkin()
         addScreen(GameTest())
         setScreen<GameTest>()
     }
@@ -113,11 +114,13 @@ private class GameTest() : AbstractTestScreen() {
         stage.addActor(
             GameView(viewModel, Scene2DSkin.defaultSkin)
         )
+        super.clearScreen = false
+        EventBus += viewModel
     }
 
     override fun render(delta: Float) {
         clearScreen(0f, 0f, 0f, 1f)
-        boardRenderer.render()
+        // boardRenderer.render()
         super.render(delta)
     }
 }

@@ -81,8 +81,10 @@ class GameViewModel(
      */
     var thisPlayerTurn = currentTurnPlayer == thisPlayerNumber
 
-    // TODO: Chat log view model.
+    // TODO: Chat log view model. REMOVE!
     var chatLogProperty: List<Pair<String, String>> by propertyNotify(group.chatLog)
+
+    var lastGroupMessage: Pair<String, String> by propertyNotify("" to "") // Nice?
 
     var rollDiceModeProperty: Boolean by propertyNotify(false)
         private set
@@ -141,6 +143,10 @@ class GameViewModel(
 
     override fun onEvent(event: Event) {
         when (event) {
+            is ChatEvent -> {
+                lastGroupMessage = event.from to event.message
+            }
+
             is NextTurnEvent -> {
                 currentTurnPlayer = event.playerNumber
             }

@@ -8,7 +8,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.utils.viewport.ExtendViewport
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import io.github.petvat.katan.event.EventBus
 import io.github.petvat.katan.ui.ktx.KtxKatan
+import io.github.petvat.katan.ui.model.ViewModel
 import ktx.app.KtxScreen
 import ktx.app.clearScreen
 
@@ -20,10 +22,12 @@ abstract class AbstractTestScreen : KtxScreen {
     private val viewport = ScreenViewport()
     private val batch by lazy { SpriteBatch() }
     val stage: Stage
-    private val scaleFactor = 3
+    private val scaleFactor = 2
+
+    protected var clearScreen = true
 
     init {
-        viewport.unitsPerPixel = 1f / scaleFactor
+        viewport.unitsPerPixel = (1f / scaleFactor)
         stage = Stage(viewport, batch)
     }
 
@@ -51,10 +55,7 @@ abstract class AbstractTestScreen : KtxScreen {
     override fun render(delta: Float) {
         // camera.update()
 
-        clearScreen(0f, 0f, 0f)
-
-        Gdx.gl.glClearColor(0f, 0.2f, 0.3f, 0.8f)
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+        if (clearScreen) clearScreen(0f, 0f, 0f)
 
         viewport.apply()
         // batch.projectionMatrix = camera.combined

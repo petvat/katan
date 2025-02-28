@@ -6,6 +6,12 @@ BitmapFont: {
 		markupEnabled: false
 		flip: false
 	}
+	CelticTime: {
+		file: CelticTime.fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
 }
 Color: {
 	RGBA_101_86_43_255: {
@@ -15,7 +21,7 @@ Color: {
 		hex: 6d6760ff
 	}
 	RGBA_136_122_81_255: {
-		hex: f5e6b9ff
+		hex: ffedbfff
 	}
 	RGBA_255_243_211_255: {
 		hex: fff3d3ff
@@ -37,7 +43,8 @@ ButtonStyle: {
 }
 LabelStyle: {
 	default: {
-		font: alagard
+		font: CelticTime
+		fontColor: RGBA_109_103_96_255
 	}
 }
 ScrollPaneStyle: {
@@ -50,8 +57,8 @@ ScrollPaneStyle: {
 TextButtonStyle: {
 	default: {
 		font: alagard
-		fontColor: RGBA_136_122_81_255
-		overFontColor: RGBA_136_122_81_255
+		fontColor: RGBA_109_103_96_255
+		overFontColor: RGBA_109_103_96_255
 		up: btn
 		down: btn
 		pressedOffsetY: -2
@@ -59,7 +66,7 @@ TextButtonStyle: {
 }
 TextFieldStyle: {
 	default: {
-		font: alagard
+		font: CelticTime
 		fontColor: RGBA_109_103_96_255
 		background: text-field
 		cursor: cursor

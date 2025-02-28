@@ -20,21 +20,23 @@ class OtherPlayerWidget(
 ) : Table(skin), KTable {
 
 
-    private val nameLabel = scene2d.label(displayName, defaultStyle, skin) { }
+    private val nameLabel = scene2d.label(displayName) { }
 
-    private val vpLabel = scene2d.label("VP: $victoryPoints")
+    private val vpLabel = scene2d.label("VP: $victoryPoints") {
+    }
 
     private val cc = scene2d.label("Cards: $cardCount")
 
     private val turnLabel = scene2d.label("")
 
     init {
-        add(nameLabel).growX()
+        background = skin.getDrawable("area")
+        add(nameLabel).growX().colspan(2)
         row()
-        add(vpLabel)
-        add(cc)
-        row()
-        add(turnLabel)
+        add(vpLabel).space(5f)
+        add(cc).space(5f)
+        //row()
+        //add(turnLabel)
     }
 
     fun activateTurn() {

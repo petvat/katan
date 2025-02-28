@@ -16,7 +16,7 @@ class OtherPlayersTable(
     private val otherPlayersWidget: Map<Int, OtherPlayerWidget>
 
     init {
-        align(Align.center)
+        align(Align.top)
 
         otherPlayersWidget = otherPlayers.associate {
             it.playerNumber to scene2d.otherPlayerStats(
@@ -31,7 +31,7 @@ class OtherPlayersTable(
         }
 
         otherPlayersWidget.values.forEach {
-            add(it)
+            add(it).space(10f)
         }
     }
 
