@@ -1,6 +1,7 @@
 package io.github.petvat.katan.ui.ktx.screen
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
@@ -8,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable
 import com.kotcrab.vis.ui.VisUI
 import ktx.scene2d.Scene2DSkin
 import ktx.style.*
+
 
 enum class Image(
     val atlasKey: String
@@ -31,16 +33,29 @@ operator fun Skin.get(img: Image): Drawable = this.getDrawable(img.atlasKey)
 operator fun Skin.get(font: Font): BitmapFont = this.getFont(font.atlasKey)
 
 
-fun loadJsonSkin() {
-    Scene2DSkin.defaultSkin = Skin(Gdx.files.internal("assets/first-itr-ui.json"))
-}
+//fun loadJsonSkin() {
+//    Scene2DSkin.defaultSkin = Skin(Gdx.files.internal("assets/first-itr-ui.json"))
+//}
 
 fun loadVisUISkin() {
     VisUI.load(VisUI.SkinScale.X2)
     Scene2DSkin.defaultSkin = VisUI.getSkin()
 }
 
+fun loadUISkin() {
+    val skin = Skin(Gdx.files.internal("assets/katan-ui-001.json"))
+
+    val atlas = skin.atlas
+
+    // Disable anti-aliasing of textures by applying nearest-neighbor filtering.
+    for (texture in atlas.textures) {
+        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+    }
+    Scene2DSkin.defaultSkin = skin
+}
+
 /**
+ * TODO: Remove
  * Loads the UI skin.
  */
 fun loadSkin() {

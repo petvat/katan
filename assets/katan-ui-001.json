@@ -1,0 +1,88 @@
+{
+BitmapFont: {
+	alagard: {
+		file: alagard.fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
+}
+Color: {
+	RGBA_101_86_43_255: {
+		hex: 65562bff
+	}
+	RGBA_109_103_96_255: {
+		hex: 6d6760ff
+	}
+	RGBA_136_122_81_255: {
+		hex: f5e6b9ff
+	}
+	RGBA_255_243_211_255: {
+		hex: fff3d3ff
+	}
+}
+TintedDrawable: {
+	cursor: {
+		name: white-pixel
+		color: RGBA_109_103_96_255
+		minWidth: 1
+		minHeight: 5
+	}
+}
+ButtonStyle: {
+	default: {
+		up: btn
+		down: btn
+	}
+}
+LabelStyle: {
+	default: {
+		font: alagard
+	}
+}
+ScrollPaneStyle: {
+	default: {
+		background: area
+		vScroll: scroll
+		vScrollKnob: scroll-btn
+	}
+}
+TextButtonStyle: {
+	default: {
+		font: alagard
+		fontColor: RGBA_136_122_81_255
+		overFontColor: RGBA_136_122_81_255
+		up: btn
+		down: btn
+		pressedOffsetY: -2
+	}
+}
+TextFieldStyle: {
+	default: {
+		font: alagard
+		fontColor: RGBA_109_103_96_255
+		background: text-field
+		cursor: cursor
+		selection: cursor
+		messageFont: alagard
+		messageFontColor: RGBA_109_103_96_255
+	}
+	katan-2: {
+		font: alagard
+		fontColor: RGBA_109_103_96_255
+		background: text-field
+	}
+}
+TextTooltipStyle: {
+	default: {
+		label: default
+	}
+}
+WindowStyle: {
+	default: {
+		background: area
+		titleFont: alagard
+		titleFontColor: RGBA_109_103_96_255
+	}
+}
+}

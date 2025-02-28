@@ -1,0 +1,97 @@
+
+katan-ui-001.png
+size: 512, 512
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+white-pixel
+  rotate: false
+  xy: 507, 505
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
+alagard
+  rotate: false
+  xy: 1, 476
+  size: 504, 30
+  orig: 504, 30
+  offset: 0, 0
+  index: -1
+area
+  rotate: false
+  xy: 1, 348
+  size: 126, 126
+  split: 5, 5, 4, 4
+  orig: 126, 126
+  offset: 0, 0
+  index: -1
+btn
+  rotate: false
+  xy: 129, 432
+  size: 37, 18
+  split: 4, 4, 5, 4
+  pad: 6, 6, 6, 5
+  orig: 37, 18
+  offset: 0, 0
+  index: -1
+katan-sp-btn-dwn
+  rotate: false
+  xy: 129, 452
+  size: 116, 22
+  split: 0, 0, 1, 0
+  pad: 0, 0, 0, 0
+  orig: 116, 22
+  offset: 0, 0
+  index: -1
+katan-sp-btn-dwn-real
+  rotate: false
+  xy: 129, 452
+  size: 116, 22
+  split: 10, 10, 3, 3
+  pad: 0, 0, 0, 0
+  orig: 116, 22
+  offset: 0, 0
+  index: -1
+katan-sp-btn-up
+  rotate: false
+  xy: 1, 324
+  size: 116, 22
+  split: 10, 10, 0, 0
+  pad: 0, 0, 0, 0
+  orig: 116, 22
+  offset: 0, 0
+  index: -1
+katan-sp-btn-up-real
+  rotate: false
+  xy: 1, 324
+  size: 116, 22
+  split: 10, 10, 2, 4
+  pad: 0, 0, 0, 0
+  orig: 116, 22
+  offset: 0, 0
+  index: -1
+scroll
+  rotate: false
+  xy: 129, 380
+  size: 20, 50
+  split: 5, 5, 3, 3
+  pad: 0, 0, 0, 0
+  orig: 20, 50
+  offset: 0, 0
+  index: -1
+scroll-btn
+  rotate: false
+  xy: 1, 262
+  size: 25, 40
+  orig: 25, 40
+  offset: 0, 0
+  index: -1
+text-field
+  rotate: false
+  xy: 1, 304
+  size: 37, 18
+  split: 4, 4, 4, 4
+  orig: 37, 18
+  offset: 0, 0
+  index: -1
