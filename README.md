@@ -2,7 +2,7 @@
 
 WIP
 
-A *Settlers of Catan* implementation written in Kotlin using LibGDX/KTX.
+A mutliplayer *Settlers of Catan* implementation written in Kotlin using LibGDX/KTX. The TCP server is made with the `java.nio` library.
 
 ## Building
 
