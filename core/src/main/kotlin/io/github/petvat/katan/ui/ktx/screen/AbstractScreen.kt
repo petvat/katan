@@ -15,14 +15,16 @@ import ktx.scene2d.Scene2DSkin
 
 abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
     private val vp = ScreenViewport()
-    protected val stage = Stage(vp, game.batch)
-
+    private val scaleFactor = 3
+    protected val stage: Stage
     abstract val viewModel: ViewModel
 
 
     init {
-        vp.camera.position.y = 10f
-        stage.isDebugAll = true
+        vp.unitsPerPixel = 1f / scaleFactor
+        stage = Stage(vp, game.batch)
+
+        // stage.isDebugAll = true
     }
 
     val logger = KotlinLogging.logger { }
