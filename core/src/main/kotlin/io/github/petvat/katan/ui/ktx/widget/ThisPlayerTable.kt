@@ -24,10 +24,10 @@ class ThisPlayerTable(
     private val brick: Label
     private val vp: Label
 
-    var oreImg = Image(Texture(Gdx.files.internal("./assets/ore-simple-tex.png")))
-    var brickImg = Image(Texture(Gdx.files.internal("./assets/brick-simple-tex.png")))
-    var woolImg = Image(Texture(Gdx.files.internal("./assets/wool-simple-tex.png")))
-    var woodImg = Image(Texture(Gdx.files.internal("./assets/wood-simple-tex.png")))
+    var oreImg = Image(Texture(Gdx.files.internal("./ore-simple-tex.png")))
+    var brickImg = Image(Texture(Gdx.files.internal("./brick-simple-tex.png")))
+    var woolImg = Image(Texture(Gdx.files.internal("./wool-simple-tex.png")))
+    var woodImg = Image(Texture(Gdx.files.internal("./wood-simple-tex.png")))
 
     private val turn: Label
 

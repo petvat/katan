@@ -41,8 +41,8 @@ fun loadVisUISkin() {
  * Loads in the custom UI skin.
  */
 fun loadUISkin() {
-    val skin = Skin(Gdx.files.internal("assets/katan-ui-001.json"))
-    val altSkin = Skin(Gdx.files.internal("assets/katan-ui-alt-001.json"))
+    val skin = Skin(Gdx.files.internal("./katan-ui-001.json"))
+    val altSkin = Skin(Gdx.files.internal("./katan-ui-alt-001.json"))
 
 
     val atlas = altSkin.atlas

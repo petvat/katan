@@ -9,17 +9,19 @@ the `java.nio` library.
 
 To build the project, navigate to the project directory and run:
 
-`./gradlew build`
+`./gradlew build -x test`
+
+(As of now, tests must be skipped.)
 
 ## Running
 
 To start the client application run:
 
-`./gradlew :lwjgl:run`
+`./gradlew :lwjgl3:run`
 
-To start a simple CLI interface run:
+(WIP) To start a simple CLI interface run:
 
-`./gradlew :lwjgl:runCli`
+`./gradlew :lwjgl3:runCli`
 
 To start the server application run:
 
