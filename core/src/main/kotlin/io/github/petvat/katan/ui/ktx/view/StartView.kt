@@ -1,9 +1,12 @@
 package io.github.petvat.katan.ui.ktx.view
 
+import com.badlogic.gdx.Input
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Align
 import io.github.petvat.katan.ui.model.StartMenuViewModel
 import ktx.actors.onChangeEvent
+import ktx.actors.onKeyUp
 import ktx.scene2d.*
 
 
@@ -18,13 +21,35 @@ class StartMenuView(
         setFillParent(true)
         align(Align.center)
 
-        textButton("Connect to host") {
-            onChangeEvent { this@StartMenuView.viewModel.connectToclient() } // inlined
+        val innertbl = scene2d.table {
+            background = skin.getDrawable("area")
+
+//        textField {
+//            onKeyUp {
+//                if (it == Input.Keys.ENTER) {
+//                    println(text)
+//                    onChangeEvent { this@StartMenuView.viewModel.connectToclient() }
+//                    text = "" // reset
+//                }
+//            }
+//        }
+//        row()
+
+            textButton("Connect") {
+                onChangeEvent { this@StartMenuView.viewModel.connectToclient() } // inlined
+            }
+            row().space(10f)
+            textButton("Settings") {
+                onChangeEvent {
+                    println("click.")
+                }
+            }
+
         }
-        row()
-        textButton("Settings") {
-            onChangeEvent { println("click.") }
-        }
+
+        add(innertbl).maxHeight(700f).maxWidth(700f)
+
+
     }
 
     override fun registerOnPropertyChanges() {}
