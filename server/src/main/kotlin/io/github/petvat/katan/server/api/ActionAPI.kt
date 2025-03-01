@@ -10,7 +10,7 @@ import io.github.petvat.katan.shared.protocol.*
 /**
  * Responsible for translating client requests into game actions and performing them.
  */
-object ActionAPI {
+object ActionApi {
 
     private val logger = KotlinLogging.logger { }
 
@@ -113,6 +113,10 @@ object ActionAPI {
 
                 is Request.ClaimVictory -> {
                     ClaimVictory(game, playerNumber)
+                }
+
+                is Request.RespondTrade -> {
+                    RespondTrade(game, playerNumber, actionRequest.tradeId, actionRequest.accept)
                 }
 
                 else -> {
