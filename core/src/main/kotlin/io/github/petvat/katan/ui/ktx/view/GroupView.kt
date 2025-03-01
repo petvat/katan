@@ -29,7 +29,7 @@ class GroupView(
         chatWidget = scene2d.chat(
             skin = skin,
             callback = viewModel::handleChat
-        )
+        ) { }
         startBtn = scene2d.textButton("Start game") {
             onChange { this@GroupView.viewModel.handleInit() }
         }

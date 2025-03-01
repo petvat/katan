@@ -30,29 +30,35 @@ class GroupListElementWidget(
     private var joinButton: TextButton
 
     init {
-        nameL = label(groupName) {
+        background = skin.getDrawable("slot")
+        nameL = scene2d.label(groupName) {
             setAlignment(Align.center)
-            it.growX()
-            it.padRight(4f)
-            it.padLeft(4f)
+//            it.expandX()
+//            it.padRight(4f)
+//            it.padLeft(4f)
         }
-        clientsL = label("$numClients / $maxClients") {
-            it.expand()
+        clientsL = scene2d.label("$numClients / $maxClients") {
+            // it.expand()
         }
-        modeL = label(mode) {
+        modeL = scene2d.label(mode) {
             setAlignment(Align.center)
-            it.growX()
-            it.padRight(4f)
-            it.padLeft(4f)
+//            it.growX()
+//            it.padRight(4f)
+//            it.padLeft(4f)
         }
-        joinButton = textButton("Join") {
-            it.growX()
-            it.padRight(4f)
-            it.padLeft(4f)
+        joinButton = scene2d.textButton("Join") {
+//            it.growX()
+//            it.padRight(4f)
+//            it.padLeft(4f)
             onChangeEvent {
                 callback()
             }
         }
+
+        add(nameL).growX().padRight(5f).padLeft(5f)
+        add(clientsL).expandX().padRight(5f).padLeft(5f)
+        add(modeL).expandX().padRight(5f).padLeft(5f)
+        add(joinButton).expandX().padRight(5f).padLeft(5f)
     }
 
     fun update(groupName: String?, mode: String?, numClients: String?, maxClients: String?) {
@@ -73,7 +79,7 @@ class ScrollPaneWidget<T : Actor>(val skin: Skin) : ScrollPane(null, skin), KGro
         fadeScrollBars = false
         setScrollingDisabled(true, false)
         contentTable = scene2d.table {
-
+            align(Align.top)
         }
         actor = contentTable
     }
@@ -83,10 +89,8 @@ class ScrollPaneWidget<T : Actor>(val skin: Skin) : ScrollPane(null, skin), KGro
     }
 
     fun add(element: T) {
-        val cell = contentTable.add(element)
-        cell
-            .growX()
-            .row()
+        val cell = contentTable.add(element).space(4f).growX().row()
+
     }
 }
 
@@ -100,24 +104,25 @@ class GroupListWidget(skin: Skin, val callback: (String, String) -> Unit) : Tabl
         align(Align.center)
 
         widgetLabel = scene2d.label("Lobby") {
-            setAlignment(Align.center)
+            setFontScale(1.5f)
+            setAlignment(Align.top)
         }
         scrollPaneWidget = scene2d.scrollWidget(skin) { }
 
-        add(widgetLabel)
+        add(widgetLabel).top()
         row()
-        add(scrollPaneWidget).growX()
+        add(scrollPaneWidget).expandX().padTop(10f)
 
     }
 
     fun update(groups: List<GroupModel>) {
         groups.forEach { group ->
-            val name = "name"
+            val name = "New group"
             val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
                 name,
                 group.mode.name,
                 group.numClients.toString(),
-                "?",
+                group.maxClients.toString(),
                 skin,
                 { this@GroupListWidget.callback(group.id, name) })
 
@@ -131,38 +136,38 @@ class GroupListWidget(skin: Skin, val callback: (String, String) -> Unit) : Tabl
 /**
  * NOTE: Tested. Alignment problems when wrapped in Table.
  */
-class GroupListTable(val skin: Skin, val callback: (String, String) -> Unit) : ScrollPane(null, skin), KGroup {
-    private val contentTable: Table
-
-    init {
-        setFillParent(true)
-        fadeScrollBars = false
-        setScrollingDisabled(true, false)
-
-        contentTable = scene2d.table(skin) {
-
-        }
-        actor = contentTable
-    }
-
-    fun update(groups: List<GroupModel>) {
-        contentTable.clear()
-        groups.forEach { group ->
-            val name = "name"
-            val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
-                name,
-                group.mode.name,
-                group.numClients.toString(),
-                "?",
-                skin,
-                { this@GroupListTable.callback(group.id, name) })
-
-            val cell = contentTable.add(element)
-            cell.growX()
-            cell.row()
-        }
-    }
-}
+//class GroupListTable(val skin: Skin, val callback: (String, String) -> Unit) : ScrollPane(null, skin), KGroup {
+//    private val contentTable: Table
+//
+//    init {
+//        setFillParent(true)
+//        fadeScrollBars = false
+//        setScrollingDisabled(true, false)
+//
+//        contentTable = scene2d.table(skin) {
+//
+//        }
+//        actor = contentTable
+//    }
+//
+//    fun update(groups: List<GroupModel>) {
+//        contentTable.clear()
+//        groups.forEach { group ->
+//            val name = "name"
+//            val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
+//                name,
+//                group.mode.name,
+//                group.numClients.toString(),
+//                "?",
+//                skin,
+//                { this@GroupListTable.callback(group.id, name) })
+//
+//            val cell = contentTable.add(element)
+//            cell.growX().spaceRight(5f)
+//            cell.row()
+//        }
+//    }
+//}
 
 
 //

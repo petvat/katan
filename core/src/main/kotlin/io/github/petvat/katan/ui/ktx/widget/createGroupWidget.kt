@@ -16,25 +16,31 @@ class CreateGroupWidget(
 ) : Table(skin), KTable {
 
     val createGroup: Label
-    val settings: Label
+    val settings: ScrollPaneWidget<SettingsWidget>
     val createBtn: TextButton
 
     init {
         // setFillParent(true)
         align(Align.center)
-        createGroup = scene2d.label("Create group")
-        settings = scene2d.label("Settings placeholder") {
-            onClick {
-                println("TODO: Settings not implemented!")
-            }
+        createGroup = scene2d.label("Create group") {
+            setFontScale(1.5f)
+            setAlignment(Align.center)
         }
+        settings = scene2d.scrollWidget {
+
+        }
+
+        repeat(5) {
+            settings.add(scene2d.settingsWidget("Stat $it", {}, skin))
+        }
+
         createBtn = scene2d.textButton("Create") {
             onClick { callback() }
         }
 
-        add(createGroup)
+        add(createGroup).top()
         row()
-        add(settings).growX()
+        add(settings).grow().padTop(10f)
         row()
         add(createBtn)
     }

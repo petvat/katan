@@ -5,6 +5,7 @@ import io.github.petvat.katan.event.EventBus
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.model.PermissionLevel
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
+import io.github.petvat.katan.ui.ktx.screen.loadUISkin
 import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
 import io.github.petvat.katan.ui.ktx.view.GroupView
 import io.github.petvat.katan.ui.ktx.widget.ChatWidget
@@ -25,7 +26,7 @@ fun main() = gdxTest("Group test", GroupTestLauncher())
 
 private class GroupTestLauncher : KtxGame<GroupTest>() {
     override fun create() {
-        loadVisUISkin()
+        loadUISkin()
         addScreen(GroupTest())
         setScreen<GroupTest>()
     }
@@ -50,8 +51,7 @@ private class GroupTest() : AbstractTestScreen() {
         )
 
         EventBus += viewModel
-
-        viewModel.onEvent(ChatEvent("Player1", "Hello"))
+        // viewModel.onEvent(ChatEvent("Player1", "Hello"))
     }
 }
 
@@ -76,9 +76,8 @@ private class ChatIsolatedTest : AbstractTestScreen() {
                 setFillParent(true)
                 ch = scene2d.chat(messages, Scene2DSkin.defaultSkin, {}) {
                 }
-                add(ch).growX()
+                add(ch).grow()
             }
-
             //}
 
         }
