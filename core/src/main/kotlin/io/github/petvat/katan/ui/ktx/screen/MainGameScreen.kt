@@ -2,8 +2,14 @@ package io.github.petvat.katan.ui.ktx.screen
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
+import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.input.GestureDetector
+import com.badlogic.gdx.input.GestureDetector.GestureAdapter
+import com.badlogic.gdx.input.GestureDetector.GestureListener
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ExtendViewport
 import io.github.petvat.katan.event.EventBus
 import io.github.petvat.katan.shared.hexlib.PCoordinate
@@ -15,6 +21,8 @@ import io.github.petvat.katan.ui.ktx.view.tradeView
 import io.github.petvat.katan.ui.model.GameViewModel
 import ktx.scene2d.Scene2DSkin
 import ktx.scene2d.actors
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.sqrt
 
 class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
@@ -33,8 +41,8 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
     private val batch = game.batch
 
     init {
-        camera.position.set(0f, 0f, 0f)
-        camera.update()
+        //camera.position.set(0f, 0f, 0f)
+        //camera.update()
     }
 
     /**
@@ -48,9 +56,41 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override lateinit var viewModel: GameViewModel
 
-    override fun show() {
-        super.show()
+    var lastTouchX = 0f
+    var lastTouchY = 0f
+    val dragSensitivity = 0.5f
+    val minX = -230f
+    val minY = minX
+    val maxX = abs(minX)
+    val maxY = abs(minY)
+
+    private val inputProcessor = object : InputAdapter() {
+        override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+            lastTouchX = screenX.toFloat()
+            lastTouchY = screenY.toFloat()
+            return true
+        }
+
+        override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+            val deltaX = lastTouchX - screenX
+            val deltaY = lastTouchY - screenY
+
+            camera.translate(
+                deltaX * camera.zoom * dragSensitivity,
+                -deltaY * camera.zoom * dragSensitivity
+            ) // Move the camera
+
+            camera.position.x = MathUtils.clamp(camera.position.x, minX, maxX)
+            camera.position.y = MathUtils.clamp(camera.position.y, minY, maxY)
+            camera.update()
+
+            lastTouchX = screenX.toFloat()
+            lastTouchY = screenY.toFloat()
+
+            return true
+        }
     }
+
 
     override fun buildStage() {
 
@@ -69,6 +109,8 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
         )
         // TODO: Might be needed somewhere: tiles = game.model.gameManager!!.board.tiles.toMutableList() Break reason?
 
+        inputMultiplexer.addProcessor(inputProcessor)
+
         stage.actors {
             tradeView(viewModel, Scene2DSkin.defaultSkin) { isVisible = false } // Overlay of trade system
             gameView(viewModel, Scene2DSkin.defaultSkin)
@@ -77,6 +119,7 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override fun resize(width: Int, height: Int) {
         viewport.update(width, height)
+        super.resize(width, height)
     }
 
     override fun render(delta: Float) {
@@ -90,6 +133,9 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
         batch.projectionMatrix = camera.combined
 
         boardRenderer.render()
+
+        stage.viewport.apply() // Apply the stage viewport to render the UI correctly.
+
 
         stage.act()
         stage.draw()
@@ -116,5 +162,9 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
         if (Gdx.input.isTouched) {
             boardRenderer.handleTouch(Gdx.input.x, Gdx.input.y)
         }
+
     }
 }
+
+
+

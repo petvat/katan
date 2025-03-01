@@ -8,17 +8,18 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.ui.ktx.KtxKatan
-import io.github.petvat.katan.ui.ktx.widget.createErrorWindow
+import io.github.petvat.katan.ui.ktx.widget.error
 import io.github.petvat.katan.ui.model.ViewModel
 import ktx.app.KtxScreen
 import ktx.scene2d.Scene2DSkin
+import ktx.scene2d.scene2d
 
 abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
     private val vp = ScreenViewport()
     private val scaleFactor = 3
     protected val stage: Stage
     abstract val viewModel: ViewModel
-
+    protected lateinit var inputMultiplexer: InputMultiplexer
 
     init {
         vp.unitsPerPixel = 1f / scaleFactor
@@ -37,9 +38,9 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
      * TODO: Might be possible to do EventBus += this, have not checked.
      */
     override fun show() {
-        val multiplexer = InputMultiplexer();
-        multiplexer.addProcessor(stage)
-        Gdx.input.inputProcessor = multiplexer;
+        inputMultiplexer = InputMultiplexer()
+        inputMultiplexer.addProcessor(stage)
+        Gdx.input.inputProcessor = inputMultiplexer
 
         logger.debug { "Building stage." }
         stage.clear()
@@ -62,7 +63,7 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
     }
 
     private fun showError(message: String) {
-        stage.addActor(createErrorWindow(Scene2DSkin.defaultSkin, message))
+        stage.addActor(scene2d.error(message, Scene2DSkin.defaultSkin))
     }
 
     protected abstract fun buildStage()
