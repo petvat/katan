@@ -1,0 +1,73 @@
+{
+com.badlogic.gdx.graphics.g2d.BitmapFont: {
+	CelticTime1: {
+		file: CelticTime(1).fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
+	Kubasta: {
+		file: Kubasta.fnt
+		scaledSize: -1
+		markupEnabled: false
+		flip: false
+	}
+}
+com.badlogic.gdx.graphics.Color: {
+	RGBA_255_241_146_255: {
+		r: 1
+		g: 0.94662887
+		b: 0.5730335
+		a: 1
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Skin$TintedDrawable: {
+	crs: {
+		name: white-pixel
+		color: RGBA_255_241_146_255
+		minWidth: 1
+		minHeight: 6
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Button$ButtonStyle: {
+	default: {
+		up: btn
+		pressedOffsetY: -1
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.Label$LabelStyle: {
+	default: {
+		font: Kubasta
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.ScrollPane$ScrollPaneStyle: {
+	default: {
+		background: scroll-area
+		hScroll: scroll-btn
+		hScrollKnob: slot
+		vScroll: scroll-slide
+		vScrollKnob: scroll-btn
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextButton$TextButtonStyle: {
+	default: {
+		font: Kubasta
+		up: btn
+		down: btn
+		pressedOffsetY: -1
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextField$TextFieldStyle: {
+	default: {
+		font: CelticTime1
+		fontColor: RGBA_255_241_146_255
+		background: scroll-area
+		cursor: crs
+	}
+}
+com.badlogic.gdx.scenes.scene2d.ui.TextTooltip$TextTooltipStyle: {
+	default: {
+		label: default
+	}
+}
+}

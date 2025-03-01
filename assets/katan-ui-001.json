@@ -39,11 +39,12 @@ ButtonStyle: {
 	default: {
 		up: btn
 		down: btn
+		pressedOffsetY: -2
 	}
 }
 LabelStyle: {
 	default: {
-		font: CelticTime
+		font: alagard
 		fontColor: RGBA_109_103_96_255
 	}
 }
@@ -66,7 +67,7 @@ TextButtonStyle: {
 }
 TextFieldStyle: {
 	default: {
-		font: CelticTime
+		font: alagard
 		fontColor: RGBA_109_103_96_255
 		background: text-field
 		cursor: cursor

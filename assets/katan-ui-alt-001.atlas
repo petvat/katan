@@ -1,0 +1,84 @@
+
+katan-ui-alt-001.png
+size: 512, 512
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+white-pixel
+  rotate: false
+  xy: 507, 505
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
+CelticTime(1)
+  rotate: false
+  xy: 1, 484
+  size: 504, 22
+  orig: 504, 22
+  offset: 0, 0
+  index: -1
+Kubasta
+  rotate: false
+  xy: 1, 452
+  size: 504, 30
+  orig: 504, 30
+  offset: 0, 0
+  index: -1
+area
+  rotate: false
+  xy: 1, 402
+  size: 48, 48
+  split: 20, 20, 20, 20
+  orig: 48, 48
+  offset: 0, 0
+  index: -1
+btn
+  rotate: false
+  xy: 1, 384
+  size: 16, 16
+  split: 6, 6, 7, 6
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+btn-down
+  rotate: false
+  xy: 51, 432
+  size: 16, 18
+  split: 6, 6, 7, 6
+  orig: 16, 18
+  offset: 0, 0
+  index: -1
+scroll-area
+  rotate: false
+  xy: 1, 366
+  size: 16, 16
+  split: 4, 4, 4, 5
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+scroll-btn
+  rotate: false
+  xy: 51, 418
+  size: 12, 12
+  split: 5, 5, 5, 5
+  pad: 5, 5, 6, 5
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+scroll-slide
+  rotate: false
+  xy: 69, 438
+  size: 12, 12
+  split: 3, 3, 3, 3
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+slot
+  rotate: false
+  xy: 19, 388
+  size: 12, 12
+  split: 4, 4, 4, 4
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
