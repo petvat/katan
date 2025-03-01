@@ -1,8 +1,10 @@
 package io.github.petvat.katan.lwjgl3
 
+import io.github.petvat.katan.event.GroupUpdateEvent
 import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.PermissionLevel
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
+import io.github.petvat.katan.ui.ktx.screen.loadUISkin
 import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
 import io.github.petvat.katan.ui.ktx.view.LobbyView
 import io.github.petvat.katan.ui.model.LobbyViewModel
@@ -27,7 +29,7 @@ fun main() = gdxTest("UI Lobby test", LobbyViewTest())
 
 private class LobbyViewTest : KtxGame<LobbyTest>() {
     override fun create() {
-        loadVisUISkin()
+        loadUISkin()
         addScreen(LobbyTest())
         setScreen<LobbyTest>()
     }
@@ -36,14 +38,21 @@ private class LobbyViewTest : KtxGame<LobbyTest>() {
 
 private class LobbyTest() : AbstractTestScreen() {
 
-    private val groups = List(15) {
-        PublicGroupDTO("id", 4, 4, PermissionLevel.USER, GameMode.STANDARD)
-    }
+    private val groups = listOf(
+        PublicGroupDTO("id", 2, 4, PermissionLevel.USER, GameMode.STANDARD)
+    )
 
     override fun setup() {
+        val viewModel = LobbyViewModel(MockController(), {}, groups.toMutableList())
         stage.addActor(
-            LobbyView(LobbyViewModel(MockController(), {}, groups.toMutableList()), Scene2DSkin.defaultSkin)
+            LobbyView(viewModel, Scene2DSkin.defaultSkin)
         )
+
+        repeat(10) {
+            viewModel.onEvent(GroupUpdateEvent("$it", PermissionLevel.USER, GameMode.STANDARD, 3, 4))
+        }
+
+
     }
 }
 

@@ -7,10 +7,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.ui.ktx.widget.*
 import io.github.petvat.katan.ui.model.LobbyViewModel
 import ktx.actors.onClick
-import ktx.scene2d.KTable
-import ktx.scene2d.label
-import ktx.scene2d.scene2d
-import ktx.scene2d.textButton
+import ktx.scene2d.*
 
 class LobbyView(
     viewModel: LobbyViewModel,
@@ -28,17 +25,23 @@ class LobbyView(
     init {
         setFillParent(true)
         align(Align.center)
-        groupsWidget = scene2d.groupsWidget(viewModel::handleJoin, skin) { }
-        createWidget = scene2d.createWidget(viewModel::handleCreate, skin) { }
-        backBtn = scene2d.textButton("Back") {
-            onClick { println("back - TODO") }
-            align(Align.center)
+
+        val innertlb = scene2d.table {
+            background = skin.getDrawable("area")
+            this@LobbyView.groupsWidget = scene2d.groupsWidget(viewModel::handleJoin, skin) { }
+            this@LobbyView.createWidget = scene2d.createWidget(viewModel::handleCreate, skin) { }
+            this@LobbyView.backBtn = scene2d.textButton("Back") {
+                onClick { println("back - TODO") }
+                align(Align.center)
+            }
         }
 
-        add(groupsWidget).grow()
-        add(createWidget).grow()
-        row()
-        add(backBtn).colspan(2)
+        innertlb.add(groupsWidget).grow().spaceRight(20f)
+        innertlb.add(createWidget).grow()
+        innertlb.row()
+        innertlb.add(backBtn).colspan(2).padTop(10f)
+
+        add(innertlb).minWidth(100f).minHeight(100f).maxWidth(1500f).maxHeight(500f)
 
 //        textButton("Refresh") {
 //            it.expandX()
@@ -56,7 +59,7 @@ class LobbyView(
     override fun registerOnPropertyChanges() {
         viewModel.onPropertyChange(LobbyViewModel::groupModels) {
             logger.debug { "groups update" }
-            groupsWidget.update(it.values.toList())
+            groupsWidget.update(listOf(it.values.last())) // TODO: Fix this!
         }
     }
 }
