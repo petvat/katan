@@ -15,6 +15,7 @@ import ktx.scene2d.Scene2DSkin
 import ktx.scene2d.scene2d
 
 abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
+    private val logger = KotlinLogging.logger { }
     private val vp = ScreenViewport()
     private val scaleFactor = 3
     protected val stage: Stage
@@ -24,18 +25,14 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
     init {
         vp.unitsPerPixel = 1f / scaleFactor
         stage = Stage(vp, game.batch)
-
         // stage.isDebugAll = true
     }
-
-    val logger = KotlinLogging.logger { }
-
+    
     override fun resize(width: Int, height: Int) {
         stage.viewport.update(width, height, true)
     }
 
     /**
-     * TODO: Might be possible to do EventBus += this, have not checked.
      */
     override fun show() {
         inputMultiplexer = InputMultiplexer()

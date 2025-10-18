@@ -10,18 +10,53 @@ import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.util.requireValues
 import io.github.petvat.katan.ui.model.GameViewModel
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 
 /**
+ * Represents a renderable entity.
+ *
+ * @property texture The texture to be rendered
+ * @property x The x position
+ * @property y The y position
+ * @property depth The depth of the texture, used for ordering
+ * @property contains Determines whether some point is inside this renderable
+ * @property visible If it should be rendered
+ */
+data class Renderable(
+    val texture: TextureRegion,
+    val x: Float,
+    val y: Float,
+    val depth: Int,
+    val contains: (x: Float, y: Float) -> Boolean,
+    var visible: Boolean = true
+)
+
+/**
  * Board renderer for LibGDX.
  */
-class BoardGraphic(
+class BoardView(
     override val viewModel: GameViewModel,
     private val batch: SpriteBatch,
     private val assets: Assets,
     private val layout: Layout
-) : Graphic<GameViewModel> {
+) : View<GameViewModel> {
+
+    private val renderables = mutableListOf<Renderable>()
+
+
+    /*
+    TODO: Introduce this.
+
+    Map from logical coordinate to renderable.
+    Map<Coordinates, Renderable>
+
+    Frontier maps - on demand? Nah, needs to be efficient.
+
+     Sort it after?
+
+     */
 
     private var settlementFrontierMap: Map<ICoordinates, PCoordinate> = mapOf()
 
@@ -69,15 +104,26 @@ class BoardGraphic(
     /**
      * The texture that is rendered on highligthed intersections.
      */
-    private lateinit var intersectionHighLightTex: TextureRegion
+    private lateinit var intersectionZoneTexure: TextureRegion
 
     /**
      * The radius of the intersection hightlight clickable area in pixels.
      */
-    private val intersectionHighLightTextRadius = 20
-
+    private val intersectionZoneRadius = 20
 
     init {
+
+        // TODO: use this.
+//        val tileTexes = mapIslandTextures() + mapSeaShoreTextures(3) + mapSeaTextures(3)
+//
+//        renderables += tileTexes
+//            .map { (coord, tex) -> Renderable(tex, coord.x.toFloat(), coord.y.toFloat(), 0, { _, _ -> false }) }
+//            .toList()
+//
+//        renderables += tokenRenderMap
+//            .map { (coord, tex) -> Renderable(tex, coord.x.toFloat(), coord.y.toFloat(), 1, { _, _ -> false }) }
+//            .toList()
+
         val mapIslandText = mapIslandTextures()
         tileRenderMap =
             (mapIslandText + mapSeaShoreTextures(3) + mapSeaTextures(4)) as MutableMap<PCoordinate, TextureRegion>
@@ -85,6 +131,8 @@ class BoardGraphic(
         // NOTE: Uses doubled coordinates
         val hexes = viewModel.tilesDoubled.map { it.hexCoordinate }
         intersectionMap = mapIntersectionCoordinates(layout, hexes)
+
+        // TODO: Map edges
 
         registerOnPropertyChanges()
     }
@@ -105,8 +153,8 @@ class BoardGraphic(
                 circleContains(
                     phys.x.toInt(),
                     phys.y.toInt(),
-                    intersectionHighLightTextRadius,
-                    x,
+                    intersectionZoneRadius,
+                    x, // closure
                     y
                 )
             }?.key
@@ -114,11 +162,11 @@ class BoardGraphic(
 
         if (viewModel.settlementPlacingMode) {
             checkContains(settlementFrontierMap).let {
-                viewModel.handleBuild(BuildKind.Village(VillageKind.CITY), it as Coordinates)
+                viewModel.handleBuild(BuildKind.Village(VillageKind.SETTLEMENT), it!!)
             }
         } else if (viewModel.cityPlacingMode) {
             checkContains(cityFrontierMap).let {
-                viewModel.handleBuild(BuildKind.Village(VillageKind.CITY), it as Coordinates)
+                viewModel.handleBuild(BuildKind.Village(VillageKind.CITY), it!!)
             }
         }
     }
@@ -136,42 +184,48 @@ class BoardGraphic(
 
         batch.begin()
 
+        // Draw tiles
+        drawMap(tileRenderMap)
+        // draw tokens
+        drawMap(
+            tokenRenderMap,
+            functionY = { coord, tex -> coord.y.roundToInt().toFloat() - (tex.regionHeight / 2) + 5 })
+        // draw road
+        drawMap(roadRenderMap)
+        // draw village
+        drawMap(villageRenderMap)
+
         // TODO: Atomicity - what if viewModel changes during this?
         if (viewModel.roadPlacingMode) {
             drawAll(
                 roadFrontierMap.values.toList(),
-                intersectionHighLightTex
+                intersectionZoneTexure
             ) // TODO: CHANGE
         }
         if (viewModel.settlementPlacingMode) {
             drawAll(
                 settlementFrontierMap.values.toList(),
-                intersectionHighLightTex
+                intersectionZoneTexure
             )
         }
         if (viewModel.cityPlacingMode) {
             drawAll(
                 cityFrontierMap.values.toList(),
-                intersectionHighLightTex
+                intersectionZoneTexure
             )
         }
-
-        // Draw tiles
-        drawMap(tileRenderMap)
-        // draw tokens
-        drawMap(tokenRenderMap, functionY = { coord, tex -> coord.y.toFloat() - (tex.regionHeight / 2) + 5 })
-        // draw road
-        drawMap(roadRenderMap)
-        // draw village
-        drawMap(villageRenderMap)
 
         batch.end()
     }
 
     private fun drawMap(
         map: Map<PCoordinate, TextureRegion>,
-        functionX: (PCoordinate, TextureRegion) -> Float = { coord, tex -> coord.x.toFloat() - tex.regionWidth / 2 },
-        functionY: (PCoordinate, TextureRegion) -> Float = { coord, tex -> coord.y.toFloat() - tex.regionHeight / 2 }
+        functionX: (PCoordinate, TextureRegion) -> Float = { coord, tex ->
+            coord.x.roundToInt().toFloat() - tex.regionWidth / 2
+        },
+        functionY: (PCoordinate, TextureRegion) -> Float = { coord, tex ->
+            coord.y.roundToInt().toFloat() - tex.regionHeight / 2
+        }
     ) {
         map.forEach { (coord, tex) ->
             batch.draw(tex, functionX(coord, tex), functionY(coord, tex))
@@ -184,6 +238,14 @@ class BoardGraphic(
     ): Map<ICoordinates, PCoordinate> {
         return HexUtils.intersectionCoordinates(layout, hexCoordinates)
     }
+
+    private fun mapEdgeCoordinates(
+        layout: Layout,
+        hexCoordinates: List<HexCoordinates>
+    ): Map<ICoordinates, PCoordinate> {
+        return HexUtils.edgeCoordinates(layout, hexCoordinates)
+    }
+
 
     /**
      * Maps Island textures. Tiles as well as tokens.

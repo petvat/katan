@@ -1,19 +1,16 @@
 package io.github.petvat.katan.ui.ktx.view
 
-import com.badlogic.gdx.Input
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Align
 import io.github.petvat.katan.ui.model.StartMenuViewModel
 import ktx.actors.onChangeEvent
-import ktx.actors.onKeyUp
 import ktx.scene2d.*
 
 
 class StartMenuView(
     viewModel: StartMenuViewModel,
     skin: Skin
-) : View<StartMenuViewModel>(skin, viewModel), KTable {
+) : KtxView<StartMenuViewModel>(skin, viewModel), KTable {
 
     // private val  settingsWidget
 

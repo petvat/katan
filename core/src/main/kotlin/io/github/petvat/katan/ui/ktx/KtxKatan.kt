@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.kotcrab.vis.ui.VisUI
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.controller.NioController
-import io.github.petvat.katan.model.KatanModel
+import io.github.petvat.katan.controller.GameService
+import io.github.petvat.katan.model.ClientState
 import io.github.petvat.katan.ui.Assets
 import io.github.petvat.katan.ui.ktx.screen.*
 import io.github.petvat.katan.ui.model.ScreenType
@@ -17,12 +17,12 @@ import ktx.app.KtxGame
  * Main class for LibGDX view context.
  *
  */
-class KtxKatan(val model: KatanModel) :
+class KtxKatan(val model: ClientState) :
     KtxGame<AbstractScreen>() {
 
     companion object {
-        const val VH = 200f
-        const val VW = 200f
+        const val VH = 400f
+        const val VW = 400f
     }
 
     private val logger = KotlinLogging.logger { }
@@ -31,9 +31,9 @@ class KtxKatan(val model: KatanModel) :
 
     lateinit var batch: SpriteBatch
 
-    private lateinit var _controller: NioController
+    private lateinit var _controller: GameService
 
-    var controller: NioController
+    var controller: GameService
         get() = _controller
         set(value) {
             _controller = value
@@ -58,8 +58,7 @@ class KtxKatan(val model: KatanModel) :
         assets = Assets()
         batch = SpriteBatch()
 
-        // loadJsonSkin()
-        loadVisUISkin()
+        loadUISkin()
 
         assert(VisUI.isLoaded())
 
@@ -70,5 +69,11 @@ class KtxKatan(val model: KatanModel) :
         addScreen(LoginScreen(this))
 
         setScreen<MenuScreen>()
+    }
+
+    override fun dispose() {
+        disposeSkin()
+        batch.dispose()
+        assets.dispose()
     }
 }

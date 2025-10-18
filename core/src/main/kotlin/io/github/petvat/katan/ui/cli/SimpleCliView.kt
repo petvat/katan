@@ -28,7 +28,7 @@ class SimpleCliView(val model: KatanModel) {
  * Simple CLI view.
  *
  */
-//class SimpleCliView(val model: KatanModel) : KatanUI, Runnable, EventListener {
+//class SimpleCliView(val gameState: KatanModel) : KatanUI, Runnable, EventListener {
 //    private val scanner = Scanner(System.`in`)
 //
 //    private lateinit var _controller: SimpleCliInputController // Backing property
@@ -117,7 +117,7 @@ class SimpleCliView(val model: KatanModel) {
 //
 //    fun showLobbyView() {
 //        println("Groups")
-//        for ((i, session) in model.groups.withIndex()) {
+//        for ((i, session) in gameState.groups.withIndex()) {
 //            println("$i: ${session.users}, joinable: ${session.joinable}")
 //        }
 //    }

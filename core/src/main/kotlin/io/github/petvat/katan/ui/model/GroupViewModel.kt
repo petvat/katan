@@ -1,12 +1,13 @@
 package io.github.petvat.katan.ui.model
 
-import io.github.petvat.katan.controller.RequestController
+import io.github.petvat.katan.controller.GameService
 import io.github.petvat.katan.event.*
+import io.github.petvat.katan.model.GroupState
 import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 
 class GroupViewModel(
-    private val group: PrivateGroupDTO, // <- TODO
-    private val outController: RequestController,
+    private val group: GroupState,
+    private val outController: GameService,
     private val transitionService: ViewTransitionService,
 ) : ViewModel() {
 

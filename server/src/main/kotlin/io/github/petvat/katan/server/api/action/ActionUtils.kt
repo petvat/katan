@@ -38,7 +38,7 @@ object ActionUtils {
                 "$playerNumber built a $buildKind.",
             )
 
-        // Alert players
+        // Alert userToPlayerId
         game.players.forEach { player ->
             responses[player.playerNumber] = dto
         }

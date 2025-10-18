@@ -6,7 +6,6 @@ import io.github.petvat.katan.server.group.Game
 import io.github.petvat.katan.shared.protocol.Response
 
 /**
- * This is an implementation of the Command pattern.
  * All actions should implement the Action interface.
  *
  * @property execute Performs the action command. [execute] does not catch any thrown exceptions.
@@ -27,7 +26,6 @@ interface Action {
      * @return responses for each player.
      */
     fun execute(): ExecutionResult<Response>
-
 }
 
 

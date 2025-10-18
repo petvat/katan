@@ -2,13 +2,15 @@ package io.github.petvat.katan.server.nio
 
 import io.github.petvat.katan.shared.model.SessionId
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.server.api.KatanApi
-import io.github.petvat.katan.server.client.*
+import io.github.petvat.katan.server.service.client.Auth
+import io.github.petvat.katan.server.service.client.ClientId
+import io.github.petvat.katan.server.service.client.ClientRegistry
+import io.github.petvat.katan.server.service.client.ConnectedClient
+import io.github.petvat.katan.server.service.service.RequestProcessor
+import io.github.petvat.katan.server.service.session.Session
+import io.github.petvat.katan.server.service.session.SessionRegistry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
@@ -18,22 +20,11 @@ import java.nio.channels.SocketChannel
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-// TODO: MOVE
-/**
- * Avoid race conditions by aquiring its lock from this point.
- */
-val clientLockMap = ConcurrentHashMap<SessionId, Mutex>()
-
-suspend fun <R> wrapWithMutex(mutex: Mutex, function: suspend () -> R): suspend () -> R {
-    return {
-        mutex.withLock {
-            function()
-        }
-    }
-}
 
 /**
  * This class represents a NIO server.
+ *
+ * TODO: Make abstract with abstract func respond()
  *
  * @property start Starts up the server on a single thread
  * @property acceptConnection Accepts a new client connection
@@ -42,166 +33,130 @@ suspend fun <R> wrapWithMutex(mutex: Mutex, function: suspend () -> R): suspend 
  *
  */
 class NioServer(
-    private val requestChannel: Channel<Pair<SessionId, String>>,
-    private val responseChannel: Channel<Pair<SocketChannel, String>>,
-    private val testMode: Boolean = false
+    private val requestProcessor: RequestProcessor,
+    private val sessionRegistry: SessionRegistry,
+    private val clientRegistry: ClientRegistry
 ) {
     private val logger = KotlinLogging.logger { }
+
+    private val requestChannel = Channel<Pair<SessionId, String>>()
+
+    private val responseChannel = Channel<Pair<SocketChannel, String>>()
 
     private val serverChannel = ServerSocketChannel.open()
 
     private val selector = Selector.open()
 
-    private val clients = ConcurrentHashMap<SessionId, SocketChannel>()
-
     private val serverScope = CoroutineScope(Dispatchers.Default)
 
     private val clientBuffers = ConcurrentHashMap<SocketChannel, Pair<ByteBuffer, StringBuilder>>()
 
-    private fun generateSessionId(): SessionId {
-        return SessionId(UUID.randomUUID().toString());
+
+    // TODO: Move
+    private fun generateSessionId() = SessionId(UUID.randomUUID().toString())
+
+    private suspend fun processSelectedKeys() {
+        selector.selectedKeys().forEach {
+            when {
+                it.isAcceptable && it.channel() is ServerSocketChannel -> {
+                    acceptConnection()
+                }
+
+                it.isReadable && it.channel() is SocketChannel -> acceptClientRequest(it)
+            }
+        }
+        selector.selectedKeys().clear()
     }
 
-    /**
-     * Main server entry.
-     *
-     * @throws IOException Close connections.
-     */
-    fun start(portNumber: Int) {
+    fun start(portNumber: Int, requestPool: Int = 3, responsePool: Int = 1) {
         try {
             serverChannel.configureBlocking(false)
             serverChannel.bind(InetSocketAddress(portNumber))
             serverChannel.register(selector, SelectionKey.OP_ACCEPT)
 
-            // This coroutine acts as the producer. Listens to client requests and enqueues them if request must be handled.
             serverScope.launch(Dispatchers.IO) {
                 while (true) {
-                    if (selector.select() == 0) {
-                        continue
+                    if (selector.select() > 0) {
+                        processSelectedKeys()
                     }
-                    selector.selectedKeys().forEach { key ->
-                        if (key.isAcceptable) {
-                            when (val channel = key.channel()) {
-                                is ServerSocketChannel -> acceptConnection(channel)
-                                else -> throw RuntimeException("Unknown channel.")
-                            }
-                        } else if (key.isReadable) {
-                            logger.debug { "Readable request" }
-                            when (val channel = key.channel()) {
-                                is SocketChannel -> acceptClientRequest(key)
-                                else -> throw RuntimeException("Unknown channel.")
-                            }
-                        }
-                    }
-                    selector.selectedKeys().clear()
                 }
             }
 
             // This coroutine acts as consumer. Dequeues from request queue, generates response and enqueues it onto response queue.
-            val requestProcessorsPoolSize = 3
-            repeat(requestProcessorsPoolSize) {
+            repeat(requestPool) {
                 serverScope.launch {
                     for ((client, req) in requestChannel) {
-                        if (testMode) { // HACK
-                            // echo
-                            responseCallback(mapOf(client to req))
-                        } else {
-                            KatanApi.handleRequest(req, client, ::responseCallback)
-                        }
+                        requestProcessor.handle(
+                            clientRegistry[sessionRegistry[client].belongsTo],
+                            req,
+                            ::responseCallback
+                        )
                     }
                 }
             }
 
-            val responsePoolSize = 3
-            repeat(responsePoolSize) {
+            repeat(responsePool) {
                 serverScope.launch(Dispatchers.IO) {
                     for ((client, res) in responseChannel) {
                         handleResponse(client, res)
+                        // MessageWriter.write()
                     }
                 }
             }
+
         } catch (e: Exception) {
             logger.error { "${e.message}.\nClosing connections." }
             serverScope.cancel()
             serverChannel.close()
         }
+
     }
 
-    private suspend fun responseCallback(responses: Map<SessionId, String>) {
-        //val json = responses.mapValues { KatanJson.messageToJson(it.value) }
+    private suspend fun responseCallback(responses: Map<Session, String>) {
         responses.forEach { (ch, res) ->
-            responseChannel.send(clients[ch]!! to res)
+            responseChannel.send(ch.socketChannel to res)
         }
     }
 
     private fun handleResponse(client: SocketChannel, response: String) {
         val buffer = ByteBuffer.wrap(response.toByteArray())
-        var writes = 0
         while (buffer.hasRemaining()) {
             client.write(buffer)
-            writes++
         }
         // TODO: Now blocking but could use channel's MessageWriter
-
-        logger.debug { "Writes: $writes" }
-
     }
 
     /**
      * Connect a new client to server.
+     *
+     * TODO: Why withConetxt?
      */
-    private fun acceptConnection(serverChannel: ServerSocketChannel) {
-        val client = serverChannel.accept()
-        val socket = client.socket()
-        logger.info { "CONNECTED: ${socket.inetAddress.hostAddress} : ${socket.port}" }
-        client.configureBlocking(false)
-        val key = client.register(selector, SelectionKey.OP_READ)
-        // val clientConn = ClientConnection(client)
+    private suspend fun acceptConnection() = withContext(Dispatchers.IO) {
+        val clientSocket = serverChannel.accept()
+        logger.info { "CONNECTED: ${clientSocket.socket().inetAddress.hostAddress} : ${clientSocket.socket().port}" }
+        clientSocket.configureBlocking(false)
 
-        // Add dedicated client buffer
-        clientBuffers[client] = ByteBuffer.allocate(4096) to StringBuilder()
+        val key = clientSocket.register(selector, SelectionKey.OP_READ)
 
         // Attach ClientSession to track state
-        val sid = generateSessionId()
-        key.attach(sid)
-        ClientRepository.addClient(
-            ConnectedClient(
-                sessionId = sid,
-                activity = Idle,
-                auth = UnAuth
-            )
-        )
-        // ClientService.addClient(GuestState(sessionId = sid))
-        clients[sid] = client
+        val clientId = ClientId(UUID.randomUUID().toString())
+        val session = Session(clientId, SessionId(UUID.randomUUID().toString()), clientSocket)
+        val client = ConnectedClient(clientId, Auth.Unauth, mutableListOf(session))
 
-        // HACK:
-        clientLockMap[sid] = Mutex()
-        logger.debug { "New client is given session ID: $sid." }
+        sessionRegistry.add(session)
+        clientRegistry.add(client)
 
-        // Response with SID
-        // TODO: Mutex!
-        // logger.debug { "Send back ACK." }
+        key.attach(session)
 
-        // TODO: Send as sessionID only! Decouple Katan-specific logic
+        // Add dedicated client buffer
+        // TODO: Add to MessageWriter
+        clientBuffers[clientSocket] = ByteBuffer.allocate(4096) to StringBuilder()
 
-//        handleResponse(
-//            client, "sid: ${sid.value}"
+        logger.debug { "New client is given session ID: ${session.id}." }
 
-//                MessageFactory.create(
-//                    messageType = MessageType.ACK,
-//                    data = Response.ConnectAck(sid.value),
-//                    description = "Client was assigned a session ID.",
-//                    success = true
-//                )
-
-        //)
-
-
+        val token = "token:${UUID.randomUUID()}"
+        responseChannel.send(clientSocket to token)
     }
-
-
-    // clients += clientConn
-
 
     /**
      * Read from a channel into a buffer.
@@ -211,6 +166,8 @@ class NioServer(
         val delimiter = '\n'
 
         logger.debug { "Begin read." }
+
+        // MessageReader.read() // MessageReader(blocking = true)
 
         try {
             val bytesRead = socketChannel.read(buf) // NOTE: Could overflow the buffer.
@@ -222,14 +179,10 @@ class NioServer(
             // partial message in the buffer
             if (bytesRead == -1) {
                 logger.error { "Read failed." }
-                val socket = socketChannel.socket()
-                logger.info { "DISCONNETED: ${socket.inetAddress.hostAddress} : ${socket.port}" }
-                clientBuffers -= socketChannel
-                socketChannel.close()
+                disconnectClient(socketChannel)
                 return null
             }
             while (buf.hasRemaining()) {
-
                 val c = buf.get().toInt().toChar()
                 if (c == delimiter) {
                     if (buf.hasRemaining()) {
@@ -256,42 +209,41 @@ class NioServer(
             disconnectClient(socketChannel)
             return null
         }
-
     }
 
     private fun disconnectClient(socketChannel: SocketChannel) {
-        logger.info { "DISCONNECTED: ${socketChannel.remoteAddress}." }
 
         val key = socketChannel.keyFor(selector)
         val sid = key.attachment() as SessionId
 
-        clientBuffers -= socketChannel
-        clients -= sid
-        clientLockMap -= sid
+        clientBuffers.remove(socketChannel)
+        sessionRegistry.remove(sid)
 
         // Cancel the selection key and close the channel
         key.cancel()
         socketChannel.close()
-        logger.debug { "Disconnect clean-up successful." }
+        logger.info { "DISCONNECTED: ${socketChannel.remoteAddress}." }
     }
-
 
     /**
      * Handle new client request.
      */
     private suspend fun acceptClientRequest(key: SelectionKey) = withContext(Dispatchers.IO) {
         val clientChannel = key.channel() as SocketChannel
+        val session = key.attachment() as Session
 
-        val sid = key.attachment() as SessionId
         logger.debug { "Aquire client lock attempt." }
-        val mutex = clientLockMap[sid]!!
-        wrapWithMutex(mutex) {
-            val req = channelRead(clientChannel)
 
-            if (req != null) {
-                logger.info { "COMPLETE MSG: $req" }
-                requestChannel.send(sid to req) // NOTE: Or client channel here if stateful
-            }
-        }.invoke()
+        val req = channelRead(clientChannel)
+
+        if (req != null) {
+            logger.debug { "COMPLETE MSG: $req" }
+            requestChannel.send(session.id to req) // NOTE: Or client channel here if stateful
+        }
+
+        // TODO: Shouldn't block. Use MessageWriter and remove lock. Implement hierarchical locking of resources in LockManager.
+//        lockManager.callInMutex(sid) {
+//
+//        }
     }
 }

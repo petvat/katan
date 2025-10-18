@@ -1,5 +1,6 @@
 package io.github.petvat.katan.shared.protocol
 
+import io.github.petvat.katan.shared.UserId
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
 import io.github.petvat.katan.shared.model.PermissionLevel
@@ -32,8 +33,8 @@ enum class MTypes() {
 
 @Serializable
 sealed class Request {
-    abstract val requestId: Int
-
+    abstract val seq: Int
+    abstract val channel: String
     abstract val type: MTypes
 
 
@@ -41,14 +42,15 @@ sealed class Request {
 
     @Serializable
     @SerialName("reg-guest")
-    data class GuestRegister(override val requestId: Int, val name: String) : Request() {
+    data class GuestRegister(override val seq: Int, val name: String) : Request() {
         @Transient
         override val type = MTypes.REQ_REG_GST
     }
 
+
     @Serializable
     @SerialName("reg")
-    data class Register(override val requestId: Int, val username: String, val psw: String) : Request() {
+    data class Register(override val seq: Int, val username: String, val psw: String) : Request() {
         @Transient
         override val type = MTypes.REQ_REG
     }
@@ -58,14 +60,14 @@ sealed class Request {
 
     @Serializable
     @SerialName("join")
-    data class Join(override val requestId: Int, val groupId: String) : Request() {
+    data class Join(override val seq: Int, val groupId: String) : Request() {
         @Transient
         override val type = MTypes.REQ_JOIN
     }
 
     @Serializable
     @SerialName("create")
-    data class Create(override val requestId: Int, val settings: Settings) : Request() {
+    data class Create(override val seq: Int, val settings: Settings) : Request() {
         @Transient
         override val type = MTypes.REQ_CREATE
     }
@@ -74,21 +76,21 @@ sealed class Request {
     // GROUP REQUESTS
     @Serializable
     @SerialName("leave")
-    data class Leave(override val requestId: Int) : Request() {
+    data class Leave(override val seq: Int) : Request() {
         @Transient
         override val type = MTypes.REQ_LEAVE
     }
 
     @Serializable
     @SerialName("chat")
-    data class Chat(override val requestId: Int, val message: String) : Request() {
+    data class Chat(override val seq: Int, val message: String) : Request() {
         @Transient
         override val type = MTypes.REQ_CHAT
     }
 
     @Serializable
     @SerialName("init")
-    data class Init(override val requestId: Int) : Request() {
+    data class Init(override val seq: Int) : Request() {
         @Transient
         override val type = MTypes.REQ_INIT
     }
@@ -98,35 +100,35 @@ sealed class Request {
 
     @Serializable
     @SerialName("rolldice")
-    data class RollDice(override val requestId: Int) : Request() {
+    data class RollDice(override val seq: Int) : Request() {
         @Transient
         override val type = MTypes.REQ_GAMEACTION
     }
 
     @Serializable
     @SerialName("move_robber")
-    data class MoveRobber(override val requestId: Int, val coordinates: HexCoordinates) : Request() {
+    data class MoveRobber(override val seq: Int, val coordinates: HexCoordinates) : Request() {
         @Transient
         override val type = MTypes.REQ_GAMEACTION
     }
 
     @Serializable
     @SerialName("build")
-    data class Build(override val requestId: Int, val buildkind: BuildKind, val coordinates: Coordinates) : Request() {
+    data class Build(override val seq: Int, val buildkind: BuildKind, val coordinates: Coordinates) : Request() {
         @Transient
         override val type = MTypes.REQ_GAMEACTION
     }
 
     @Serializable
     @SerialName("init_build")
-    data class BuildInitSettl(override val requestId: Int, val coordinates: Coordinates) : Request() {
+    data class BuildInitSettl(override val seq: Int, val coordinates: Coordinates) : Request() {
         @Transient
         override val type = MTypes.REQ_GAMEACTION
     }
 
     @Serializable
     @SerialName("steal")
-    data class Steal(override val requestId: Int, val playerNumber: Int) : Request() {
+    data class Steal(override val seq: Int, val playerNumber: Int) : Request() {
         @Transient
         override val type = MTypes.REQ_GAMEACTION
     }
@@ -135,7 +137,7 @@ sealed class Request {
     @Serializable
     @SerialName("init_trade")
     data class InitTrade(
-        override val requestId: Int,
+        override val seq: Int,
         val targetPlayers: Set<Int>,
         val offer: ResourceMap,
         val inReturn: ResourceMap
@@ -145,8 +147,21 @@ sealed class Request {
     }
 
     @Serializable
+    @SerialName("res_trade")
+    data class RespondTrade(
+        override val seq: Int,
+        val targetPlayers: Set<Int>,
+        val tradeId: Int,
+        val accept: Boolean
+    ) : Request() {
+        @Transient
+        override val type = MTypes.REQ_GAMEACTION
+    }
+
+
+    @Serializable
     @SerialName("end_turn")
-    data class EndTurn(override val requestId: Int) : Request() {
+    data class EndTurn(override val seq: Int) : Request() {
         @Transient
         override val type = MTypes.REQ_GAMEACTION
     }
@@ -154,7 +169,7 @@ sealed class Request {
 
     @Serializable
     @SerialName("claim_vict")
-    data class ClaimVictory(override val requestId: Int) : Request() {
+    data class ClaimVictory(override val seq: Int) : Request() {
         @Transient
         override val type = MTypes.REQ_GAMEACTION
     }
@@ -170,19 +185,33 @@ enum class ErrorCode {
 }
 
 @Serializable
-sealed class Response {
+sealed interface Response {
 
-    abstract val description: String?
+    val description: String
+    val seq: Int
 
     // LOBBY RESPONSES
 
     @Serializable
     @SerialName("registered")
-    data class Registered(val sid: String, override val description: String?) : Response()
+    data class Registered(
+        override val seq: Int,
+        val userId: String,
+        override val description: String = "Register success."
+    ) : Response
+
+//    @Serializable
+//    @SerialName("lobby_update")
+//    data class LobbyUpdate(val groupDTO: PublicGroupDTO, override val description: String?) : Response
+
 
     @Serializable
     @SerialName("lobby_update")
-    data class LobbyUpdate(val groupDTO: PublicGroupDTO, override val description: String?) : Response()
+    data class GroupUpdate(
+        val groupId: String,
+        val memberCount: Int,
+        val capacity: Int,
+    ) : Response
 
     @Serializable
     @SerialName("group_created")
@@ -191,7 +220,7 @@ sealed class Response {
         val level: PermissionLevel,
         val settings: Settings,
         override val description: String?
-    ) : Response()
+    ) : Response
 
     // GROUP RESPONSES
 
@@ -200,22 +229,31 @@ sealed class Response {
      */
     @Serializable
     @SerialName("user_joined")
-    data class UserJoined(val sessionId: String, val name: String, override val description: String?) : Response()
+    data class UserJoined(
+        override val seq: Int,
+        val userId: String,
+        val name: String,
+        override val description: String = "User joined group."
+    ) : Response
 
     @Serializable
     @SerialName("joined_ok")
-    data class Joined(val groupDTO: PrivateGroupDTO, override val description: String?) : Response()
+    data class Joined(
+        val groupDTO: PrivateGroupDTO,
+        override val description: String = "You joined the group.",
+        override val seq: Int
+    ) : Response
 
     @Serializable
     @SerialName("user_left")
-    data class Left(val sessionId: String, override val description: String?) : Response()
+    data class Left(val sessionId: String, override val description: String?) : Response
 
     /**
      * NOTE: currently assumes that gameId is the same as the GroupId.
      */
     @Serializable
     @SerialName("game_init")
-    data class Init(val privateGameState: GameStateDTO, override val description: String?) : Response()
+    data class Init(val privateGameState: GameStateDTO, override val description: String?) : Response
 
     @Serializable
     @SerialName("dice_rolled")
@@ -224,10 +262,10 @@ sealed class Response {
         val roll1: Int,
         val roll2: Int,
         val resources: ResourceMap,
-        val othersResources: Map<Int, ResourceMap>,
+        val othersResources: Map<Int, Int>,
         val moveRobber: Boolean,
         override val description: String?
-    ) : Response()
+    ) : Response
 
     @Serializable
     @SerialName("new_build")
@@ -237,7 +275,7 @@ sealed class Response {
         val coordinates: Coordinates,
         val victoryPoints: Int,
         override val description: String?
-    ) : Response()
+    ) : Response
 
 
     @Serializable
@@ -247,15 +285,18 @@ sealed class Response {
         val thisPlayer: ResourceMap,
         val otherPlayers: Map<Int, ResourceMap>,
         override val description: String?
-    ) : Response()
+    ) : Response
 
+    /**
+     * @property from the Session ID
+     */
     @Serializable
     @SerialName("new_chat")
     data class Chat(
         val from: String,
         val message: String,
         override val description: String?
-    ) : Response()
+    ) : Response
 
     // GAME RESPONSES
     // IN COMMON : PlayerNumber
@@ -265,13 +306,13 @@ sealed class Response {
     data class VictoryClaimed(
         val winner: Int,
         override val description: String?
-    ) : Response()
+    ) : Response
 
     @Serializable
     @SerialName("end_turn")
     data class EndTurn(
         override val description: String?
-    ) : Response()
+    ) : Response
 
     @Serializable
     @SerialName("robber_moved")
@@ -279,7 +320,7 @@ sealed class Response {
         val playerNumber: Int,
         val coordinates: Coordinates,
         override val description: String?
-    ) : Response()
+    ) : Response
 
     @Serializable
     @SerialName("trade_inited")
@@ -290,7 +331,7 @@ sealed class Response {
         val offer: ResourceMap,
         val inReturn: ResourceMap,
         override val description: String?
-    ) : Response()
+    ) : Response
 
     @Serializable
     @SerialName("trade_response")
@@ -299,21 +340,21 @@ sealed class Response {
         val tradeId: Int,
         val accept: Boolean,
         override val description: String?
-    ) : Response()
+    ) : Response
 
 
     // ALL
 
     @Serializable
     @SerialName("error")
-    data class Error(val requestId: Int, val code: ErrorCode, override val description: String?) : Response()
+    data class Error(val seq: Int, val code: ErrorCode, override val description: String?) : Response
 
     /**
      * Used for simple acknowledgement responses.
      */
     @Serializable
     @SerialName("ok")
-    data class OK(val requestId: Int, override val description: String?) : Response()
+    data class OK(val requestId: Int, override val description: String?) : Response
 }
 
 

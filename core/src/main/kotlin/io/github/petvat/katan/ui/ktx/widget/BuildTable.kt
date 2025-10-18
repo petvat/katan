@@ -14,16 +14,35 @@ import ktx.scene2d.*
 class BuildTable(
     skin: Skin,
     val callback: (Event) -> Unit, // TODO: Command
-) : Table(skin), KTable {
+) : Table(skin), KTable { // TODO: This should be a window! Then we need a command view -> screen, using eventbus.
+
+
+    val scrollPaneWidget: ScrollPaneWidget<BuildItemWidget>
 
     init {
-        addBuildItem("Settlement", VillageKind.SETTLEMENT.cost, BuildKind.Village(VillageKind.SETTLEMENT))
-        row()
-        addBuildItem("City", VillageKind.CITY.cost, BuildKind.Village(VillageKind.SETTLEMENT))
+
+        scrollPaneWidget = scene2d.scrollWidget(skin) { }
+
+        val settlItem =
+            addBuildItem("Settlement", VillageKind.SETTLEMENT.cost, 1, BuildKind.Village(VillageKind.SETTLEMENT))
+        val cityItem = addBuildItem("City", VillageKind.CITY.cost, 2, BuildKind.Village(VillageKind.SETTLEMENT))
+
+        scrollPaneWidget.add(settlItem)
+        scrollPaneWidget.add(cityItem)
+
+        add(scrollPaneWidget).growX()
+
+//        add(settlItem).growX()
+//        row()
+//        add(cityItem)
     }
 
-    private fun addBuildItem(title: String, cost: ResourceMap, buildKind: BuildKind): BuildItemWidget {
-        return scene2d.buildItem(title, cost, skin) {
+    fun toggleActive() {
+        isVisible = !isVisible
+    }
+
+    private fun addBuildItem(title: String, cost: ResourceMap, vp: Int, buildKind: BuildKind): BuildItemWidget {
+        return scene2d.buildItem(title, cost, vp, skin) {
             onChangeEvent { this@BuildTable.callback(PlaceBuildingCommand(buildKind)) }
         }
     }

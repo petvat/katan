@@ -31,8 +31,8 @@ class OtherPlayerWidget(
 
     init {
         background = skin.getDrawable("area")
-        add(nameLabel).growX().colspan(2)
-        row()
+        add(nameLabel).growX().colspan(2).padLeft(5f).padTop(10f)
+        row().padLeft(5f).padRight(5f).padBottom(10f)
         add(vpLabel).space(5f)
         add(cc).space(5f)
         //row()

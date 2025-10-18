@@ -7,6 +7,7 @@ import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.PermissionLevel
+import io.github.petvat.katan.shared.protocol.ErrorCode
 import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 
 sealed interface Event
@@ -65,8 +66,7 @@ data class GroupUpdateEvent(
     val gameMode: GameMode,
     val clientCount: Int,
     val maxClient: Int
-) :
-    Event
+) : Event
 
 
 /**
@@ -120,8 +120,7 @@ data class BuildEvent(val playerNumber: Int, val buildKind: BuildKind, val coord
 /**
  * This event fires if there occured and error.
  */
-data class ErrorEvent(val reason: String) : Event
-
+data class ErrorEvent(val reason: String, val code: ErrorCode? = null) : Event
 
 /**
  * This event fires after an initial building has been built.

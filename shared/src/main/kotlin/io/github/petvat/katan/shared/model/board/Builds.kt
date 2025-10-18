@@ -12,8 +12,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class BuildKind {
-    data class Village(val kind: VillageKind) : BuildKind()
-    data class Road(val kind: RoadKind) : BuildKind()
+    abstract val cost: ResourceMap
+
+
+    data class Village(val kind: VillageKind, override val cost: ResourceMap) : BuildKind()
+    data class Road(val kind: RoadKind, override val cost: ResourceMap) : BuildKind()
 }
 
 @Serializable
@@ -27,7 +30,7 @@ enum class RoadKind(val cost: ResourceMap) {
     ROAD(ResourceMap(1, 0, 0, 0, 1))
 }
 
-// TODO: MOVE TO SERVER MODULE
+// TODO: MOVE TO SERVER MODULE, DO IT
 
 /**
  * Represents a settlement or a city on the board.
@@ -38,16 +41,16 @@ enum class RoadKind(val cost: ResourceMap) {
  */
 class Village(
     val villageKind: VillageKind,
-    val owner: Player,
+    val owner: Int,
 ) {
-    fun harvest(resource: Resource) {
-        owner.inventory.transaction(resource, villageKind.productionNumber)
-    }
+//    fun harvest(resource: Resource) {
+//        owner.inventory.transaction(resource, villageKind.productionNumber)
+//    }
 }
 
 class Road(
     val roadKind: RoadKind,
-    val owner: Player
+    val owner: Int
 )
 
 /**

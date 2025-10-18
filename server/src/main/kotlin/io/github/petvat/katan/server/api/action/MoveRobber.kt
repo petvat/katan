@@ -27,11 +27,11 @@ class MoveRobber(
             return ExecutionResult.Failure(ErrorCode.DENIED, "Not your turn.")
         }
 
-        if (game.boardManager.moveRobber(tileCoordinate)) {
+        if (!game.boardManager.moveRobber(tileCoordinate)) {
             return ExecutionResult.Failure(ErrorCode.DENIED, "Cannot move robber to these coordinates..")
         }
 
-        // TODO: Check if nearby players, if true, go to steal state
+        // TODO: Check if nearby userToPlayerId, if true, go to steal state
 
         val moveRobberDTO = Response.RobberMoved(
             playerNumber,
@@ -42,7 +42,7 @@ class MoveRobber(
         game.players.forEach { player ->
             if (player.playerNumber == playerNumber) {
                 responses[playerNumber] =
-                    moveRobberDTO // Diff one, maybe with possible players to steal from?
+                    moveRobberDTO // Diff one, maybe with possible userToPlayerId to steal from?
 
             } else {
                 responses[playerNumber] =

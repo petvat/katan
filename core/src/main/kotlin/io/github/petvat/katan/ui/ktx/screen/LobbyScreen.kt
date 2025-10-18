@@ -12,16 +12,12 @@ class LobbyScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override lateinit var viewModel: LobbyViewModel
 
-    override fun show() {
-        super.show()
-    }
-
     override fun buildStage() {
-        viewModel = LobbyViewModel(game.controller, game.transitionService, game.model.groups)
+        viewModel = LobbyViewModel(game.controller, game.transitionService, game.model.groupModels)
         logger.debug { "Building lobby" }
         stage.actors {
             stage.addActor(LobbyView(viewModel, Scene2DSkin.defaultSkin))
-            stage.addActor(error(Scene2DSkin.defaultSkin) { isVisible = false })
+            // stage.addActor(error(Scene2DSkin.defaultSkin) { isVisible = false })
         }
     }
 }

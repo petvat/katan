@@ -1,26 +1,15 @@
 package io.github.petvat.katan.ui.model
 
-import io.github.petvat.katan.controller.RequestController
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.petvat.katan.controller.GameService
 import io.github.petvat.katan.event.*
+import io.github.petvat.katan.model.GameState
+import io.github.petvat.katan.model.GroupState
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.board.*
 import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.protocol.dto.GameStateDTO
-import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 
-data class OtherPlayerViewModel(
-    val playerNumber: Int,
-    val name: String,
-    val color: PlayerColor,
-    val victoryPoints: Int,
-    val cardCount: Int
-)
-
-data class ThisPlayerViewModel(
-    val inventory: ResourceMap,
-    val victoryPoints: Int,
-)
 
 /**
  *
@@ -29,10 +18,27 @@ data class ThisPlayerViewModel(
  * Interface between Model and view. Holds data that is updated on events.
  */
 class GameViewModel(
-    private val outController: RequestController,
-    group: PrivateGroupDTO,
-    game: GameStateDTO,
+    private val outController: GameService, // TODO: Use gameState instead! Model does the logic, viewmodel simply makes the data manageable by a view.
+    group: GroupState,
+    game: GameState,
 ) : ViewModel() {
+
+    companion object {
+        data class OtherPlayerViewModel(
+            val playerNumber: Int,
+            val name: String,
+            val color: PlayerColor,
+            val victoryPoints: Int,
+            val cardCount: Int
+        )
+
+        data class ThisPlayerViewModel(
+            val inventory: ResourceMap,
+            val victoryPoints: Int,
+        )
+    }
+
+    private val logger = KotlinLogging.logger { }
 
     val tiles = game.board.tiles.toList()
 
@@ -50,6 +56,7 @@ class GameViewModel(
 
     // evtListener -> evtListener
 
+    // TODO: REMOVE
     var playerColors = game.otherPlayers.associate {
         it.playerNumber to PlayerColor.RED // TODO: Fix
     }
@@ -81,7 +88,7 @@ class GameViewModel(
      */
     var thisPlayerTurn = currentTurnPlayer == thisPlayerNumber
 
-    // TODO: Chat log view model. REMOVE!
+    // TODO: Chat log view gameState. REMOVE!
     var chatLogProperty: List<Pair<String, String>> by propertyNotify(group.chatLog)
 
     var lastGroupMessage: Pair<String, String> by propertyNotify("" to "") // Nice?
@@ -90,7 +97,7 @@ class GameViewModel(
         private set
 
     var buildModeProperty: Boolean by propertyNotify(false)
-        private set
+    // private set TODO: Change back to private, this is just for temp testing
 
     var diceRollProperty: Pair<Int, Int> by propertyNotify(Pair(-1, -1))
 
@@ -104,8 +111,8 @@ class GameViewModel(
         game.otherPlayers.map {
             OtherPlayerViewModel(
                 playerNumber = it.playerNumber,
-                name = "NAME",
-                color = PlayerColor.RED,
+                name = "TODO: Name, PlayerDTO needs ID.",
+                color = it.color,
                 cardCount = it.cityCount,
                 victoryPoints = it.victoryPoints
             )
@@ -149,6 +156,12 @@ class GameViewModel(
 
             is NextTurnEvent -> {
                 currentTurnPlayer = event.playerNumber
+                logger.debug { "Turn event, next player is $currentTurnPlayer." }
+                if (!setupPhase) {
+                    rollDiceModeProperty = true
+                } else {
+                    settlementPlacingMode = true
+                }
             }
 
             is PlaceInitialSettlementEvent -> {
@@ -168,6 +181,10 @@ class GameViewModel(
                     it.copy(
                         cardCount = event.otherPlayersCardCounts[it.playerNumber]!!
                     )
+                }
+
+                if (thisPlayerTurn) {
+                    buildModeProperty = true
                 }
             }
 
@@ -234,10 +251,6 @@ class GameViewModel(
         }
     }
 
-//    fun getChatLogProperty(): List<Pair<String, String>> {
-//        return group.chatLogProperty
-//    }
-
     fun handleChat(message: String) = outController.handleChat(message, null) // TODO: EH
 
     fun handleRollDice() = outController.handleRollDice()
@@ -287,11 +300,9 @@ class GameViewModel(
                 return@forEach
             }
             adjacentIntersectionCoordinates.toList()
-                .filter { aic -> !frontier.contains(aic) }
-                .forEach { aic ->
-                    if (isValidCoordinate(aic)) {
-                        frontier.add(aic)
-                    }
+                .filter { frontier.contains(it) && isValidCoordinate(it) }
+                .forEach {
+                    frontier += it
                 }
         }
         return frontier
@@ -299,7 +310,8 @@ class GameViewModel(
 
     /**
      * Get all possible coordinates for placing a road.
-     * @param player With respect to this player
+     *
+     * NOTE: Could be cool to have this in separate file as utils.
      */
     private fun updateRoadFrontier(): Set<EdgeCoordinates> {
         // logic:
@@ -350,24 +362,24 @@ class GameViewModel(
      * Checks whether player can build a city on coordinate.
      * The intersection needs to have a settlement.
      */
-    private fun canBuildCity(
-        coordinate: ICoordinates
-    ): Boolean {
-        return intersections
-            .filter { i -> i.village.owner == thisPlayerNumber && i.village.villageKind == VillageKind.CITY }
-            .map { i -> i.coordinate }
-            .contains(coordinate)
-    }
+//    private fun canBuildCity(
+//        coordinate: ICoordinates
+//    ): Boolean {
+//        return intersections
+//            .filter { i -> i.village.owner == thisPlayerNumber && i.village.villageKind == VillageKind.CITY }
+//            .map { i -> i.coordinate }
+//            .contains(coordinate)
+//    }
 
-    private fun canBuildVillage(
-        coordinate: ICoordinates,
-        villageKind: VillageKind
-    ): Boolean {
-        return when (villageKind) {
-            VillageKind.SETTLEMENT -> canBuildSettlement(coordinate)
-            VillageKind.CITY -> canBuildCity(coordinate)
-        }
-    }
+//    private fun canBuildVillage(
+//        coordinate: ICoordinates,
+//        villageKind: VillageKind
+//    ): Boolean {
+//        return when (villageKind) {
+//            VillageKind.SETTLEMENT -> canBuildSettlement(coordinate)
+//            VillageKind.CITY -> canBuildCity(coordinate)
+//        }
+//    }
 
     /**
      * Checks if an intersection coordinate exists on the board.
@@ -633,7 +645,7 @@ class GameViewModel(
 // NOTE: NOT NEEDED.
 // NOTE: REMEMBER TO IMPL!
 //    fun registerPropertyChanges() {
-//        model.onPropertyChange(KatanModel::game) {
+//        gameState.onPropertyChange(KatanModel::game) {
 //            paths = it.board.paths
 //            intersections = it.board.intersections
 //            currentTurnPlayer = it.turnPlayer
@@ -654,7 +666,7 @@ class GameViewModel(
 //                )
 //            }
 //        }
-//        model.onPropertyChange(KatanModel::group) {
+//        gameState.onPropertyChange(KatanModel::group) {
 //            chatLogProperty = it.chatLogProperty
 //        }
 //    }

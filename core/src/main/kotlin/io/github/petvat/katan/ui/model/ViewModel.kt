@@ -5,12 +5,6 @@ import kotlin.properties.Delegates
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-// TODO: Rm
-enum class Command {
-    SERVER_CONN, START_GAME, JOIN_GR, CREATE_GR
-}
-
-
 abstract class ViewModel() : EventListener {
 
     // abstract fun onCommand(cmd: Command)

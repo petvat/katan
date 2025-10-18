@@ -10,11 +10,6 @@ class MenuScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override val viewModel = StartMenuViewModel(game.controller, game.transitionService)
 
-
-    override fun show() {
-        super.show()
-    }
-
     override fun buildStage() {
         stage.actors {
             startView(viewModel, Scene2DSkin.defaultSkin)

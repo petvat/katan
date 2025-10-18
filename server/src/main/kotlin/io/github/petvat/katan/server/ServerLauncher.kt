@@ -2,15 +2,21 @@
 
 package io.github.petvat.katan.server
 
+
 import io.github.petvat.katan.server.nio.NioServer
 import io.github.petvat.katan.server.nio.ServerConstants
-import io.github.petvat.katan.shared.model.SessionId
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
+import io.github.petvat.katan.server.service.channel.ChannelRegistry
+import io.github.petvat.katan.server.service.client.ClientRegistry
+import io.github.petvat.katan.server.service.concurrency.LockManager
+import io.github.petvat.katan.server.service.handler.CommandHandlerRegistry
+import io.github.petvat.katan.server.service.presenter.PresenterRegistry
+import io.github.petvat.katan.server.service.service.GameService
+import io.github.petvat.katan.server.service.service.GroupService
+import io.github.petvat.katan.server.service.service.LobbyService
+import io.github.petvat.katan.server.service.service.RequestProcessor
+
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.nio.channels.SocketChannel
 
 /**
  * Launches the TCP server application.
@@ -21,12 +27,25 @@ fun main() = runBlocking<Unit> {
 
     setLoggingLevel(loggingLevel)
 
-    val scope = CoroutineScope(Dispatchers.IO)
+    val locks = LockManager()
 
-    val requestChannel = Channel<Pair<SessionId, String>>();
-    val responseChannel = Channel<Pair<SocketChannel, String>>();
+    val clients = ClientRegistry()
+    val commandHandler = CommandHandlerRegistry()
+    val channelManager = ChannelRegistry()
+    val presenters = PresenterRegistry()
 
-    val server = NioServer(requestChannel, responseChannel)
+    val lobbyService = LobbyService(commandHandler, presenters, locks, channelManager, clients)
+    val groupService = GroupService(commandHandler, presenters, locks, channelManager, clients)
+    val gameService = GameService(commandHandler, presenters, locks, channelManager, clients)
+    // val chatService = ChatService()
+
+    val requestDispatcher = RequestProcessor(lobbyService, groupService, gameService)
+    val server = NioServer(
+        lockManager,
+        requestDispatcher,
+        clientManager
+    )
+
 
     server.start(ServerConstants.PORT)
 

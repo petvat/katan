@@ -111,11 +111,11 @@ fun ResourceMap2.fromDomain() = ResourceMapData(
  */
 @Serializable
 class ResourceMap(
-    private val wood: Int,
-    private val ore: Int,
-    private val wheat: Int,
-    private val wool: Int,
-    private val brick: Int
+    private val wood: Int = 0,
+    private val ore: Int = 0,
+    private val wheat: Int = 0,
+    private val wool: Int = 0,
+    private val brick: Int = 0
 ) {
     @Transient
     private var resources: HashMap<Resource, Int> = hashMapOf(
@@ -156,6 +156,15 @@ class ResourceMap(
             resources[key] = current + (other.getMap()[key] ?: 0)
         }
         return true
+    }
+
+    operator fun minus(resource: Resource): Boolean {
+        val value = resources[resource]
+        if (value != null && value > 0) {
+            resources[resource] = value - 1
+            return true
+        }
+        return false
     }
 
     /**

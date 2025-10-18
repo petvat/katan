@@ -12,7 +12,7 @@ import ktx.scene2d.*
 class LobbyView(
     viewModel: LobbyViewModel,
     skin: Skin
-) : View<LobbyViewModel>(skin, viewModel), KTable {
+) : KtxView<LobbyViewModel>(skin, viewModel), KTable {
 
     private val logger = KotlinLogging.logger { }
 

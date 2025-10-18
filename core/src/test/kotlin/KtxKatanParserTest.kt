@@ -1,6 +1,6 @@
 //import io.github.petvat.katan.KatanParser
 //import io.github.petvat.katan.gameState.ResourceMap
-//import io.github.petvat.katan.model.action.ActionCode
+//import io.github.petvat.katan.gameState.action.ActionCode
 //import io.github.petvat.katan.dto.*
 //import org.junit.jupiter.api.Assertions.*
 //import org.junit.jupiter.api.Test
@@ -14,7 +14,7 @@
 //    @Test
 //    fun testSerializeThenDeserializeReturnsSame() {
 //        val response = ActionResponse(
-//            -1, "sessId", io.github.petvat.katan.model.action.ActionCode.ROLL_DICE, true, "roll dice",
+//            -1, "sessId", io.github.petvat.katan.gameState.action.ActionCode.ROLL_DICE, true, "roll dice",
 //            RollDiceDTO(1, 2, ResourceMap(0, 0, 0, 0, 0), emptyMap(), true)
 //        )
 //        val json = KatanParser.toJson(response)

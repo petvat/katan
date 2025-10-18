@@ -48,7 +48,7 @@ class PlaceFirstSettlements(
 
 
         if (game.turnIndex == game.setupTurnOrder.size - 1) {
-            // Setup state done
+            // Setup phase done
             game.transitionToState(GameStates.ROLL_DICE)
             game.boardManager.harvestInitialResources() // TODO: Make private
 

@@ -7,18 +7,20 @@ import java.nio.ByteBuffer
 import java.nio.channels.Selector
 import java.nio.channels.SocketChannel
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.LinkedBlockingQueue
 
 
 /**
  * This class represents the client side endpoint of the communication socket.
  *
  * @param T The request this client will process
+ * @param S The response this client will process the request into.
  */
-abstract class NioClient<T> {
+abstract class NioClient<T, S> {
     private val logger = KotlinLogging.logger { }
     private lateinit var serverChannel: SocketChannel
     private lateinit var selector: Selector
-    val messageQueue = ConcurrentLinkedQueue<String>()
+    val messageQueue = LinkedBlockingQueue<S>()
 
     /**
      *
@@ -71,14 +73,13 @@ abstract class NioClient<T> {
                     if (bytesRead > 0) {
                         readBuffer.flip()
                         logger.info { "Message from server." }
-                        processResponse(String(readBuffer.array(), 0, bytesRead))
+                        enqueue(processResponse(String(readBuffer.array(), 0, bytesRead)))
                     }
                     readBuffer.clear()
                 } catch (e: Exception) {
                     logger.debug { "DISCONNECT: Lost connection with server: ${e.message}" }
                     serverChannel.close()
                 }
-
             }
 //            var selectionKey = selector.selectedKeys().iterator()
 //
@@ -110,14 +111,13 @@ abstract class NioClient<T> {
         runner.start()
     }
 
-    private fun processResponse(response: String) {
-        logger.debug { "Message from server: $response" }
-
-        val success = messageQueue.add(response)
-        logger.debug { "Message added? $success" }
+    private fun enqueue(response: S) {
+        messageQueue.add(response)
     }
 
     abstract fun processRequest(request: T): String
+
+    abstract fun processResponse(response: String): S
 
     fun close() {
         logger.info { "Closing connection." }

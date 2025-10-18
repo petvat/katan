@@ -35,6 +35,8 @@ sea_ul
 bounds:1122,34,110,86
 sea_ur
 bounds:226,34,110,86
+select-zone
+bounds:1906,40,16,16
 token-10
 bounds:2,2,35,30
 token-11

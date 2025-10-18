@@ -14,4 +14,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * @param messageQueue
  *
  */
-class MessageWriter
+class MessageWriter {
+
+}

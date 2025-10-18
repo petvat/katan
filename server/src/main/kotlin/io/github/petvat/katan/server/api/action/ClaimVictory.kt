@@ -10,7 +10,7 @@ class ClaimVictory(
     override val playerNumber: Int
 ) : Action {
     override fun validate(): Boolean {
-        return playerNumber != game.playerInTurn()
+        return playerNumber == game.playerInTurn()
     }
 
     override fun execute(): ExecutionResult<Response> {

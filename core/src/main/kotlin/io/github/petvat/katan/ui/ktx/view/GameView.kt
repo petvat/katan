@@ -1,10 +1,11 @@
 package io.github.petvat.katan.ui.ktx.view
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.scenes.scene2d.Touchable
-import com.badlogic.gdx.scenes.scene2d.ui.Button
-import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.Table
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton
+import com.badlogic.gdx.scenes.scene2d.ui.*
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.Align
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.ui.ktx.widget.*
@@ -22,11 +23,11 @@ import ktx.scene2d.*
 class GameView(
     viewModel: GameViewModel,
     skin: Skin
-) : KTable, View<GameViewModel>(skin, viewModel) {
+) : KTable, KtxView<GameViewModel>(skin, viewModel) {
 
     private val logger = KotlinLogging.logger { }
 
-    private val rollDiceBtn: TextButton
+    private val rollDiceBtn: ImageButton
 
     private val buildBtn: TextButton
 
@@ -36,7 +37,7 @@ class GameView(
 
     private val buildTable: Table
 
-    // TODO: Use Player model?
+    // TODO: Use Player gameState?
     private val playersInfoWidget: OtherPlayersTable
 
     private val thisPlayerInfoTable: ThisPlayerTable
@@ -58,7 +59,7 @@ class GameView(
             isVisible = false
         }
         buildBtn = scene2d.textButton("Build") {
-            onChangeEvent { this@GameView.buildWidget.isVisible = true }
+            onChangeEvent { this@GameView.buildWidget.toggleActive() }
             isDisabled = true
         }
 
@@ -72,19 +73,25 @@ class GameView(
         ) {
             this.bottom()
         }
-        rollDiceBtn = scene2d.textButton("Roll dice") {
-            onChangeEvent { this@GameView.viewModel.handleRollDice() }
+
+        val diceTex =
+            TextureRegionDrawable(TextureRegion(Texture(Gdx.files.internal("./dice-icon.png"))))
+
+        diceTex.setMinSize(diceTex.minWidth * 2, diceTex.minHeight * 2)
+        rollDiceBtn = ImageButton(diceTex)
+        rollDiceBtn.onChangeEvent {
+            this@GameView.viewModel.handleRollDice()
         }
 
-        buildTable.add(buildWidget)
+        buildTable.add(buildWidget).growX()
         buildTable.row()
         buildTable.add(buildBtn)
 
         add(playersInfoWidget).colspan(4).growX().maxWidth(1000f)
-        row().expand()
+        row().expandY()
         add(chat).bottom()
-        add(thisPlayerInfoTable).growX().bottom()
-        add(buildTable).bottom()
+        add(thisPlayerInfoTable).expandX().bottom()
+        add(buildTable).bottom().growX()
         add(rollDiceBtn).bottom()
 
         registerOnPropertyChanges()
@@ -101,8 +108,11 @@ class GameView(
         viewModel.onPropertyChange(GameViewModel::currentTurnPlayer) {
             if (viewModel.thisPlayerTurn) {
                 thisPlayerInfoTable.activateTurn()
+//                if (!viewModel.setupPhase) {
+//                    toggle(rollDiceBtn, true)
+//                }
             } else {
-                thisPlayerInfoTable.deactivateTurn()
+                thisPlayerInfoTable.deactivateTurn() // redundant.
                 playersInfoWidget.activateTurn(it)
             }
         }

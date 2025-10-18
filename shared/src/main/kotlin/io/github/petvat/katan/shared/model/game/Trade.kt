@@ -21,8 +21,11 @@ class Trade(
     val offer: ResourceMap,
     val inReturn: ResourceMap
 ) {
+
     /**
      * Atomic.
+     *
+     * TODO: Just return boolean.
      */
     fun transact(acceptor: Player) {
         if (initiator.inventory.minus(inReturn) && acceptor.inventory.minus(offer)) {

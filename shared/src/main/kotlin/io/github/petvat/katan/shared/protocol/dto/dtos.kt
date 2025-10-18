@@ -62,6 +62,7 @@ data class PlayerDTO(
  */
 @Serializable
 data class OtherPlayerDTO(
+    val id: String,
     val playerNumber: Int,
     var victoryPoints: Int,
     var cardCount: Int,
@@ -90,9 +91,8 @@ data class PrivateUserDTO(
 @Serializable
 open class PrivateGroupDTO(
     open val id: String,
-    open val clients: MutableMap<String, String>,
-    open val level: PermissionLevel,
-    open val chatLog: MutableList<Pair<String, String>>, // TODO: Use custom data structure.
+    open val clients: Map<String, String>, // NOTE: Just Client Id and Name for now.
+    // open val chatLog: MutableList<Pair<String, String>>, // TODO: Use custom data structure.
     open val settings: Settings
 )
 

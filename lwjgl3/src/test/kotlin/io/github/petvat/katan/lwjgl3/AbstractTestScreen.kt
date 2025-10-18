@@ -22,7 +22,7 @@ abstract class AbstractTestScreen : KtxScreen {
     private val viewport = ScreenViewport()
     private val batch by lazy { SpriteBatch() }
     val stage: Stage
-    private val scaleFactor = 2
+    private val scaleFactor = 3
 
     protected var clearScreen = true
 
@@ -54,6 +54,7 @@ abstract class AbstractTestScreen : KtxScreen {
 
     override fun render(delta: Float) {
         // camera.update()
+
 
         if (clearScreen) clearScreen(0f, 0f, 0f)
 

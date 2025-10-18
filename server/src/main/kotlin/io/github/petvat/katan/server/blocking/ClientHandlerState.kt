@@ -38,17 +38,17 @@ package io.github.petvat.katan.server.blocking
 //            return false
 //        }
 //        val parsedRequest = GsonParser.toReqMsg(request)
-//        val data = parsedRequest.payload.data
+//        val value = parsedRequest.payload.value
 //
 //        try {
 //            val responses: Map<Int, Payload<Response>> = when (parsedRequest.header.messageType) {
-//                MessageType.LOGIN -> handleLoginRequest(data as Request.Login)
-//                MessageType.CREATE -> handleCreateSession(data as Request.Create)
-//                MessageType.JOIN -> handleJoinRequest(data as Request.Join)
+//                MessageType.LOGIN -> handleLoginRequest(value as Request.Login)
+//                MessageType.CREATE -> handleCreateSession(value as Request.Create)
+//                MessageType.JOIN -> handleJoinRequest(value as Request.Join)
 //                MessageType.INIT -> handleStartGameRequest()
-//                MessageType.ACTION -> handleActionRequest(data as ActionRequest)
-//                MessageType.CHAT -> handleChatRequest(data as Request.Chat)
-//                MessageType.GET_SESSION -> handleGetSessions(data as Request.Sessions)
+//                MessageType.ACTION -> handleActionRequest(value as ActionRequest)
+//                MessageType.CHAT -> handleChatRequest(value as Request.Chat)
+//                MessageType.GET_SESSION -> handleGetSessions(value as Request.Sessions)
 //            }
 //            val responsesJson = responses.mapValues { (_, value) ->
 //                GsonParser.toJson(
@@ -259,10 +259,10 @@ package io.github.petvat.katan.server.blocking
 //                    UserRepository.getUser(sender.id)
 //                )
 //            )
-//            for (client in session.clients) {
+//            for (client in session.members) {
 //                responses[client.id] =
 //                    MessageFactory.createResponsePayload(
-//                        data = if (client.id == sender.id) null else sessionJoinedDTO,
+//                        value = if (client.id == sender.id) null else sessionJoinedDTO,
 //                        success = true,
 //                        description = "${sender.id} joined session.",
 //                    )
@@ -308,7 +308,7 @@ package io.github.petvat.katan.server.blocking
 //
 //    override fun validateSender(request: JsonObject): Boolean {
 //        return sender.id == request.get("senderId").asInt &&
-//            session.clients.contains(sender)
+//            session.members.contains(sender)
 //    }
 //
 //    override fun handleActionRequest(request: ActionRequest): Map<Int, Payload<ActionResponse>> {
@@ -318,15 +318,15 @@ package io.github.petvat.katan.server.blocking
 //    override fun handleChatRequest(request: Request.Chat): Map<Int, Payload<Response.Chat>> {
 //        val responses: MutableMap<Int, Payload<Response.Chat>> = mutableMapOf()
 //
-//        // Broadcast the message to all clients in the session
-//        for (client in session.clients) {
+//        // Broadcast the message to all members in the session
+//        for (client in session.members) {
 //
 //            // TODO: check if target
 //            responses[client.id] =
 //                MessageFactory.createResponsePayload(
 //                    success = true,
 //                    description = "Message received.",
-//                    data = Response.Chat(client.id, request.message)
+//                    value = Response.Chat(client.id, request.message)
 //                )
 //        }
 //
@@ -355,21 +355,21 @@ package io.github.petvat.katan.server.blocking
 //     * Auth player and check belongs to session.
 //     */
 //    override fun validateSender(request: JsonObject): Boolean {
-//        return session.clients.contains(sender) &&
+//        return session.members.contains(sender) &&
 //            sender.id == request.get("SenderId").toString().toInt()
 //    }
 //
 //    override fun handleChatRequest(request: Request.Chat): Map<Int, Payload<Response.Chat>> {
 //        val responses: MutableMap<Int, Payload<Response.Chat>> = mutableMapOf()
 //
-//        // Broadcast the message to all clients in the session
-//        for (client in session.clients) {
+//        // Broadcast the message to all members in the session
+//        for (client in session.members) {
 //
 //            responses[client.id] =
 //                MessageFactory.createResponsePayload(
 //                    success = true,
 //                    description = "Message received.",
-//                    data = Response.Chat(client.id, request.message)
+//                    value = Response.Chat(client.id, request.message)
 //                )
 //        }
 //
@@ -388,12 +388,12 @@ package io.github.petvat.katan.server.blocking
 //        val game = GameService.createGameProgress(session)
 //        logger.debug { "Game initialized." }
 //
-//        // Connect all clients to game
-//        for (client in session.clients) {
+//        // Connect all members to game
+//        for (client in session.members) {
 //            (client.state as InSessionState).connectToGame(game) // !!!
 //
 //            val response = MessageFactory.createResponsePayload(
-//                data = Response.Init(GameService.getPrivateGameState(game, game.getPlayer(client.id))),
+//                value = Response.Init(GameService.getPrivateGameState(game, game.getPlayer(client.id))),
 //                success = true,
 //                description = "Game has started."
 //            )

@@ -204,6 +204,7 @@ class MessageWidget(
 
     init {
         align(Align.left)
+        background = skin.getDrawable("slot")
         // TODO: Use smaller font
         messageLabel = scene2d.label("$from: $message") {
             wrap = true

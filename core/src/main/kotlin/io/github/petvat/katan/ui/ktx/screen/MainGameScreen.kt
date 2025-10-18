@@ -5,16 +5,12 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.input.GestureDetector
-import com.badlogic.gdx.input.GestureDetector.GestureAdapter
-import com.badlogic.gdx.input.GestureDetector.GestureListener
 import com.badlogic.gdx.math.MathUtils
-import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ExtendViewport
-import io.github.petvat.katan.event.EventBus
+import com.badlogic.gdx.utils.viewport.ScreenViewport
 import io.github.petvat.katan.shared.hexlib.PCoordinate
 import io.github.petvat.katan.shared.hexlib.Layout
-import io.github.petvat.katan.ui.ktx.view.BoardGraphic
+import io.github.petvat.katan.ui.ktx.view.BoardView
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.view.gameView
 import io.github.petvat.katan.ui.ktx.view.tradeView
@@ -22,7 +18,6 @@ import io.github.petvat.katan.ui.model.GameViewModel
 import ktx.scene2d.Scene2DSkin
 import ktx.scene2d.actors
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.sqrt
 
 class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
@@ -35,14 +30,17 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
         const val TEX_WIDTH = 110.0
     }
 
-    private val viewport = ExtendViewport(KtxKatan.VW, KtxKatan.VH)
+    private val viewport = ScreenViewport()
     private val camera = viewport.camera as OrthographicCamera
     private val assets = game.assets
     private val batch = game.batch
+    var scaleFactors = listOf(1f, 1 / 2f, 1 / 3f, 1 / 4f)
+    var scaleFactorIdx = 1
 
     init {
         //camera.position.set(0f, 0f, 0f)
         //camera.update()
+        viewport.unitsPerPixel = scaleFactors[2]
     }
 
     /**
@@ -52,7 +50,7 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     // private lateinit var tiles: MutableList<Tile>
 
-    private lateinit var boardRenderer: BoardGraphic
+    private lateinit var boardRenderer: BoardView
 
     override lateinit var viewModel: GameViewModel
 
@@ -99,15 +97,15 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
             PCoordinate(0.0, 0.0) // Origin hex relative to viewport
         )
 
-        viewModel = GameViewModel(game.controller, game.model.group, game.model.game)
+        viewModel = GameViewModel(game.controller, game.model.groupModel, game.model.gameModel)
 
-        boardRenderer = BoardGraphic(
+        boardRenderer = BoardView(
             viewModel,
             batch,
             assets,
             layout
         )
-        // TODO: Might be needed somewhere: tiles = game.model.gameManager!!.board.tiles.toMutableList() Break reason?
+        // TODO: Might be needed somewhere: tiles = game.gameState.gameManager!!.board.tiles.toMutableList() Break reason?
 
         inputMultiplexer.addProcessor(inputProcessor)
 
@@ -124,13 +122,13 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     override fun render(delta: Float) {
         handleInput()
-        camera.update()
 
         Gdx.gl.glClearColor(0f, 0.2f, 0.3f, 0.8f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         viewport.apply()
         batch.projectionMatrix = camera.combined
+        camera.update()
 
         boardRenderer.render()
 
@@ -141,14 +139,16 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
         stage.draw()
     }
 
+    // TODO: Why is this here? Move it to BoardView!
     private fun handleInput() {
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             if (camera.zoom > 0.02f) { // Prevent flip transformation
-                camera.zoom -= 0.02f
+                // viewport.unitsPerPixel = scaleFactors[++scaleFactorIdx % (scaleFactors.size - 1)]
+                viewport.unitsPerPixel *= 1.02f
             }
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            camera.zoom += 0.02f
+            viewport.unitsPerPixel *= 0.98f
         }
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             camera.translate(-3f, 0f, 0f);

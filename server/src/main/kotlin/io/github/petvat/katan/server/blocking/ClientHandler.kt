@@ -63,15 +63,15 @@ package io.github.petvat.katan.server.blocking
 //
 //class SessionState(override val model: KatanContext, private val session: Session) : KatanState {
 //    override fun processChat(chat: Request.Chat): Map<Int, Payload<Response.Chat>> {
-//        // Broadcast the message to all clients in the session
-//        for (client in session.clients) {
+//        // Broadcast the message to all members in the session
+//        for (client in session.members) {
 //
 //            // TODO: check if target
 //            responses[client.id] =
 //                MessageFactory.createResponsePayload(
 //                    success = true,
 //                    description = "Message received.",
-//                    data = Response.Chat(client.userId, request.message)
+//                    value = Response.Chat(client.userId, request.message)
 //                )
 //        }
 //
@@ -80,7 +80,7 @@ package io.github.petvat.katan.server.blocking
 //
 //    // NOTE: Broadcast or not is not dependent on state but message type, so need
 //    override fun sendResponses(response: ResponseMessage) {
-//        for (client in session.clients) {
+//        for (client in session.members) {
 //            client.sendResponseMessage()
 //        }
 //    }

@@ -26,12 +26,12 @@ class OtherPlayersTable(
                 it.cardCount,
                 skin = skin
             ) {
-                pad(5f)
+                pad(8f)
             }
         }
 
         otherPlayersWidget.values.forEach {
-            add(it).space(10f)
+            add(it).space(10f).expandX()
         }
     }
 

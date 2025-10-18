@@ -1,7 +1,7 @@
 package io.github.petvat.katan.ui.model
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.controller.RequestController
+import io.github.petvat.katan.controller.GameService
 import io.github.petvat.katan.event.Event
 import io.github.petvat.katan.event.LoginEvent
 
@@ -11,7 +11,7 @@ import io.github.petvat.katan.event.LoginEvent
  * - LobbyView
  */
 class LoginViewModel(
-    private val outController: RequestController,
+    private val gameService: GameService,
     private val transitionService: ViewTransitionService
 ) : ViewModel() {
 
@@ -22,7 +22,7 @@ class LoginViewModel(
 //        if (port?.toIntOrNull() == null || port.toInt() < 10000) {
 //            InEventBus.fire(ErrorEvent(""))
 //        }
-        outController.handleRegister(name)
+        gameService.handleRegister(name)
     }
 
     override fun onEvent(event: Event) {

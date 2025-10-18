@@ -1,5 +1,7 @@
 package io.github.petvat.katan.lwjgl3
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.viewport.ExtendViewport
@@ -17,8 +19,7 @@ import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.screen.MainGameScreen.Companion.TEX_HEIGHT
 import io.github.petvat.katan.ui.ktx.screen.MainGameScreen.Companion.TEX_WIDTH
 import io.github.petvat.katan.ui.ktx.screen.loadUISkin
-import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
-import io.github.petvat.katan.ui.ktx.view.BoardGraphic
+import io.github.petvat.katan.ui.ktx.view.BoardView
 import io.github.petvat.katan.ui.ktx.view.GameView
 import io.github.petvat.katan.ui.model.GameViewModel
 import ktx.app.KtxGame
@@ -102,7 +103,7 @@ private class GameTest() : AbstractTestScreen() {
 
     // private lateinit var tiles: MutableList<Tile>
 
-    val boardRenderer = BoardGraphic(
+    val boardRenderer = BoardView(
         viewModel,
         batch,
         assets,
@@ -116,12 +117,29 @@ private class GameTest() : AbstractTestScreen() {
         )
         super.clearScreen = false
         EventBus += viewModel
+
+        viewModel.buildModeProperty = true //
     }
 
     override fun render(delta: Float) {
-        clearScreen(0f, 0f, 0f, 1f)
-        // boardRenderer.render()
-        super.render(delta)
+        camera.update()
+
+        Gdx.gl.glClearColor(0f, 0.2f, 0.3f, 0.8f)
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+        viewport.apply()
+        batch.projectionMatrix = camera.combined
+
+        boardRenderer.render()
+
+        stage.viewport.apply() // Apply the stage viewport to render the UI correctly.
+        stage.act()
+        stage.draw()
+
+
+//        clearScreen(0f, 0f, 0f, 1f)
+//        boardRenderer.render()
+//        super.render(delta)
     }
 }
 

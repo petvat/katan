@@ -10,7 +10,7 @@ import io.github.petvat.katan.shared.model.game.Settings
 
 
 class MockController : RequestController {
-    
+
     override fun handleInit() {
         TODO("Not yet implemented")
     }
@@ -33,6 +33,7 @@ class MockController : RequestController {
     }
 
     override fun handleChat(message: String, recipients: Set<String>?) {
+        println("reached chat mock handling")
         EventBus.fire(ChatEvent("You (loop-back)", message))
     }
 

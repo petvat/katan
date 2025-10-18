@@ -1,17 +1,15 @@
 package io.github.petvat.katan.ui.model
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.controller.RequestController
+import io.github.petvat.katan.controller.GameService
 import io.github.petvat.katan.event.ConnectionEvent
 import io.github.petvat.katan.event.Event
-import io.github.petvat.katan.event.LobbyEvent
-import io.github.petvat.katan.event.LoginEvent
 
 /**
  * Start view, where user can choose server host.
  */
 class StartMenuViewModel(
-    private val outController: RequestController,
+    private val outController: GameService,
     private val transitionService: ViewTransitionService
 ) : ViewModel() {
 
@@ -23,7 +21,7 @@ class StartMenuViewModel(
 //        if (port?.toIntOrNull() == null || port.toInt() < 10000) {
 //            InEventBus.fire(ErrorEvent(""))
 //        }
-        outController.connectClient(address, port)
+        outController.handleConnectClient(address, port)
     }
 
     override fun onEvent(event: Event) {

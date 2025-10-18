@@ -5,3 +5,14 @@ package io.github.petvat.katan.shared.model
  */
 @JvmInline
 value class SessionId(val value: String)
+
+
+@JvmInline
+value class GameId(val value: String)
+
+@JvmInline
+value class PlayerId(val value: Int)
+
+
+@JvmInline
+value class ClientId(val value: String)

@@ -9,7 +9,7 @@ import ktx.scene2d.*
 class TradeView(
     viewModel: GameViewModel,
     skin: Skin
-) : View<GameViewModel>(skin, viewModel), KTable {
+) : KtxView<GameViewModel>(skin, viewModel), KTable {
 
     init {
         label("TODO: Trade view.")

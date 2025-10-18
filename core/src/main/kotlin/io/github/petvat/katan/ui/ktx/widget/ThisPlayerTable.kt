@@ -27,17 +27,17 @@ class ThisPlayerTable(
     var oreImg = Image(Texture(Gdx.files.internal("./ore-simple-tex.png")))
     var brickImg = Image(Texture(Gdx.files.internal("./brick-simple-tex.png")))
     var woolImg = Image(Texture(Gdx.files.internal("./wool-simple-tex.png")))
-    var woodImg = Image(Texture(Gdx.files.internal("./wood-simple-tex.png")))
+    var woodImg = Image(Texture(Gdx.files.internal("./assets/wood-simple-tex.png")))
 
     private val turn: Label
 
     init {
         background = skin.getDrawable("area")
-        wood = scene2d.label("Wood: ${thisPlayerViewModel.inventory[Resource.WOOD]}")
-        ore = scene2d.label("Ore: ${thisPlayerViewModel.inventory[Resource.ORE]}")
-        wool = scene2d.label("Wool: ${thisPlayerViewModel.inventory[Resource.WOOL]}")
-        wheat = scene2d.label("Wheat: ${thisPlayerViewModel.inventory[Resource.WHEAT]}")
-        brick = scene2d.label("Brick: ${thisPlayerViewModel.inventory[Resource.BRICK]}")
+        wood = scene2d.label("x${thisPlayerViewModel.inventory[Resource.WOOD]}")
+        ore = scene2d.label("x${thisPlayerViewModel.inventory[Resource.ORE]}")
+        wool = scene2d.label("x${thisPlayerViewModel.inventory[Resource.WOOL]}")
+        wheat = scene2d.label("x${thisPlayerViewModel.inventory[Resource.WHEAT]}")
+        brick = scene2d.label("x${thisPlayerViewModel.inventory[Resource.BRICK]}")
         vp = scene2d.label("Victory points: ${thisPlayerViewModel.victoryPoints}")
         turn = scene2d.label("") // TODO: replace with something better
 

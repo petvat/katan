@@ -1,6 +1,6 @@
 package io.github.petvat.katan.server.http
 
-import io.github.petvat.katan.server.api.KatanApi
+import io.github.petvat.katan.server.api.RequestHandler
 import io.github.petvat.katan.server.client.*
 import io.github.petvat.katan.shared.model.SessionId
 import io.ktor.server.application.*
@@ -53,7 +53,7 @@ fun Application.configureRouting() {
                     when (frame) {
                         is Frame.Text -> {
                             val json = frame.readText()
-                            KatanApi.handleRequest(json, sessionId, ::sendMessages)
+                            //.handleRequest(json, id, ::sendMessages)
                         }
 
                         is Frame.Close -> {
@@ -67,7 +67,7 @@ fun Application.configureRouting() {
             } finally {
                 // Cleanup
                 sessions.remove(sessionId)
-                ClientRepository.removeClient(sessionId)
+                // ClientManager.removeClient(id)
             }
         }
     }

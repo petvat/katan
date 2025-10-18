@@ -184,22 +184,22 @@ tasks.register('runCli', JavaExec) {
 //  dependsOn("testClasses") // Ensure test classes are compiled before running
 //}
 
-tasks.register("runMock", JavaExec) {
-  group = "application"
-  description = "Runs mock"
-
-  mainClass.set("io.github.petvat.katan.lwjgl3.integrationTest")
-
-  // Force JavaExec to use test class files
-  classpath = files(sourceSets["test"].output) + sourceSets["test"].runtimeClasspath
-
-  workingDir = rootProject.file("assets").path
-
-  if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
-
-
-  dependsOn("testClasses") // Ensure test classes are compiled before running
-}
+//tasks.register("runMock", JavaExec) {
+//  group = "application"
+//  description = "Runs mock"
+//
+//  mainClass.set("io.github.petvat.katan.lwjgl3.integrationTest")
+//
+//  // Force JavaExec to use test class files
+//  classpath = files(sourceSets["test"].output) + sourceSets["test"].runtimeClasspath
+//
+//  workingDir = rootProject.file("assets").path
+//
+//  if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
+//
+//
+//  dependsOn("testClasses") // Ensure test classes are compiled before running
+//}
 
 if (enableGraalNative == 'true') {
   apply from: file("nativeimage.gradle")

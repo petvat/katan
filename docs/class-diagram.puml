@@ -1,0 +1,43 @@
+@startuml
+
+
+class NioKatanClient {
+    + messageQueue: ConcurrentLinkedQueue<String>
+    + forwardRequest()
+}
+
+class RequestController {
+    + connectClient()
+}
+
+class ResponseProcessor
+
+class ResponseDispatcher
+
+class KatanModel
+
+
+interface View
+
+interface ViewModel
+
+class EventBus {
+    + eventListeners: List<EventListener>
+    + fire(event: Event)
+}
+
+ResponseDispatcher --* NioKatanClient 
+ResponseDispatcher --* ResponseProcessor  
+
+ResponseProcessor --> KatanModel
+ResponseProcessor --> EventBus
+
+RequestController --> NioKatanClient
+
+EventBus o-- ViewModel
+
+View --> ViewModel
+
+ViewModel --* RequestController
+
+@enduml

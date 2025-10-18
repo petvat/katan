@@ -5,6 +5,7 @@ import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.utils.Array
 import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.Resource
 
@@ -14,7 +15,7 @@ import io.github.petvat.katan.shared.model.game.Resource
  */
 class Assets {
 
-    val manager = AssetManager()
+    private val manager = AssetManager()
 
     /**
      * load() must be called before using this.
@@ -60,8 +61,10 @@ class Assets {
         Asset.SEA_UL to boardAtlas.findRegion("sea_ul"),
         Asset.SEA_UR to boardAtlas.findRegion("sea_ur"),
         Asset.SEA_U to boardAtlas.findRegion("sea_u"),
-        Asset.SEA_D to boardAtlas.findRegion("sea_d")
+        Asset.SEA_D to boardAtlas.findRegion("sea_d"),
+        Asset.SELECT_ZONE to boardAtlas.findRegion("select-zone")
     )
+
     val tokenTextureMap = mapOf<Int, TextureRegion>(
         2 to boardAtlas.findRegion("token-2"),
         3 to boardAtlas.findRegion("token-3"),
@@ -75,14 +78,17 @@ class Assets {
         12 to boardAtlas.findRegion("token-12"),
     )
 
+
     enum class Asset {
         GRAIN, FOREST, PASTURE, MOUNTAINS, HILLS, DESERT,
-        SEA_DAL, SEA_DAR, SEA_DL, SEA_DR, SEA_L, SEA_R, SEA_UAL, SEA_UAR, SEA_UL, SEA_UR, SEA_U, SEA_D, SEA
+        SEA_DAL, SEA_DAR, SEA_DL, SEA_DR, SEA_L, SEA_R, SEA_UAL, SEA_UAR, SEA_UL, SEA_UR, SEA_U, SEA_D, SEA,
+        SELECT_ZONE
     }
 
     companion object {
         const val PATH_PREFIX = "assets/"
         const val KATAN_GRAPHICS_F = "./katan-graphics-v2.atlas"
+        const val KATAN_UI_F = "./katan-ui-001.json"
 
         // val BOARD_ATLAS = TextureAtlas(Gdx.files.internal("assets/katan-board.atlas"))
 
@@ -101,9 +107,8 @@ class Assets {
             Asset.SEA_UL to "${PATH_PREFIX}sea_ul.png",
             Asset.SEA_UR to "${PATH_PREFIX}sea_ur.png",
             Asset.SEA_U to "${PATH_PREFIX}sea_u.png",
-            Asset.SEA_D to "${PATH_PREFIX}sea_d.png"
+            Asset.SEA_D to "${PATH_PREFIX}sea_d.png",
         )
-
 
         val ASSET_DESCRIPTORS = ASSET_PATHS.mapValues { toDesc(it.value, Texture::class.java) }
 
@@ -121,7 +126,15 @@ class Assets {
         // ASSET_DESCRIPTORS.values.forEach { manager.load(it) }
         manager.load(KATAN_GRAPHICS_F, TextureAtlas::class.java)
         manager.finishLoading()
+
         boardAtlas = manager.get(KATAN_GRAPHICS_F)
+
+        for (texture in boardAtlas.textures) {
+            texture.setFilter(
+                Texture.TextureFilter.Linear,
+                Texture.TextureFilter.Nearest
+            ) // FIX: it seems that letting the minification filter to nearest eliminiates pixel jittering!
+        }
     }
 
     fun dispose() {

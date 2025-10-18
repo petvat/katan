@@ -180,6 +180,41 @@ object HexUtils {
         return intersectionMap
     }
 
+    fun edgeCoordinates(
+        layout: Layout,
+        hexCoordinate: List<HexCoordinates>
+    ): MutableMap<ICoordinates, PCoordinate> {
+        TODO()
+    }
+
+
+    /**
+     * Returns the edge linking two adjacent intersection coordinates.
+     */
+    fun getAdjacentEdge(icoord1: ICoordinates, icoord2: ICoordinates): EdgeCoordinates {
+        TODO()
+    }
+
+    fun edgeMappings(
+        layout: Layout,
+        intersectionCoordinates: List<Pair<ICoordinates, PCoordinate>>
+    ) {
+
+        val edges = mutableMapOf<EdgeCoordinates, PCoordinate>()
+
+        for (i in intersectionCoordinates.indices step 2) {
+
+            val (ic1, pc1) = intersectionCoordinates[i]
+            val (ic2, pc2) = intersectionCoordinates[i + 1]
+
+            val midpoint = { coord1: Double, coord2: Double -> (coord1 + coord2) / 2 }
+
+            edges[getAdjacentEdge(ic1, ic2)] = PCoordinate(midpoint(pc1.x, pc2.x), midpoint(pc1.y, pc2.x))
+
+        }
+
+    }
+
 
     /**
      *
