@@ -3,13 +3,13 @@ package io.github.petvat.katan.ui.ktx.widget
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.ui.model.OtherPlayerViewModel
+import io.github.petvat.katan.ui.projection.OtherPlayerProjection
 import ktx.scene2d.*
 
 
 @Scene2dDsl
 class OtherPlayersTable(
-    otherPlayers: List<OtherPlayerViewModel>,
+    otherPlayers: List<OtherPlayerProjection>,
     skin: Skin
 ) : Table(skin), KGroup {
 
@@ -20,7 +20,7 @@ class OtherPlayersTable(
 
         otherPlayersWidget = otherPlayers.associate {
             it.playerNumber to scene2d.otherPlayerStats(
-                it.name,
+                "Placeholder", // TODO: FIX
                 it.color,
                 it.victoryPoints,
                 it.cardCount,
@@ -73,7 +73,7 @@ class OtherPlayersTable(
 
 @Scene2dDsl
 fun <S> KWidget<S>.playersTable(
-    otherPlayers: List<OtherPlayerViewModel>,
+    otherPlayers: List<OtherPlayerProjection>,
     skin: Skin,
     init: OtherPlayersTable.(S) -> Unit = {}
 ): OtherPlayersTable = actor(OtherPlayersTable(otherPlayers, skin), init)

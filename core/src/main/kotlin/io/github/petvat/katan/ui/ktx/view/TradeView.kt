@@ -1,15 +1,15 @@
 package io.github.petvat.katan.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import io.github.petvat.katan.ui.model.GameViewModel
+import io.github.petvat.katan.ui.viewmodel.GameVM
 import ktx.scene2d.*
 
 /**
  */
 class TradeView(
-    viewModel: GameViewModel,
+    viewModel: GameVM,
     skin: Skin
-) : KtxView<GameViewModel>(skin, viewModel), KTable {
+) : KtxView<GameVM>(skin, viewModel), KTable {
 
     init {
         label("TODO: Trade view.")
@@ -23,7 +23,7 @@ class TradeView(
 
 @Scene2dDsl
 fun <S> KWidget<S>.tradeView(
-    viewModel: GameViewModel,
+    viewModel: GameVM,
     skin: Skin,
     init: (@Scene2dDsl TradeView).(S) -> Unit = {},
 ): TradeView = actor(TradeView(viewModel, skin), init)

@@ -1,48 +1,44 @@
 package io.github.petvat.katan.server.service.handler
 
-import io.github.petvat.katan.server.service.client.ConnectedClient
 import io.github.petvat.katan.server.service.command.Build
 import io.github.petvat.katan.server.service.command.RollDice
 import io.github.petvat.katan.server.service.engine.EngineResult
 import io.github.petvat.katan.server.service.engine.GameRuleEngine
-import io.github.petvat.katan.server.service.engine.Phase
+import io.github.petvat.katan.shared.model.game.Phase
 import io.github.petvat.katan.server.service.event.Event
 import io.github.petvat.katan.server.service.event.GameEvent
 import io.github.petvat.katan.server.service.channel.GameChannel
+import io.github.petvat.katan.server.service.command.BuildInitSettlment
+import io.github.petvat.katan.server.service.command.EndTurn
 import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
 import io.github.petvat.katan.shared.hexlib.ICoordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
+import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.protocol.ErrorCode
 
 class RollDiceHandler : GameCommandHandler<RollDice> {
 
-    override fun execute(
-        client: ConnectedClient,
+    override fun executeGameAction(
         channel: GameChannel,
+        player: Int,
+        engine: GameRuleEngine,
         command: RollDice
     ): GameEvent {
         val game = channel.snapshot
-
-        // TODO CHECK game.find ClientId == Subscriber is PLAYER
-
-        val player = channel.clientToPlayerId[client.auth.id] ?: return Event.Failure(
-            "Player is not part of this game.",
-            ErrorCode.DENIED
-        )
-
-        // TODO: Very redundant! Find way to inject without creating
-        val gameRuleEngine = GameRuleEngine(game.rules)
+        if (game.phase != Phase.ROLL_DICE) {
+            return Event.Failure("Cannot roll dice - not dice roll phase.", ErrorCode.DENIED)
+        }
 
         if (player != game.turnPlayer) {
             return Event.Failure("Cannot roll dice - not your turn.", ErrorCode.DENIED)
         }
-        val (roll1, roll2) = gameRuleEngine.rollDice()
+        val (roll1, roll2) = engine.rollDice()
         val eyes = roll1 + roll2
 
         val (resources, phase) = if (game.rules.moveRobberOn != eyes) {
-            gameRuleEngine.harvestResources(game, eyes) to Phase.BUILD_N_TRADE
+            engine.harvestResources(game, eyes) to Phase.BUILD_N_TRADE
         } else {
-            gameRuleEngine.discardResources(game) to Phase.MOVE_ROBBER
+            engine.discardResources(game) to Phase.MOVE_ROBBER
         }
 
         channel.snapshot =
@@ -55,50 +51,90 @@ class RollDiceHandler : GameCommandHandler<RollDice> {
             )
 
         return GameEvent.DiceRolledSummary(
+            targetChannelId = channel.id,
             roll1 = roll1,
             roll2 = roll2,
             resources = resources,
             nextPhase = phase
         )
-
     }
 }
 
+class BuildInitialSettlementHandler : GameCommandHandler<BuildInitSettlment> {
+    override fun executeGameAction(
+        channel: GameChannel,
+        player: Int,
+        engine: GameRuleEngine,
+        command: BuildInitSettlment
+    ): GameEvent {
+        val game = channel.snapshot
+        if (game.phase != Phase.SETUP) {
+            return Event.Failure("Cannot build initial settlement -  not setup phase.", ErrorCode.DENIED)
+        }
+
+        when (val board =
+            engine.buildVillage(game.board, player, command.coordinates as ICoordinates, VillageKind.SETTLEMENT)) {
+            is EngineResult.Failure -> return Event.Failure(board.description, ErrorCode.DENIED)
+            is EngineResult.Success -> {
+                val vps = engine.countVictoryPoints(game)
+
+                val playerData = game.players.single { it.number == player }
+
+                val updatedPlayers = game.players.map {
+                    val vp = vps[it.number]!!
+                    playerData.copy(victoryPoints = vp)
+                }
+
+                channel.snapshot = game.copy(board = board.value, players = updatedPlayers)
+
+                return GameEvent.Built(
+                    targetChannelId = channel.id,
+                    coordinates = command.coordinates,
+                    buildKind = BuildKind.Village(VillageKind.SETTLEMENT),
+                    vps = engine.countVictoryPoints(game) // Important as any build action could lead to change is VPs for any player
+                )
+            }
+        }
+
+
+    }
+
+}
+
 class BuildHandler : GameCommandHandler<Build> {
-    override fun execute(client: ConnectedClient, channel: GameChannel, command: Build): Event {
+    override fun executeGameAction(
+        channel: GameChannel,
+        player: Int,
+        engine: GameRuleEngine,
+        command: Build
+    ): GameEvent {
         val game = channel.snapshot
         if (game.phase != Phase.BUILD_N_TRADE)
             return Event.Failure("Cannot roll dice in current state ${game.phase}.", ErrorCode.DENIED)
 
-        val playerNum =
-            channel.clientToPlayerId[client.auth.id] ?: return Event.Failure(
-                "Player is not part of this game.",
-                ErrorCode.DENIED
-            )
-        if (playerNum != game.turnPlayer) {
+        if (player != game.turnPlayer) {
             return Event.Failure("Cannot roll dice - not your turn.", ErrorCode.DENIED)
         }
-        val player = game.players.find { it.number == playerNum }!!
+        val playerData = game.players.find { it.number == player }!!
 
-        val gameRuleEngine = GameRuleEngine(game.rules) // TODO: Remove
 
-        if (!gameRuleEngine.hasSufficientResources(player, command.buildKind.cost)) {
+        if (!engine.hasSufficientResources(playerData, channel.snapshot.rules.getCost(command.buildKind))) {
             return Event.Failure("Not sufficient resources to build", ErrorCode.DENIED)
         }
         val board = when (command.buildKind) {
             is BuildKind.Village -> {
-                gameRuleEngine.buildVillage(
+                engine.buildVillage(
                     game.board,
-                    player.number,
+                    playerData.number,
                     command.coordinates as ICoordinates,
                     command.buildKind.kind
                 )
             }
 
             is BuildKind.Road -> {
-                gameRuleEngine.buildRoad(
+                engine.buildRoad(
                     game.board,
-                    player.number,
+                    playerData.number,
                     command.coordinates as EdgeCoordinates,
                     command.buildKind.kind
                 )
@@ -108,23 +144,49 @@ class BuildHandler : GameCommandHandler<Build> {
         when (board) {
             is EngineResult.Failure -> return Event.Failure(board.description, ErrorCode.DENIED)
             is EngineResult.Success -> {
-                val vps = gameRuleEngine.countVictoryPoints(game)
+                val vps = engine.countVictoryPoints(game)
 
                 val updatedPlayers = game.players.map {
                     val vp = vps[it.number]!!
-                    player.copy(victoryPoints = vp)
+                    playerData.copy(victoryPoints = vp)
                 }
 
                 channel.snapshot = game.copy(board = board.value, players = updatedPlayers)
 
                 return GameEvent.Built(
+                    targetChannelId = channel.id,
                     coordinates = command.coordinates,
                     buildKind = command.buildKind,
-                    vps = gameRuleEngine.countVictoryPoints(game) // Important as any build action could lead to change is VPs for any player
+                    vps = engine.countVictoryPoints(game) // Important as any build action could lead to change is VPs for any player
                 )
             }
         }
     }
+}
+
+class EndTurnHandler : GameCommandHandler<EndTurn> {
+
+    override fun executeGameAction(
+        channel: GameChannel,
+        player: Int,
+        engine: GameRuleEngine,
+        command: EndTurn
+    ): GameEvent {
+        val game = channel.snapshot
+        if (game.phase != Phase.BUILD_N_TRADE)
+            return Event.Failure("Cannot end turn in current state ${game.phase}.", ErrorCode.DENIED)
+
+        if (player != game.turnPlayer) {
+            return Event.Failure("Cannot end turn - not your turn.", ErrorCode.DENIED)
+        }
+
+        channel.snapshot = game.copy(
+            turnPlayer = engine.nextTurn(game)
+        )
+
+        return GameEvent.TurnEnded(targetChannelId = channel.id, nextPlayer = channel.snapshot.turnPlayer)
+    }
+
 }
 
 

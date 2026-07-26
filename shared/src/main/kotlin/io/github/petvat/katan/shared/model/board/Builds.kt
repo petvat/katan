@@ -12,11 +12,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class BuildKind {
-    abstract val cost: ResourceMap
-
-
-    data class Village(val kind: VillageKind, override val cost: ResourceMap) : BuildKind()
-    data class Road(val kind: RoadKind, override val cost: ResourceMap) : BuildKind()
+    data class Village(val kind: VillageKind) : BuildKind()
+    data class Road(val kind: RoadKind) : BuildKind()
 }
 
 @Serializable
@@ -39,7 +36,8 @@ enum class RoadKind(val cost: ResourceMap) {
  * @param owner the player owner
  *
  */
-class Village(
+@Serializable
+data class Village(
     val villageKind: VillageKind,
     val owner: Int,
 ) {
@@ -48,6 +46,7 @@ class Village(
 //    }
 }
 
+@Serializable
 class Road(
     val roadKind: RoadKind,
     val owner: Int
@@ -56,6 +55,7 @@ class Road(
 /**
  * Active edge, i.e. an edge with a road.
  */
+@Serializable
 data class Edge(
     val coordinate: EdgeCoordinates,
     val road: Road
@@ -64,6 +64,7 @@ data class Edge(
 /**
  * Active intersection, i.e. an intersection with a village.
  */
+@Serializable
 data class Intersection(
     val coordinate: ICoordinates,
     val village: Village

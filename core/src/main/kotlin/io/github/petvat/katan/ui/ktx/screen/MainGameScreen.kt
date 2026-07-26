@@ -6,21 +6,21 @@ import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.math.MathUtils
-import com.badlogic.gdx.utils.viewport.ExtendViewport
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import io.github.petvat.katan.event.EventSystem
 import io.github.petvat.katan.shared.hexlib.PCoordinate
 import io.github.petvat.katan.shared.hexlib.Layout
 import io.github.petvat.katan.ui.ktx.view.BoardView
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.view.gameView
 import io.github.petvat.katan.ui.ktx.view.tradeView
-import io.github.petvat.katan.ui.model.GameViewModel
+import io.github.petvat.katan.ui.viewmodel.GameVM
 import ktx.scene2d.Scene2DSkin
 import ktx.scene2d.actors
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
+class MainGameScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bus) {
 
     companion object {
         /**
@@ -52,7 +52,7 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
 
     private lateinit var boardRenderer: BoardView
 
-    override lateinit var viewModel: GameViewModel
+    override lateinit var viewModel: GameVM
 
     var lastTouchX = 0f
     var lastTouchY = 0f
@@ -97,21 +97,22 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
             PCoordinate(0.0, 0.0) // Origin hex relative to viewport
         )
 
-        viewModel = GameViewModel(game.controller, game.model.groupModel, game.model.gameModel)
+        viewModel = GameVM(ktxCtx.model.game, ktxCtx.gameActions, ktxCtx.chatActions)
 
         boardRenderer = BoardView(
             viewModel,
+            viewModel.projection,
             batch,
             assets,
             layout
         )
-        // TODO: Might be needed somewhere: tiles = game.gameState.gameManager!!.board.tiles.toMutableList() Break reason?
+        // TODO: Might be needed somewhere: tiles = ktxCtx.gameState.gameManager!!.board.tiles.toMutableList() Break reason?
 
         inputMultiplexer.addProcessor(inputProcessor)
 
         stage.actors {
             tradeView(viewModel, Scene2DSkin.defaultSkin) { isVisible = false } // Overlay of trade system
-            gameView(viewModel, Scene2DSkin.defaultSkin)
+            gameView(model = viewModel, projection = viewModel.projection, Scene2DSkin.defaultSkin)
         }
     }
 
@@ -133,7 +134,6 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
         boardRenderer.render()
 
         stage.viewport.apply() // Apply the stage viewport to render the UI correctly.
-
 
         stage.act()
         stage.draw()
@@ -158,10 +158,10 @@ class MainGameScreen(game: KtxKatan) : AbstractScreen(game) {
         }
 
         // TODO BIG: Handle click input!
-
-        if (Gdx.input.isTouched) {
-            boardRenderer.handleTouch(Gdx.input.x, Gdx.input.y)
-        }
+//
+//        if (Gdx.input.isTouched) {
+//            boardRenderer.handleTouch(Gdx.input.x, Gdx.input.y)
+//        }
 
     }
 }

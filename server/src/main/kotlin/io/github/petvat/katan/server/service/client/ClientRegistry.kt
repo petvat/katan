@@ -1,28 +1,45 @@
 package io.github.petvat.katan.server.service.client
 
-import io.github.petvat.katan.server.service.presenter.ConcurrentRegistry
+import io.github.petvat.katan.server.service.presenter.ConcurrentKeyedRegistry
+import io.github.petvat.katan.server.service.presenter.ConcurrentTypedRegistry
 import io.github.petvat.katan.shared.UserId
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-// TODO: This one is weird. Maybe UserId to ConnectedClient. SessionId should be Session, which is ephemeral
-//class ClientRegistry {
-//    private val clients = ConcurrentHashMap<ClientId, ConnectedClient>()
-//
-//    operator fun get(id: ClientId): ConnectedClient {
-//        return clients[id] ?: error("Session $id does not exist.")
-//    }
-//
-//    fun add(client: ConnectedClient) {
-//        clients[client.id] = client
-//    }
-//
-//    fun remove(id: ClientId) {
-//        clients.remove(id)
-//    }
-//}
+class ClientRegistry : ConcurrentKeyedRegistry<ClientId, ConnectedClient>() {
 
-class ClientRegistry : ConcurrentRegistry<ClientId, ConnectedClient>()
-class UserRegistry : ConcurrentRegistry<UserId, Auth>() { // HACK: ?
+    private val reconnectScope = CoroutineScope(Dispatchers.Default)
+    private val graceWindow = Duration.ofSeconds(30)
+
+    fun markDisconnected(clientId: ClientId, onExpired: suspend (ConnectedClient) -> Unit) {
+        val client = get(clientId) ?: return
+        client.connection = null
+        client.disconnectedAt = Instant.now()
+
+        reconnectScope.launch {
+            delay(graceWindow.toMillis())
+            // Exipre connection if still disconnected after grace window
+            if (client.connection == null && client.disconnectedAt != null) {
+                unregister(clientId)
+                onExpired(client) // Deattach client
+            }
+        }
+    }
+
+    fun markReconnected(clientId: ClientId, connection: Connection) {
+        val client = get(clientId) ?: error("Reconnecting client not found: $clientId")
+        client.connection = connection
+        client.disconnectedAt = null
+    }
+}
+
+
+class UserRegistry : ConcurrentKeyedRegistry<UserId, Auth>() { // HACK: ?
     private val clients = ConcurrentHashMap<UserId, MutableList<ClientId>>()
 
     fun getClientsByUser(userId: UserId): List<ClientId> {

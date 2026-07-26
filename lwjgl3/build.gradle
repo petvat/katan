@@ -46,6 +46,7 @@ dependencies {
 //  testImplementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
 
   implementation project(':core')
+  implementation project(':shared') // TODO: Remove after testing
 //  testImplementation project(':core')
   testImplementation project(':shared')
   // testImplementation "io.mockk:mockk:$mockkVersion"
@@ -207,5 +208,6 @@ if (enableGraalNative == 'true') {
 
 
 test {
+  workingDir = rootProject.file('assets').path
   useJUnitPlatform()
 }

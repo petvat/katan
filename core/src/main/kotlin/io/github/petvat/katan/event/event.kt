@@ -1,37 +1,26 @@
 package io.github.petvat.katan.event
 
 
+import io.github.petvat.katan.model.GroupSummary
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.ICoordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.GameMode
-import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.PermissionLevel
+import io.github.petvat.katan.shared.model.game.ResourceMapData
 import io.github.petvat.katan.shared.protocol.ErrorCode
-import io.github.petvat.katan.shared.protocol.dto.PublicGroupDTO
 
 sealed interface Event
-
-/**
- * INTERNAL
- * This event fires if there is a request for
- *
- * TODO: Rename to Event or properly differentiate between commands and events.
- */
-data class PlaceBuildingCommand<out K : BuildKind>(val buildKind: K) : Event
 
 
 interface EventListener {
     fun onEvent(event: Event)
 }
 
-/**
- * NOTE: Not used.
- */
-data class GetGroupsEvent(val groups: Collection<PublicGroupDTO>) : Event
 
 /**
- * This event firest when this user has joined a group.
+ * This event fires when this user has joined a group.
+ *
+ *
  */
 data object JoinEvent : Event
 
@@ -43,15 +32,17 @@ data object UserJoinedEvent : Event
 
 
 /**
- * This event fires on a successful game intialization.
+ * This event fires on a successful ktxCtx intialization.
  */
 data object InitEvent : Event
 
 
-/**
- * This event fires
- */
-data object LobbyEvent : Event
+data class SetupEndedEvent(
+    val turnPlayer: Int,
+    val playerNumber: Int,
+    val buildKind: BuildKind,
+    val coordinates: Coordinates
+) : Event
 
 
 /**
@@ -61,11 +52,7 @@ data object LobbyEvent : Event
 data object CreateEvent : Event
 
 data class GroupUpdateEvent(
-    val groupId: String,
-    val level: PermissionLevel,
-    val gameMode: GameMode,
-    val clientCount: Int,
-    val maxClient: Int
+    val groupSummary: GroupSummary
 ) : Event
 
 
@@ -85,8 +72,6 @@ data object LoginEvent : Event
  */
 data object ConnectionEvent : Event
 
-// TODO: Do it non-optimal way first then change later if needed.
-//  Other: Change ViewModel based on events
 
 /**
  *
@@ -100,15 +85,19 @@ data object ConnectionEvent : Event
 data class RolledDiceEvent(
     val roll1: Int,
     val roll2: Int,
-    val moveRobber: Boolean,
-    val playerResources: ResourceMap,
-    val otherPlayersCardCounts: Map<Int, Int>
+    val moveRobber: Boolean
 ) : Event
+
+
+data object MyTurnEvent : Event
+
+data object MyTurnSetupEvent : Event
+
 
 /**
  * This event fires indicating the start of the next turn.
  */
-data class NextTurnEvent(val playerNumber: Int) : Event // Check if possible.
+data class NextTurnEvent(val playerNumber: Int) : Event
 
 
 /**

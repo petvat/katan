@@ -2,7 +2,7 @@ package io.github.petvat.katan.ui.ktx.view
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.ui.model.StartMenuViewModel
+import io.github.petvat.katan.ui.viewmodel.StartMenuViewModel
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
@@ -62,7 +62,7 @@ fun <S> KWidget<S>.startView(
 
 
 //class MenuView(
-//    game: KtxKatan,
+//    ktxCtx: KtxKatan,
 //    skin: Skin
 //) : Table(skin), KTable, EventListener {
 //
@@ -72,12 +72,12 @@ fun <S> KWidget<S>.startView(
 //        align(Align.center)
 //        debug = true
 //        textButton("Connect to host").onChange {
-//            if (game.controller.connectClient(null, null)) {
-//                game.showLobbyView()
+//            if (ktxCtx.controller.connectClient(null, null)) {
+//                ktxCtx.showLobbyView()
 //            } else {
-//                game.showErrorView("Could not connect to server!")
+//                ktxCtx.showErrorView("Could not connect to server!")
 //            }
-//            // game.showLobbyView()
+//            // ktxCtx.showLobbyView()
 //        }
 //        row()
 //        textButton("Settings").onChange { println("TODO: implement settings") }
@@ -94,7 +94,7 @@ fun <S> KWidget<S>.startView(
 //
 //@Scene2dDsl
 //fun <S> KWidget<S>.menuView(
-//    game: KtxKatan,
+//    ktxCtx: KtxKatan,
 //    skin: Skin,
 //    init: MenuView.(S) -> Unit = {}
-//): MenuView = actor(MenuView(game, skin), init)
+//): MenuView = actor(MenuView(ktxCtx, skin), init)

@@ -1,33 +1,54 @@
 package io.github.petvat.katan.server.service.client
 
-import io.github.petvat.katan.server.service.session.Session
 import io.github.petvat.katan.shared.UserId
+import java.nio.channels.SocketChannel
+import java.time.Instant
+
+import kotlin.concurrent.Volatile
 
 @JvmInline
 value class ClientId(val value: String)
 
 
+@JvmInline
+value class ConnectionId(val value: String)
+
+
+data class Connection(
+    val id: ConnectionId, // TODO: USeful?
+    val socketChannel: SocketChannel
+)
+
+
+/*
+ TODO: Do instead:
+
+ ConnectedClient(
+ id: ClientId
+ auth/user: Auth
+
+
+  NOTE: Because Auth should be used on model.
+ */
+
+
 data class ConnectedClient(
     val id: ClientId,
-    var auth: Auth,
-    val sessions: List<Session>
+    @Volatile var auth: Auth = Auth.Unauth,
+
+    @Volatile
+    var connection: Connection? = null // null while disconnected
 ) {
-    init {
-        require(
-            id.value.startsWith(
-                when (auth) {
-                    is Auth.Guest -> "guest:"
-                    is Auth.Unauth -> "unauth:"
-                    is Auth.User -> "user:"
-                }
-            )
-        )
-    }
+
+    @Volatile
+    var disconnectedAt: Instant? = null
+
+    val isConnected get() = connection != null
 }
 
 sealed interface AuthCredentials {
     data class Guest(val name: String) : AuthCredentials
-    data class User(val name: String) : AuthCredentials
+    data class User(val name: String, val psw: String) : AuthCredentials
     data class Admin(val name: String, val secret: String) : AuthCredentials
 }
 
@@ -44,12 +65,22 @@ sealed interface Auth {
     data class Guest(
         override val name: String,
         override val id: UserId
-    ) : Auth
+    ) : Auth {
+        init {
+            require(id.value.startsWith("guest"))
+        }
+
+    }
 
     data class User(
         override val name: String,
+        val psw: String,
         override val id: UserId
-    ) : Auth
+    ) : Auth {
+        init {
+            require(id.value.startsWith("user"))
+        }
+    }
 
 }
 

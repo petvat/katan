@@ -1,21 +1,22 @@
 package io.github.petvat.katan.ui.ktx.screen
 
+import io.github.petvat.katan.event.EventSystem
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.view.GroupView
-import io.github.petvat.katan.ui.model.GroupViewModel
+import io.github.petvat.katan.ui.viewmodel.GroupViewModel
 import ktx.scene2d.Scene2DSkin
 import ktx.scene2d.actors
 
 
-class GroupScreen(game: KtxKatan) : AbstractScreen(game) {
+class GroupScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bus) {
 
     override lateinit var viewModel: GroupViewModel
 
     override fun buildStage() {
 
-        viewModel = GroupViewModel(game.model.groupModel, game.controller, game.transitionService)
+        viewModel = GroupViewModel(ktxCtx.model.group, ktxCtx.chatActions, ktxCtx.gameActions, ktxCtx.transitionService)
         stage.actors {
-            stage.addActor(
+            stage.addActor( // NOTE: ?
                 GroupView(
                     viewModel,
                     Scene2DSkin.defaultSkin

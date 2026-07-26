@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.utils.Align
 import io.github.petvat.katan.ui.ktx.widget.ChatWidget
 import io.github.petvat.katan.ui.ktx.widget.chat
-import io.github.petvat.katan.ui.model.GroupViewModel
+import io.github.petvat.katan.ui.viewmodel.GroupViewModel
 import ktx.actors.onChange
 import ktx.scene2d.KTable
 import ktx.scene2d.scene2d
@@ -30,7 +30,7 @@ class GroupView(
             skin = skin,
             callback = viewModel::handleChat
         ) { }
-        startBtn = scene2d.textButton("Start game") {
+        startBtn = scene2d.textButton("Start ktxCtx") {
             onChange { this@GroupView.viewModel.handleInit() }
         }
 
@@ -42,20 +42,11 @@ class GroupView(
     }
 
     override fun registerOnPropertyChanges() {
-
-        // More sophisticated
-        viewModel.onPropertyChange(GroupViewModel::lastGroupMessage) {
-            println("reached binder last message")
+        viewModel.onPropertyChange(GroupViewModel::lastMessage) {
             chatWidget.addMessage(it.first, it.second)
 
         }
 
-        // Dump
-        viewModel.onPropertyChange(GroupViewModel::chatLogProperty) {
-            // chatWidget.addMessage(it.first, it.second)
-            println("reach")
-            chatWidget.addAll(it)
-        }
     }
 
 

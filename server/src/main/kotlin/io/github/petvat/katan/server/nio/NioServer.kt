@@ -1,14 +1,11 @@
 package io.github.petvat.katan.server.nio
 
-import io.github.petvat.katan.shared.model.SessionId
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.server.service.client.Auth
-import io.github.petvat.katan.server.service.client.ClientId
-import io.github.petvat.katan.server.service.client.ClientRegistry
-import io.github.petvat.katan.server.service.client.ConnectedClient
-import io.github.petvat.katan.server.service.service.RequestProcessor
-import io.github.petvat.katan.server.service.session.Session
-import io.github.petvat.katan.server.service.session.SessionRegistry
+import io.github.petvat.katan.server.service.channel.IdType
+import io.github.petvat.katan.server.service.channel.generateClientId
+import io.github.petvat.katan.server.service.client.*
+import io.github.petvat.katan.server.service.gateway.RequestProcessor
+import io.github.petvat.katan.shared.MessageReader
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import java.net.InetSocketAddress
@@ -24,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * This class represents a NIO server.
  *
- * TODO: Make abstract with abstract func respond()
  *
  * @property start Starts up the server on a single thread
  * @property acceptConnection Accepts a new client connection
@@ -34,12 +30,11 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class NioServer(
     private val requestProcessor: RequestProcessor,
-    private val sessionRegistry: SessionRegistry,
     private val clientRegistry: ClientRegistry
 ) {
     private val logger = KotlinLogging.logger { }
 
-    private val requestChannel = Channel<Pair<SessionId, String>>()
+    private val requestChannel = Channel<Pair<ClientId, String>>()
 
     private val responseChannel = Channel<Pair<SocketChannel, String>>()
 
@@ -49,11 +44,13 @@ class NioServer(
 
     private val serverScope = CoroutineScope(Dispatchers.Default)
 
-    private val clientBuffers = ConcurrentHashMap<SocketChannel, Pair<ByteBuffer, StringBuilder>>()
 
+    private val writers = ConcurrentHashMap<SocketChannel, MessageWriter>()
+    private val readers = ConcurrentHashMap<SocketChannel, MessageReader>()
 
-    // TODO: Move
-    private fun generateSessionId() = SessionId(UUID.randomUUID().toString())
+    // private val clientBuffers = ConcurrentHashMap<SocketChannel, Pair<ByteBuffer, StringBuilder>>()
+
+    private val readBuffers = ConcurrentHashMap<SocketChannel, ByteBuffer>()
 
     private suspend fun processSelectedKeys() {
         selector.selectedKeys().forEach {
@@ -63,11 +60,23 @@ class NioServer(
                 }
 
                 it.isReadable && it.channel() is SocketChannel -> acceptClientRequest(it)
+
+                // in processSelectedKeys' when block:
+                it.isWritable && it.channel() is SocketChannel -> {
+                    val ch = it.channel() as SocketChannel
+                    val writer = writers[ch] ?: return
+                    if (writer.flush()) {
+                        it.interestOpsAnd(SelectionKey.OP_READ) // done draining. Stop listening for writable
+                    }
+                }
             }
         }
         selector.selectedKeys().clear()
     }
 
+    /**
+     * @note [responsePool] > 1 will break with blocking client
+     */
     fun start(portNumber: Int, requestPool: Int = 3, responsePool: Int = 1) {
         try {
             serverChannel.configureBlocking(false)
@@ -86,8 +95,9 @@ class NioServer(
             repeat(requestPool) {
                 serverScope.launch {
                     for ((client, req) in requestChannel) {
+                        logger.debug { "Received request [$req] from [$client]." }
                         requestProcessor.handle(
-                            clientRegistry[sessionRegistry[client].belongsTo],
+                            clientRegistry.get(client)!!,
                             req,
                             ::responseCallback
                         )
@@ -98,6 +108,7 @@ class NioServer(
             repeat(responsePool) {
                 serverScope.launch(Dispatchers.IO) {
                     for ((client, res) in responseChannel) {
+                        logger.debug { "Sending response [$res] to [$client]." }
                         handleResponse(client, res)
                         // MessageWriter.write()
                     }
@@ -112,24 +123,26 @@ class NioServer(
 
     }
 
-    private suspend fun responseCallback(responses: Map<Session, String>) {
+    private suspend fun responseCallback(responses: Map<ConnectedClient, String>) {
         responses.forEach { (ch, res) ->
-            responseChannel.send(ch.socketChannel to res)
+            responseChannel.send(ch.connection!!.socketChannel to res) // HACK: "!!"
         }
     }
 
+
     private fun handleResponse(client: SocketChannel, response: String) {
-        val buffer = ByteBuffer.wrap(response.toByteArray())
-        while (buffer.hasRemaining()) {
-            client.write(buffer)
+        val writer = writers.getOrPut(client) { MessageWriter(client) }
+        writer.enqueue(response)
+        if (!writer.flush()) {
+            client.keyFor(selector)?.interestOpsOr(SelectionKey.OP_WRITE)
         }
-        // TODO: Now blocking but could use channel's MessageWriter
     }
 
     /**
      * Connect a new client to server.
+     * NOT FULLY CONNECTED
+     * Phase 1 - Raw connection, no identity.
      *
-     * TODO: Why withConetxt?
      */
     private suspend fun acceptConnection() = withContext(Dispatchers.IO) {
         val clientSocket = serverChannel.accept()
@@ -139,90 +152,46 @@ class NioServer(
         val key = clientSocket.register(selector, SelectionKey.OP_READ)
 
         // Attach ClientSession to track state
-        val clientId = ClientId(UUID.randomUUID().toString())
-        val session = Session(clientId, SessionId(UUID.randomUUID().toString()), clientSocket)
-        val client = ConnectedClient(clientId, Auth.Unauth, mutableListOf(session))
 
-        sessionRegistry.add(session)
-        clientRegistry.add(client)
 
-        key.attach(session)
+        val connection = Connection(ConnectionId(UUID.randomUUID().toString()), clientSocket)
+        val connectedClient = ConnectedClient(generateClientId(IdType.CLIENT), connection = connection)
 
-        // Add dedicated client buffer
-        // TODO: Add to MessageWriter
-        clientBuffers[clientSocket] = ByteBuffer.allocate(4096) to StringBuilder()
+        key.attach(connectedClient.id)
 
-        logger.debug { "New client is given session ID: ${session.id}." }
+        clientRegistry.register(connectedClient.id, connectedClient)
 
-        val token = "token:${UUID.randomUUID()}"
-        responseChannel.send(clientSocket to token)
+        logger.info { "PENDING CONNECTION: ${clientSocket.socket().inetAddress.hostAddress}" }
     }
 
     /**
      * Read from a channel into a buffer.
      */
-    private fun channelRead(socketChannel: SocketChannel): String? {
-        val (buf, str) = clientBuffers[socketChannel]!!
-        val delimiter = '\n'
 
+    private fun channelRead(socketChannel: SocketChannel): List<String> {
         logger.debug { "Begin read." }
+        val reader = readers.getOrPut(socketChannel) { MessageReader() }
 
-        // MessageReader.read() // MessageReader(blocking = true)
-
-        try {
-            val bytesRead = socketChannel.read(buf) // NOTE: Could overflow the buffer.
-            buf.flip() // read mode
-
-            logger.debug { "PARTIAL: $str" }
-
-            // If the string builder is not empty, that indicates that there is a
-            // partial message in the buffer
-            if (bytesRead == -1) {
-                logger.error { "Read failed." }
-                disconnectClient(socketChannel)
-                return null
-            }
-            while (buf.hasRemaining()) {
-                val c = buf.get().toInt().toChar()
-                if (c == delimiter) {
-                    if (buf.hasRemaining()) {
-                        // There is a partial message in the buffer.
-                        buf.compact()
-                    } else {
-                        buf.clear()
-                    }
-                    val msg = str.toString()
-                    // We can clear the str because it now contains a complete message.
-                    str.clear()
-                    logger.debug { "Complete msg return: $msg" }
-                    return msg
-                } else {
-                    str.append(c)
-                }
-            }
-            // If we never reach a delimiter, we had a partial read.
-            // Buffer should be empty.
-            buf.flip() // write mode
-            return null
+        return try {
+            reader.readAvailable(socketChannel)
         } catch (e: Exception) {
             logger.debug { "DISCONNECTING TYP 2, ABRUPT: ${e.message}" }
             disconnectClient(socketChannel)
-            return null
+            emptyList()
         }
     }
 
     private fun disconnectClient(socketChannel: SocketChannel) {
-
         val key = socketChannel.keyFor(selector)
-        val sid = key.attachment() as SessionId
+        val clientId = key.attachment() as ClientId
 
-        clientBuffers.remove(socketChannel)
-        sessionRegistry.remove(sid)
-
-        // Cancel the selection key and close the channel
-        key.cancel()
-        socketChannel.close()
-        logger.info { "DISCONNECTED: ${socketChannel.remoteAddress}." }
+        clientRegistry.markDisconnected(clientId) { expiredClient ->
+            readBuffers.remove(socketChannel)
+            key.cancel()
+            socketChannel.close()
+            logger.info { "Client ${expiredClient.id} expired after grace window." }
+        }
+        logger.info { "DISCONNECTED: $clientId (grace period started)." }
     }
 
     /**
@@ -230,20 +199,9 @@ class NioServer(
      */
     private suspend fun acceptClientRequest(key: SelectionKey) = withContext(Dispatchers.IO) {
         val clientChannel = key.channel() as SocketChannel
-        val session = key.attachment() as Session
-
-        logger.debug { "Aquire client lock attempt." }
-
-        val req = channelRead(clientChannel)
-
-        if (req != null) {
-            logger.debug { "COMPLETE MSG: $req" }
-            requestChannel.send(session.id to req) // NOTE: Or client channel here if stateful
-        }
-
-        // TODO: Shouldn't block. Use MessageWriter and remove lock. Implement hierarchical locking of resources in LockManager.
-//        lockManager.callInMutex(sid) {
-//
-//        }
+        val clientId = key.attachment() as ClientId
+        val messages = channelRead(clientChannel)
+        if (messages.isEmpty()) return@withContext
+        messages.forEach { msg -> requestChannel.send(clientId to msg) }
     }
 }

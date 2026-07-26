@@ -9,13 +9,13 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.widget.error
-import io.github.petvat.katan.ui.model.ViewModel
+import io.github.petvat.katan.ui.viewmodel.ViewModel
 import ktx.app.KtxScreen
 import ktx.scene2d.Scene2DSkin
 import ktx.scene2d.scene2d
 
-abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
-    private val logger = KotlinLogging.logger { }
+abstract class AbstractScreen(val ktxCtx: KtxKatan, private val bus: EventSystem) : KtxScreen, EventListener {
+    protected val logger = KotlinLogging.logger { }
     private val vp = ScreenViewport()
     private val scaleFactor = 3
     protected val stage: Stage
@@ -24,10 +24,10 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
 
     init {
         vp.unitsPerPixel = 1f / scaleFactor
-        stage = Stage(vp, game.batch)
+        stage = Stage(vp, ktxCtx.batch)
         // stage.isDebugAll = true
     }
-    
+
     override fun resize(width: Int, height: Int) {
         stage.viewport.update(width, height, true)
     }
@@ -42,8 +42,10 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
         logger.debug { "Building stage." }
         stage.clear()
         buildStage()
-        EventBus += this
-        EventBus += viewModel
+
+        // Add to event bus
+        bus += this
+        bus += viewModel
     }
 
     override fun hide() {
@@ -80,8 +82,8 @@ abstract class AbstractScreen(val game: KtxKatan) : KtxScreen, EventListener {
     }
 
     override fun dispose() {
-        EventBus -= viewModel
-        EventBus -= this
+        bus -= viewModel
+        bus -= this
         stage.dispose()
     }
 }

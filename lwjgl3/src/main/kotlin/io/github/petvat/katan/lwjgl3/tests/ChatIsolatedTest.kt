@@ -1,0 +1,79 @@
+package io.github.petvat.katan.lwjgl3.tests
+
+import io.github.petvat.katan.event.EventSystem
+import io.github.petvat.katan.model.GroupState
+import io.github.petvat.katan.shared.model.game.Settings
+import io.github.petvat.katan.ui.ktx.screen.loadUISkin
+import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
+import io.github.petvat.katan.ui.ktx.view.GroupView
+import io.github.petvat.katan.ui.ktx.widget.ChatWidget
+import io.github.petvat.katan.ui.ktx.widget.chat
+import io.github.petvat.katan.ui.viewmodel.GroupViewModel
+import ktx.app.KtxGame
+import ktx.scene2d.Scene2DSkin
+import ktx.scene2d.actors
+import ktx.scene2d.scene2d
+import ktx.scene2d.table
+
+fun main() = gdxTest("Group test", GroupTestLauncher())
+
+
+/**
+ * TODO: Provide an abstraction between DTO and client state
+ */
+
+private class GroupTestLauncher : KtxGame<GroupTest>() {
+    override fun create() {
+        loadUISkin()
+        addScreen(GroupTest())
+        setScreen<GroupTest>()
+    }
+}
+
+private class GroupTest() : AbstractTestScreen() {
+
+    val eventBus = EventSystem()
+
+    private val group =
+        GroupState("1", mutableMapOf("1" to "P1", "2" to "P2"), Settings())
+
+    override fun setup() {
+        val viewModel = GroupViewModel(group, MockChatActions(), MockGameActions(), { })
+
+        stage.addActor(
+            GroupView(viewModel, Scene2DSkin.defaultSkin)
+        )
+
+        eventBus += viewModel
+        // viewModel.onEvent(ChatEvent("Player1", "Hello"))
+    }
+}
+
+private class ChatTestLauncher : KtxGame<ChatIsolatedTest>() {
+    override fun create() {
+        loadVisUISkin()
+        addScreen(ChatIsolatedTest())
+        setScreen<ChatIsolatedTest>()
+    }
+}
+
+private class ChatIsolatedTest : AbstractTestScreen() {
+
+    val messages = List(20) { "Name" to "Hello" }
+
+    override fun setup() {
+        val ch: ChatWidget
+
+        stage.actors {
+            table {
+
+                setFillParent(true)
+                ch = scene2d.chat(messages, Scene2DSkin.defaultSkin, {}) {
+                }
+                add(ch).grow()
+            }
+            //}
+
+        }
+    }
+}

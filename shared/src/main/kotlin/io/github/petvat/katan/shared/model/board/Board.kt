@@ -3,6 +3,7 @@ package io.github.petvat.katan.shared.model.board
 import io.github.petvat.katan.shared.hexlib.HexCoordinates
 import io.github.petvat.katan.shared.protocol.dto.BoardDTO
 import io.github.petvat.katan.shared.protocol.dto.Transmittable
+import kotlinx.serialization.Serializable
 
 
 /**

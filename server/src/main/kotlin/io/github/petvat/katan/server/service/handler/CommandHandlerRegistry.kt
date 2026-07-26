@@ -1,19 +1,35 @@
 package io.github.petvat.katan.server.service.handler
 
 import io.github.petvat.katan.server.service.channel.Channel
+import io.github.petvat.katan.server.service.channel.ChannelRegistry
+import io.github.petvat.katan.server.service.channel.GroupFactory
+import io.github.petvat.katan.server.service.channel.LobbyChannel
 import io.github.petvat.katan.server.service.command.*
-import io.github.petvat.katan.server.service.presenter.ConcurrentRegistry
 import kotlin.reflect.KClass
 
-class CommandHandlerRegistry {
-
-    init {
-        register(Register::class, RegisterHandler())
-        register(RollDice::class, RollDiceHandler())
-        register(JoinGroup::class, JoinGroupHandler())
-    }
+class CommandHandlerRegistry(
+    channelRegistry: ChannelRegistry,
+) {
 
     private val handlers = mutableMapOf<KClass<out Command>, CommandHandler<out Command, out Channel<*>>>()
+
+    init {
+        // GROUP
+        register(JoinGroup::class, JoinGroupHandler())
+        register(LeaveGroup::class, LeaveGroupHandler())
+        register(CreateGroup::class, CreateGroupHandler(channelRegistry))
+        register(InitGame::class, InitGameHandler(channelRegistry))
+
+        // GAME
+        register(RollDice::class, RollDiceHandler())
+        register(Build::class, BuildHandler())
+        register(EndTurn::class, EndTurnHandler())
+        register(BuildInitSettlment::class, BuildInitialSettlementHandler())
+
+        // CHAT
+        register(Chat::class, ChatHandler())
+    }
+
 
     private fun <C : Command> register(eventClass: KClass<C>, presenter: CommandHandler<C, out Channel<*>>) {
         handlers[eventClass] = presenter

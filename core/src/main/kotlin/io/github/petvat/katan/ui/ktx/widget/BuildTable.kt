@@ -2,21 +2,25 @@ package io.github.petvat.katan.ui.ktx.widget
 
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.event.Event
 import io.github.petvat.katan.event.PlaceBuildingCommand
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import ktx.actors.onChangeEvent
+import ktx.actors.onClick
+import ktx.log.logger
 import ktx.scene2d.*
 
 @Scene2dDsl
 class BuildTable(
     skin: Skin,
-    val callback: (Event) -> Unit, // TODO: Command
+    val callback: (PlaceBuildingCommand<*>) -> Unit,
 ) : Table(skin), KTable { // TODO: This should be a window! Then we need a command view -> screen, using eventbus.
 
 
+    val logger = KotlinLogging.logger { }
     val scrollPaneWidget: ScrollPaneWidget<BuildItemWidget>
 
     init {
@@ -43,7 +47,10 @@ class BuildTable(
 
     private fun addBuildItem(title: String, cost: ResourceMap, vp: Int, buildKind: BuildKind): BuildItemWidget {
         return scene2d.buildItem(title, cost, vp, skin) {
-            onChangeEvent { this@BuildTable.callback(PlaceBuildingCommand(buildKind)) }
+            onClick {
+                this@BuildTable.logger.debug { "Clicked on addBuildItem" }
+                this@BuildTable.callback(PlaceBuildingCommand(buildKind))
+            }
         }
     }
 }
@@ -51,7 +58,7 @@ class BuildTable(
 @Scene2dDsl
 fun <S> KWidget<S>.buildTable(
     skin: Skin,
-    callback: (Event) -> Unit,
+    callback: (PlaceBuildingCommand<*>) -> Unit,
     init: BuildTable.(S) -> Unit = {}
 ): BuildTable = actor(BuildTable(skin, callback), init)
 

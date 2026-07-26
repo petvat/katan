@@ -1,6 +1,6 @@
 package io.github.petvat.katan.server.service.engine
 
-import io.github.petvat.katan.server.service.engine.board.BoardManager2
+import io.github.petvat.katan.server.service.engine.board.BoardManager
 import io.github.petvat.katan.server.service.event.GameEvent
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
@@ -9,14 +9,19 @@ import io.github.petvat.katan.shared.model.board.Board
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.board.RoadKind
 import io.github.petvat.katan.shared.model.board.VillageKind
+import io.github.petvat.katan.shared.model.game.Phase
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import kotlin.random.Random
 
 // TODO: This could ust be an Object
+// FIXME: Shared
 class GameRuleEngine(
     ruleBook: RuleBook,
 ) {
-    private val boardManager = BoardManager2(ruleBook)
+    private val boardManager = BoardManager(ruleBook)
+
+    fun buildInitialSettlement(board: Board, player: Int, coordinates: ICoordinates) =
+        boardManager.buildInitialVillage(board, player, coordinates)
 
     fun buildVillage(board: Board, player: Int, coordinates: ICoordinates, villageKind: VillageKind) =
         boardManager.buildVillage(board, player, coordinates, villageKind)
@@ -63,6 +68,14 @@ class GameRuleEngine(
         return resources
     }
 
+
+    /**
+     * Returns the player number of the next player in turn.
+     */
+    fun nextTurn(game: GameSnapshot): Int {
+        val next = game.turnOrder.indexOf(game.turnPlayer) % game.turnOrder.size
+        return game.turnOrder[next]
+    }
 
     fun discardResources(game: GameSnapshot): Map<Int, ResourceMap> =
         game.players.associate { player: Player ->
@@ -137,7 +150,7 @@ class GameRuleEngine(
         coordinates: Coordinates,
         game: GameSnapshot
     ): EngineResult<Pair<GameSnapshot, GameEvent>> {
-        if (!hasSufficientResources(player, building.cost)) {
+        if (!hasSufficientResources(player, game.rules.getCost(building))) {
             return EngineResult.Failure("Not sufficient resources to build")
         }
         val board = when (building) {

@@ -8,12 +8,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.ui.model.ThisPlayerViewModel
+import io.github.petvat.katan.ui.projection.ThisPlayerProjection
 import ktx.scene2d.*
 
 
 class ThisPlayerTable(
-    thisPlayerViewModel: ThisPlayerViewModel,
+    thisPlayerVM: ThisPlayerProjection,
     skin: Skin
 ) : Table(skin), KTable {
 
@@ -33,12 +33,12 @@ class ThisPlayerTable(
 
     init {
         background = skin.getDrawable("area")
-        wood = scene2d.label("x${thisPlayerViewModel.inventory[Resource.WOOD]}")
-        ore = scene2d.label("x${thisPlayerViewModel.inventory[Resource.ORE]}")
-        wool = scene2d.label("x${thisPlayerViewModel.inventory[Resource.WOOL]}")
-        wheat = scene2d.label("x${thisPlayerViewModel.inventory[Resource.WHEAT]}")
-        brick = scene2d.label("x${thisPlayerViewModel.inventory[Resource.BRICK]}")
-        vp = scene2d.label("Victory points: ${thisPlayerViewModel.victoryPoints}")
+        wood = scene2d.label("x${thisPlayerVM.inventory[Resource.WOOD]}")
+        ore = scene2d.label("x${thisPlayerVM.inventory[Resource.ORE]}")
+        wool = scene2d.label("x${thisPlayerVM.inventory[Resource.WOOL]}")
+        wheat = scene2d.label("x${thisPlayerVM.inventory[Resource.WHEAT]}")
+        brick = scene2d.label("x${thisPlayerVM.inventory[Resource.BRICK]}")
+        vp = scene2d.label("Victory points: ${thisPlayerVM.victoryPoints}")
         turn = scene2d.label("") // TODO: replace with something better
 
         add(woodImg)
@@ -88,8 +88,8 @@ class ThisPlayerTable(
 
 @Scene2dDsl
 fun <S> KWidget<S>.thisPlayerTable(
-    thisPlayerViewModel: ThisPlayerViewModel,
+    thisPlayerProjection: ThisPlayerProjection,
     skin: Skin,
     init: ThisPlayerTable.(S) -> Unit = {}
-): ThisPlayerTable = actor(ThisPlayerTable(thisPlayerViewModel, skin), init)
+): ThisPlayerTable = actor(ThisPlayerTable(thisPlayerProjection, skin), init)
 

@@ -24,14 +24,14 @@ sealed interface Coordinates {
  * Logical hexagon/tile coordiantes.
  */
 @Serializable
-class HexCoordinates(@SerialName("hex_q") override val q: Int, @SerialName("hex_r") override val r: Int) :
+data class HexCoordinates(@SerialName("hex_q") override val q: Int, @SerialName("hex_r") override val r: Int) :
     Coordinates
 
 /**
  * Logical intersection coordinates.
  */
 @Serializable
-class ICoordinates(
+data class ICoordinates(
     @SerialName("intersect_q") override val q: Int,
     @SerialName("intersect_r") override val r: Int
 ) : Coordinates
@@ -40,7 +40,7 @@ class ICoordinates(
  * Logical edge coordinates.
  */
 @Serializable
-class EdgeCoordinates(
+data class EdgeCoordinates(
     @SerialName("edge_q") override val q: Int,
     @SerialName("edge_r") override val r: Int
 ) : Coordinates

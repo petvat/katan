@@ -6,14 +6,15 @@ import io.github.petvat.katan.server.service.engine.RuleBook
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.shared.model.board.*
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.protocol.ErrorCode
 import java.util.List.copyOf
 
 /**
+ *
+ * TODO: Generalize and share!
  * BoardManager is responsible for the spatial and positional logic of the board.
  *
  */
-class BoardManager2(ruleBook: RuleBook) {
+class BoardManager(ruleBook: RuleBook) {
 
     fun countVictoryPoints(board: Board): Map<Int, Int> {
         val vps = mutableMapOf<Int, Int>()
@@ -273,6 +274,30 @@ class BoardManager2(ruleBook: RuleBook) {
 
     /**
      * Builds settlement at intersection coordinate if valid.
+     */
+    fun buildInitialVillage(
+        board: Board,
+        player: Int,
+        coordinate: ICoordinates,
+    ): EngineResult<Board> {
+        if (coordinate in invalidIntersectionsByDistanceRule(board)) {
+            return EngineResult.Failure("Invalid build coordinate.")
+        }
+
+        return EngineResult.of(
+            board.copy(
+                intersections = board.intersections + Intersection(
+                    coordinate,
+                    Village(VillageKind.SETTLEMENT, player)
+                )
+            )
+        )
+
+
+    }
+
+    /**
+     * Builds settlement at intersection coordinate if valid.
      *
      * @param player builder
      * @param coordinate intersection
@@ -334,7 +359,7 @@ class BoardManager2(ruleBook: RuleBook) {
  *
  * Manages all logical operations on board.
  */
-class BoardManager(
+class BoardManagerDEPR(
     val board: Board
 ) {
     /**

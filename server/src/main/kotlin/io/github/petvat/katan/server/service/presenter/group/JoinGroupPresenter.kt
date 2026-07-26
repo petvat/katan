@@ -1,42 +1,45 @@
 package io.github.petvat.katan.server.service.presenter.group
 
+import io.github.petvat.katan.server.service.channel.ChannelRegistry
 import io.github.petvat.katan.server.service.channel.GroupChannel
 import io.github.petvat.katan.server.service.channel.GroupSubscriber
 import io.github.petvat.katan.server.service.client.UserRegistry
 import io.github.petvat.katan.server.service.event.GroupEvent
 import io.github.petvat.katan.shared.UserId
 import io.github.petvat.katan.shared.protocol.Response
-import io.github.petvat.katan.shared.protocol.dto.PrivateGroupDTO
 
-class JoinGroupPresenter(private val userRegistry: UserRegistry) : AbstractGroupPresenter<GroupEvent.Joined>() {
 
-    override fun inGroupView(event: GroupEvent.Joined, pov: UserId, channel: GroupChannel): Response {
+class JoinGroupPresenter(private val userRegistry: UserRegistry, channelRegistry: ChannelRegistry) :
+    AbstractGroupPresenter<GroupEvent.Joined>(channelRegistry) {
+
+    override fun groupView(event: GroupEvent.Joined, pov: UserId, channel: GroupChannel): Response {
         return if (event.userId == pov) {
             Response.Joined(
-                seq = channel.seq, // <- unsafe
-                groupDTO = PrivateGroupDTO(
-                    id = channel.id.value,
-                    clients = channel.subs.filter { it is GroupSubscriber }.keys.associate {
-                        it.value to userRegistry.get(it).name
-                    },
-                    settings = channel.settings
-                )
+
+                groupId = channel.id.value,
+                members = channel.subs.filter { it is GroupSubscriber }.keys.associate {
+                    it.value to (userRegistry.get(it)?.name ?: "Unnamed user")
+                }.toMap(),
+                settings = channel.settings
+
             )
+
         } else {
             Response.UserJoined(
-                seq = channel.seq,
+                groupId = channel.id.value,
                 userId = pov.value,
-                name = userRegistry.get(pov).name
+                name = userRegistry.get(pov)?.name ?: "Unnamed user"
             )
         }
     }
 
-    override fun outGroupView(event: GroupEvent.Joined, channel: GroupChannel): Response {
+    override fun lobbyView(event: GroupEvent.Joined, channel: GroupChannel): Response {
         return Response.GroupUpdate(
             event.userId.value,
             capacity = channel.settings.maxPlayers,
             memberCount = channel.subs.size
         )
+
     }
 
 }

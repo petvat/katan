@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.utils.Align
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.ui.ktx.widget.*
-import io.github.petvat.katan.ui.model.LobbyViewModel
+import io.github.petvat.katan.ui.viewmodel.LobbyViewModel
 import ktx.actors.onClick
 import ktx.scene2d.*
 
@@ -51,13 +51,13 @@ class LobbyView(
 //            }
 //        }
 
-        groupsWidget.update(viewModel.groupModels.values.toList())
+        groupsWidget.update(viewModel.groupSummaries.values.toList())
 
         registerOnPropertyChanges()
     }
 
     override fun registerOnPropertyChanges() {
-        viewModel.onPropertyChange(LobbyViewModel::groupModels) {
+        viewModel.onPropertyChange(LobbyViewModel::groupSummaries) {
             logger.debug { "groups update" }
             groupsWidget.update(listOf(it.values.last())) // TODO: Fix this!
         }

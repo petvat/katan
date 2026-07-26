@@ -3,7 +3,7 @@ package io.github.petvat.katan.ui.ktx.widget
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.ui.model.GroupModel
+import io.github.petvat.katan.model.GroupSummary
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
@@ -95,7 +95,7 @@ class ScrollPaneWidget<T : Actor>(val skin: Skin) : ScrollPane(null, skin), KGro
 }
 
 
-class GroupListWidget(skin: Skin, val callback: (String, String) -> Unit) : Table(skin), KTable {
+class GroupListWidget(skin: Skin, val callback: (String) -> Unit) : Table(skin), KTable {
     private val scrollPaneWidget: ScrollPaneWidget<GroupListElementWidget>
     private val widgetLabel: Label
 
@@ -115,16 +115,16 @@ class GroupListWidget(skin: Skin, val callback: (String, String) -> Unit) : Tabl
 
     }
 
-    fun update(groups: List<GroupModel>) {
+    fun update(groups: List<GroupSummary>) {
         groups.forEach { group ->
             val name = "New group"
             val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
                 name,
-                group.mode.name,
+                "Mode: Not yet implemented",
                 group.numClients.toString(),
-                group.maxClients.toString(),
+                group.capacity.toString(),
                 skin,
-                { this@GroupListWidget.callback(group.id, name) })
+                { this@GroupListWidget.callback(group.id) })
 
             scrollPaneWidget.add(element)
         }
@@ -230,7 +230,7 @@ fun <S> KWidget<S>.groupElement(
 
 @Scene2dDsl
 fun <S> KWidget<S>.groupsWidget(
-    callback: (String, String) -> Unit,
+    callback: (String) -> Unit,
     skin: Skin = Scene2DSkin.defaultSkin,
     init: GroupListWidget.(S) -> Unit = {}
 ): GroupListWidget = actor(GroupListWidget(skin, callback), init)

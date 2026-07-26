@@ -1,19 +1,50 @@
 package io.github.petvat.katan.server.service.handler
 
 import io.github.petvat.katan.server.service.client.ConnectedClient
-import io.github.petvat.katan.server.service.command.Command
-import io.github.petvat.katan.server.service.command.GameCommand
-import io.github.petvat.katan.server.service.command.GroupCommand
-import io.github.petvat.katan.server.service.command.LobbyCommand
 import io.github.petvat.katan.server.service.event.Event
 import io.github.petvat.katan.server.service.channel.*
+import io.github.petvat.katan.server.service.command.*
+import io.github.petvat.katan.server.service.engine.GameRuleEngine
+import io.github.petvat.katan.server.service.event.GameEvent
+import io.github.petvat.katan.shared.protocol.ErrorCode
 
 sealed interface CommandHandler<C : Command, R : Channel<*>> {
+    fun handle(client: ConnectedClient, channel: R, command: C): Event {
+        val event = execute(client, channel, command)
+
+
+        if (event !is Event.Failure) {
+            val tickedSeq = channel.nextSeq()
+            event.channelSeq = tickedSeq
+        }
+        return event
+    }
+
     fun execute(client: ConnectedClient, channel: R, command: C): Event
 }
 
 interface GameCommandHandler<C : GameCommand> : CommandHandler<C, GameChannel> {
-    override fun execute(client: ConnectedClient, channel: GameChannel, command: C): Event
+    override fun execute(client: ConnectedClient, channel: GameChannel, command: C): Event {
+        val game = channel.snapshot
+
+        if (channel.subs[client.auth.id] != GameSubscriber.Player) {
+            return Event.Failure("User is not part of the game.", ErrorCode.DENIED)
+        }
+
+        val player = channel.userToPlayerId[client.auth.id]!!
+
+        // TODO: Very redundant! Find way to inject without creating
+        val gameRuleEngine = GameRuleEngine(game.rules)
+
+        val event = executeGameAction(channel, player, gameRuleEngine, command)
+
+        if (event !is Event.Failure) {
+            event.channelSeq = channel.nextSeq()
+        }
+        return event
+    }
+
+    fun executeGameAction(channel: GameChannel, player: Int, engine: GameRuleEngine, command: C): GameEvent
 }
 
 interface GroupCommandHandler<C : GroupCommand> : CommandHandler<C, GroupChannel> {
@@ -24,7 +55,7 @@ interface LobbyCommandHandler<C : LobbyCommand> : CommandHandler<C, LobbyChannel
     override fun execute(client: ConnectedClient, channel: LobbyChannel, command: C): Event
 }
 
-interface ChatCommandHandler<C : LobbyCommand> : CommandHandler<C, ChatChannel> {
-    override fun execute(client: ConnectedClient, channel: ChatChannel, command: C): Event
+interface ChatCommandHandler : CommandHandler<Chat, ChatChannel> {
+    override fun execute(client: ConnectedClient, channel: ChatChannel, command: Chat): Event
 }
 

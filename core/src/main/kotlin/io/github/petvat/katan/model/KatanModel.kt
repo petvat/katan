@@ -1,228 +1,142 @@
 package io.github.petvat.katan.model
 
-import io.github.petvat.katan.controller.*
-import io.github.petvat.katan.event.*
+import com.badlogic.gdx.Game
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
 import io.github.petvat.katan.shared.hexlib.ICoordinates
-import io.github.petvat.katan.shared.model.board.BuildKind
-import io.github.petvat.katan.shared.model.board.VillageKind
-import io.github.petvat.katan.shared.model.game.ResourceMap
+import io.github.petvat.katan.shared.model.board.*
+import io.github.petvat.katan.shared.model.game.Phase
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.PermissionLevel
-import io.github.petvat.katan.shared.protocol.ErrorCode
-import io.github.petvat.katan.shared.protocol.Response
-import io.github.petvat.katan.shared.protocol.dto.*
-import kotlin.reflect.KClass
+import io.github.petvat.katan.shared.model.game.ResourceMapData
 
 
 class ClientState {
-    private val eventSystem = EventSystem()
 
-    lateinit var sessionId: String
+    lateinit var id: String
 
     lateinit var name: String
 
-    lateinit var groupModel: GroupState
+    lateinit var resumeToken: String
 
-    lateinit var groupModels: MutableList<GroupState>
+    lateinit var lobby: String
 
-    lateinit var gameModel: GameState
-
-    private val handlers = mapOf(
-        handleWith<Response.DiceRolled> { r, _ -> rollDice(r) },
-        handleWith<Response.Chat> { r, _ -> chat(r) },
-        handleWith<Response.Joined> { r, _ -> join(r) },
-    )
-
-    private inline fun <reified T : Response> handleWith(
-        crossinline handler: (T, ClientState) -> Event
-    ): Pair<KClass<out Response>, (Response) -> Event> {
-        return T::class to { r -> handler(r as T, this) }
-    }
-
-    fun update(response: Response) {
-        val handler = handlers[response::class]!!
-        val event = handler(response)
-        eventSystem.fire(event)
-    }
-    
-    // FIX: HANDLERS
-
-    private fun login(sessionId: String, name: String): Event {
-        this.sessionId = sessionId
-        this.name = name
-        return LoginEvent
-    }
-
-    private fun join(response: Response.Joined): Event {
-        groupModel = response.groupDTO.toClientModel()
-        return JoinEvent
-    }
-
-    private fun init(response: Response.Init): Event {
-        gameModel = response.privateGameState.toClientModel()
-        return InitEvent
-    }
-
-    private fun error(description: String?, code: ErrorCode?) = ErrorEvent(description ?: "No description.", code)
+    lateinit var group: GroupState
 
 
-    private fun endSetup(): Event {
-        TODO()
-    }
+    lateinit var game: GameState
 
-    private fun endTurn(): Event {
-        // TODO: INCREMENT TURN
-        return NextTurnEvent(gameModel.turnPlayer)
-    }
+    var chat: ChatState? = null
 
-    private fun rollDice(response: Response.DiceRolled): Event {
-        gameModel.player.resources = response.resources
-        gameModel.otherPlayers.forEach {
-            it.resources = response.othersResources[it.playerNumber]!!
-        }
-        // TODO: add MoveRobber. LocalGameState class?
-
-        return RolledDiceEvent(
-            response.roll1,
-            response.roll2,
-            response.moveRobber,
-            response.resources,
-            response.othersResources.mapValues { it.value.count() }
-        )
-    }
-
-    private fun chat(response: Response.Chat): Event {
-        val from = response.from
-        val message = response.message
-        groupModel.chatLog += groupModel.clients[from]!! to message
-        return ChatEvent(groupModel.chatLog.last().first, groupModel.chatLog.last().second) // !
-    }
-
-    private fun build(
-        builder: Int,
-        coordinates: Coordinates,
-        building: BuildKind,
-        victoryPoints: Boolean = true
-    ): Event {
-        when (building) {
-            is BuildKind.Road -> {
-                gameModel.board.paths += EdgeDTO(coordinates as EdgeCoordinates, RoadDTO(building.kind, builder))
-            }
-
-            is BuildKind.Village -> {
-                if (building.kind == VillageKind.SETTLEMENT) {
-                    gameModel.board.intersections += IntersectionDTO(
-                        coordinates as ICoordinates,
-                        VillageDTO(building.kind, builder)
-                    )
-                } else if (building.kind == VillageKind.CITY) {
-                    val city = gameModel.board.intersections
-                        .find { it.coordinate == coordinates as ICoordinates }!!
-                    city.village.villageKind = VillageKind.CITY
-                }
-
-                if (victoryPoints) {
-                    gameModel.otherPlayers.find { it.playerNumber == builder }?.let { it.victoryPoints++ }
-                    if (gameModel.player.playerNumber == builder) {
-                        gameModel.player.victoryPoints++
-                    }
-                }
-            }
-        }
-        return BuildEvent(builder, building, coordinates)
-    }
-
-    /**
-     * Make private.
-     */
-    fun diceRolled(playerResource: ResourceMap, otherPlayersResources: Map<Int, ResourceMap>, moveRobber: Boolean) {
-        gameModel.player.resources = playerResource
-        gameModel.otherPlayers.forEach {
-            it.resources = otherPlayersResources[it.playerNumber]!!
-        }
-        // TODO: add MoveRobber. LocalGameState class?
-    }
-
-
-    /**
-     * Make private.
-     */
-//    fun newBuilding(playerNumber: Int, building: BuildKind, coordinates: Coordinates, victoryPoints: Boolean = true) {
-//        when (building) {
-//            is BuildKind.Road -> {
-//                gameModel.board.paths += EdgeDTO(coordinates as EdgeCoordinates, RoadDTO(building.kind, playerNumber))
-//            }
-//
-//            is BuildKind.Village -> {
-//                if (building.kind == VillageKind.SETTLEMENT) {
-//                    gameModel.board.intersections += IntersectionDTO(
-//                        coordinates as ICoordinates,
-//                        VillageDTO(building.kind, playerNumber)
-//                    )
-//                } else if (building.kind == VillageKind.CITY) {
-//                    val city = gameModel.board.intersections
-//                        .find { it.coordinate == coordinates as ICoordinates }!!
-//                    city.village.villageKind = VillageKind.CITY
-//                }
-//
-//                // TODO: fix
-//                if (victoryPoints) {
-//                    gameModel.otherPlayers.find { it.playerNumber == playerNumber }?.let { it.victoryPoints++ }
-//                    if (gameModel.player.playerNumber == playerNumber) {
-//                        gameModel.player.victoryPoints++
-//                    }
-//                }
-//            }
-//        }
-//    }
+    val groupSummaries: List<GroupSummary> = mutableListOf()
 }
 
 
-fun GameStateDTO.toClientModel() = GameState(
-    player = this.player,
-    otherPlayers = this.otherPlayers,
-    turnOrder = this.turnOrder,
-    turnPlayer = this.turnPlayer,
-    board = this.board
+data class ChatState(
+    val id: String,
+    val members: Map<String, String>,
+    val chatLog: List<Pair<String, String>>
 )
 
-fun PrivateUserDTO.toClientModel() = UserModel
-
-fun PrivateGroupDTO.toClientModel() = GroupState(
-    groupId = this.id,
-    chatLog = this.chatLog,
-    clients = this.clients,
-    level = this.level,
-    settings = this.settings
-)
-
-data class ChatLogModel(
-    val log: MutableList<Pair<String, String>>
-) {
-    operator fun plusAssign(message: Pair<String, String>) {
-        log += message
-    }
-}
 
 data class GameState(
-    val player: PlayerDTO,
-    val otherPlayers: List<PlayerDTO>,
+    val player: Int,
+    val otherPlayers: List<Int>,
+    val id: String,
+    val colors: Map<Int, PlayerColor>,
     val turnOrder: List<Int>,
     var turnPlayer: Int,
-    val board: BoardDTO
+    val resources: ResourceMapData,
+    val otherResources: Map<Int, Int>,
+    val victoryPoints: Map<Int, Int>,
+    val phase: Phase,
+    var board: Board
+
+)
+
+fun ChatState.chatMessage(from: String, message: String) =
+    this.copy(
+        chatLog = chatLog + (from to message)
+    )
+
+fun GameState.addDiceRoll(
+    resources: ResourceMapData,
+    othersResources: Map<Int, Int>,
+) =
+    this.copy(
+        resources = resources,
+        otherResources = otherResources
+    )
+
+
+fun GameState.rolledDice(resources: ResourceMapData, othersResources: Map<Int, Int>, moveRobber: Boolean): GameState {
+    return this.copy(
+        resources = resources,
+        otherResources = otherResources.mapValues { (k, _) ->
+            othersResources[k]!! // TODO: Check
+        },
+        phase = if (moveRobber) Phase.MOVE_ROBBER else this.phase
+    )
+}
+
+fun GameState.addBuilding(
+    builder: Int,
+    building: BuildKind,
+    coordinates: Coordinates,
+    victoryPoints: Map<Int, Int>
+): GameState {
+
+    val newBoard = when (building) {
+        is BuildKind.Road ->
+            board.copy(
+                paths = board.paths + Edge(
+                    coordinates as EdgeCoordinates,
+                    Road(building.kind, builder)
+                )
+            )
+
+        is BuildKind.Village ->
+            when (building.kind) {
+                VillageKind.SETTLEMENT ->
+                    board.copy(
+                        intersections = board.intersections + Intersection(
+                            coordinates as ICoordinates,
+                            Village(VillageKind.SETTLEMENT, builder)
+                        )
+                    )
+
+                VillageKind.CITY ->
+                    board.copy(
+                        intersections = board.intersections.map { intersection ->
+                            if (intersection.coordinate == coordinates) {
+                                intersection.copy(
+                                    village = intersection.village.copy(
+                                        villageKind = VillageKind.CITY
+                                    )
+                                )
+                            } else intersection
+                        }
+                    )
+            }
+    }
+
+    return copy(
+        board = newBoard,
+        victoryPoints = victoryPoints
+    )
+}
+
+data class GroupSummary(
+    val id: String,
+    val numClients: Int,
+    val capacity: Int,
 )
 
 data class GroupState(
     val groupId: String, // TODO: Move GroupId to shared
-    val chatLog: MutableList<Pair<String, String>>,
-    val clients: MutableMap<String, String>,
-    val level: PermissionLevel,
+    val clients: MutableMap<String, String>, // TODO: ClientData
     val settings: Settings
 )
-
-data object UserModel
 
 
 /**
@@ -258,16 +172,16 @@ data object UserModel
 //     */
 //    lateinit var group: PrivateGroupDTO
 //
-//    lateinit var game: GameStateDTO
+//    lateinit var ktxCtx: GameStateDTO
 //
 //    var turnIndex = 0 // Custom local Game State
 //    var gamePhase = 0
 //
 //
-//    fun createGroup(groupId: String, level: PermissionLevel, settings: Settings) {
+//    fun createGroup(id: String, level: PermissionLevel, settings: Settings) {
 //        group = // HACK: NAAH, can't create a DTO like this. That's just silly.
 //            PrivateGroupDTO(
-//                groupId,
+//                id,
 //                mutableMapOf(sessionId to name),
 //                level,
 //                chatLog = mutableListOf(),
@@ -277,25 +191,25 @@ data object UserModel
 //
 //    fun join(group: PrivateGroupDTO) {
 //        this.group = group
-//        this.group.clients += sessionId to name
+//        this.group.members += sessionId to name
 //    }
 //
 //    fun userJoin(id: String, name: String) {
 //        // NOTE: Losing data here!
-//        group.clients[id] = name
+//        group.members[id] = name
 //    }
 //
 //    fun incrementTurn() {
-//        turnIndex += 1 % game.turnOrder.size
-//        game.turnPlayer = game.turnOrder[turnIndex]
+//        turnIndex += 1 % ktxCtx.turnOrder.size
+//        ktxCtx.turnPlayer = ktxCtx.turnOrder[turnIndex]
 //    }
 //
 //    /**
 //     * Delta update on dice rolled.
 //     */
 //    fun diceRolled(playerResource: ResourceMap, otherPlayersResources: Map<Int, ResourceMap>, moveRobber: Boolean) {
-//        game.player.resources = playerResource
-//        game.otherPlayers.forEach {
+//        ktxCtx.player.resources = playerResource
+//        ktxCtx.otherPlayers.forEach {
 //            it.resources = otherPlayersResources[it.playerNumber]!!
 //        }
 //        // TODO: add MoveRobber. LocalGameState class?
@@ -304,26 +218,26 @@ data object UserModel
 //    fun newBuilding(playerNumber: Int, building: BuildKind, coordinates: Coordinates, victoryPoints: Boolean = true) {
 //        when (building) {
 //            is BuildKind.Road -> {
-//                game.board.paths += EdgeDTO(coordinates as EdgeCoordinates, RoadDTO(building.kind, playerNumber))
+//                ktxCtx.board.paths += EdgeDTO(coordinates as EdgeCoordinates, RoadDTO(building.kind, playerNumber))
 //            }
 //
 //            is BuildKind.Village -> {
 //                if (building.kind == VillageKind.SETTLEMENT) {
-//                    game.board.intersections += IntersectionDTO(
+//                    ktxCtx.board.intersections += IntersectionDTO(
 //                        coordinates as ICoordinates,
 //                        VillageDTO(building.kind, playerNumber)
 //                    )
 //                } else if (building.kind == VillageKind.CITY) {
-//                    val city = game.board.intersections
+//                    val city = ktxCtx.board.intersections
 //                        .find { it.coordinate == coordinates as ICoordinates }!!
 //                    city.village.villageKind = VillageKind.CITY
 //                }
 //
 //                // TODO: fix
 //                if (victoryPoints) {
-//                    game.otherPlayers.find { it.playerNumber == playerNumber }?.let { it.victoryPoints++ }
-//                    if (game.player.playerNumber == playerNumber) {
-//                        game.player.victoryPoints++
+//                    ktxCtx.otherPlayers.find { it.playerNumber == playerNumber }?.let { it.victoryPoints++ }
+//                    if (ktxCtx.player.playerNumber == playerNumber) {
+//                        ktxCtx.player.victoryPoints++
 //                    }
 //                }
 //            }

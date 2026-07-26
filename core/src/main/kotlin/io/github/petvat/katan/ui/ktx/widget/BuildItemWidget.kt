@@ -2,6 +2,7 @@ package io.github.petvat.katan.ui.ktx.widget
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
@@ -20,7 +21,7 @@ class BuildItemWidget(
     title: String,
     cost: ResourceMap,
     vp: Int,
-    skin: Skin
+    skin: Skin,
 ) : Table(skin), KTable {
 
     private var ore: Label? = null
@@ -29,6 +30,7 @@ class BuildItemWidget(
     private var wheat: Label? = null
     private var brick: Label? = null
 
+    // TODO: Mem leak, Pass with Skin
     private var oreImg = Image(Texture(Gdx.files.internal("./ore-simple-tex.png")))
     private var brickImg = Image(Texture(Gdx.files.internal("./brick-simple-tex.png")))
     private var woolImg = Image(Texture(Gdx.files.internal("./wool-simple-tex.png")))
@@ -37,7 +39,9 @@ class BuildItemWidget(
     private var vpImg = Image(Texture(Gdx.files.internal("./assets/vp-v001.png")))
 
     init {
+        touchable = Touchable.enabled
         background = skin.getDrawable("slot")
+
         // Ugly but works for now.
         if (cost[Resource.WOOD] > 0) wood = scene2d.label("x${cost[Resource.WOOD]}")
         if (cost[Resource.ORE] > 0) ore = scene2d.label("x${cost[Resource.ORE]}")
@@ -73,7 +77,7 @@ class BuildItemWidget(
             add(it).pad(5f)
         }
         wheat?.let {
-            add(wheat).pad(5f)
+            add(it).pad(5f)
         }
 
         add(vpImg).pad(5f)

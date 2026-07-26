@@ -5,7 +5,6 @@ import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.utils.Array
 import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.Resource
 
@@ -26,8 +25,25 @@ class Assets {
         load()
     }
 
+    val intersectionZoneMap = mapOf<PlayerColor, TextureRegion>(
+        PlayerColor.RED to boardAtlas.findRegion("select-zone"),
+        PlayerColor.BLUE to boardAtlas.findRegion("TODO"),
+        PlayerColor.ORANGE to boardAtlas.findRegion("TODO"),
+        PlayerColor.WHITE to boardAtlas.findRegion("TODO"),
+    )
+
+    val edgeZoneMap = mapOf<PlayerColor, TextureRegion>(
+        PlayerColor.RED to boardAtlas.findRegion("TODO"),
+        PlayerColor.BLUE to boardAtlas.findRegion("TODO"),
+        PlayerColor.ORANGE to boardAtlas.findRegion("TODO"),
+        PlayerColor.WHITE to boardAtlas.findRegion("TODO"),
+    )
+
     val villageTextureMap = mapOf<PlayerColor, TextureRegion>(
-        PlayerColor.RED to boardAtlas.findRegion("TODO")
+        PlayerColor.RED to boardAtlas.findRegion("TODO"),
+        PlayerColor.BLUE to boardAtlas.findRegion("TODO"),
+        PlayerColor.ORANGE to boardAtlas.findRegion("TODO"),
+        PlayerColor.WHITE to boardAtlas.findRegion("TODO"),
     )
 
     val roadTexture = mapOf<PlayerColor, TextureRegion>(
@@ -46,6 +62,8 @@ class Assets {
     // Raw images
     val tileTextureMap = mapOf<Asset, TextureRegion>(
         Asset.MOUNTAINS to boardAtlas.findRegion("mountain-katan"),
+        Asset.DESERT to boardAtlas.findRegion("katan-desert"),
+        Asset.HILLS to boardAtlas.findRegion("katan-hills"),
         Asset.PASTURE to boardAtlas.findRegion("katan-pasture"),
         Asset.GRAIN to boardAtlas.findRegion("katan_grain_110px"),
         Asset.FOREST to boardAtlas.findRegion("katan-tile-forest"),
@@ -128,6 +146,13 @@ class Assets {
         manager.finishLoading()
 
         boardAtlas = manager.get(KATAN_GRAPHICS_F)
+
+        println("Atlas loaded: $boardAtlas")
+        println("Regions found: ${boardAtlas.regions.size}")
+        boardAtlas.regions.forEach { println("  region: ${it.name}") }
+        println("findRegion(\"sea\") -> ${boardAtlas.findRegion("sea")}")
+        println("findRegion(\"mountain-katan\") -> ${boardAtlas.findRegion("mountain-katan")}")
+
 
         for (texture in boardAtlas.textures) {
             texture.setFilter(

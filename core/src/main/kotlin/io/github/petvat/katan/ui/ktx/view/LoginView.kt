@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.TextField
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.ui.model.LoginViewModel
+import io.github.petvat.katan.ui.viewmodel.LoginViewModel
 import ktx.actors.onChangeEvent
 import ktx.actors.onKeyUp
 import ktx.scene2d.*
