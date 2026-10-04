@@ -34,7 +34,8 @@ class RequestProcessor(
         val msg = try {
             KatanJson.toInMessage(rawRequest)
         } catch (e: Exception) {
-            val errOut = OutMessage(replyTo = null, payload = Response.Error(ErrorCode.FMT, e.message))
+            val errOut =
+                OutMessage(replyTo = null, payload = Response.Error(ErrorCode.FMT, e.message ?: "Unknown error"))
             return callback(mapOf(client to KatanJson.toJson(errOut)))
         }
 
@@ -47,7 +48,10 @@ class RequestProcessor(
             callback(result.mapValues { (_, out) -> KatanJson.toJson(out) })
         } catch (e: Exception) {
             logger.error { e.printStackTrace() }
-            val err = OutMessage(replyTo = msg.seq, payload = Response.Error(ErrorCode.UNTRACED_ERR, e.message))
+            val err = OutMessage(
+                replyTo = msg.seq,
+                payload = Response.Error(ErrorCode.UNTRACED_ERR, e.message ?: "Unknown error")
+            )
             callback(mapOf(client to KatanJson.toJson(err)))
         }
 
@@ -85,39 +89,27 @@ class RequestProcessor(
         val command = try {
             toCommand(message.payload)
         } catch (e: NotImplementedError) {
-            return mapOf(
-                client to OutMessage(
-                    replyTo = message.seq,
-                    payload = Response.Error(ErrorCode.UNKNOWN_COMMAND, e.message)
-                )
+            handleError(
+                message, client, ErrorCode.UNKNOWN_COMMAND
             )
         }
 
         // NOTE: BREAK
         val channelId = message.channel?.let(::ChannelId)
-            ?: return mapOf(
-                client to OutMessage(
-                    replyTo = message.seq,
-                    payload = Response.Error(ErrorCode.FMT, "Missing channel")
-                )
-            )
+            ?: return handleError(message, client, ErrorCode.FMT, "Missing channel")
 
         val service = when (command) {
             is GroupCommand -> groupService
             is LobbyCommand -> lobbyService
             is GameCommand -> gameService
             is ChatCommand -> chatService
+            else -> handleError(message, client, ErrorCode.UNKNOWN_COMMAND)
         }
 
 
         val response = (service as? CommandDispatcher<Command, Channel<*>>)
-            ?.handleCommand(client, channelId, command, message.seq)
-            ?: mapOf(
-                client to OutMessage(
-                    replyTo = message.seq,
-                    payload = Response.Error(ErrorCode.UNKNOWN_COMMAND, "${command::class}")
-                )
-            )
+            ?.handleCommand(client, channelId, command as Command, message.seq)
+            ?: handleError(message, client, ErrorCode.UNKNOWN_COMMAND, "${command::class}")
         return response
     }
 

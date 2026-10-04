@@ -3,7 +3,9 @@ package io.github.petvat.katan.ui.viewmodel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.controller.LobbyActions
 import io.github.petvat.katan.event.Event
+import io.github.petvat.katan.event.LobbyEvent
 import io.github.petvat.katan.event.LoginEvent
+import io.github.petvat.katan.model.command.LobbyCommands
 
 /**
  *
@@ -11,14 +13,14 @@ import io.github.petvat.katan.event.LoginEvent
  * - LobbyView
  */
 class LoginViewModel(
-    private val lobbyService: LobbyActions,
+    private val commands: LobbyCommands,
     private val transitionService: ViewTransitionService
 ) : ViewModel() {
 
     private val logger = KotlinLogging.logger { }
 
     fun registerAsGuest(name: String) {
-        lobbyService.register(name)
+        commands.register(name)
     }
 
     fun registerAsUser(name: String, password: String) {

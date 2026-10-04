@@ -20,6 +20,45 @@ sealed interface GameEvent : Event {
             get() = "Game $targetChannelId has been created, $sourceChannelId has been destroyed."
     }
 
+    data class TradeInitiated(
+        override val targetChannelId: ChannelId,
+        override var channelSeq: Int? = null,
+        val initiator: Int,
+        val tradeId: Int,
+        val targets: Set<Int>,
+        val offer: ResourceMap,
+        val inReturn: ResourceMap
+    ) : GameEvent {
+        override val description: String get() = "Trade $tradeId initiated by $initiator."
+    }
+
+    /**
+     * @property dead Trade is dead when [by] was the last trade target to decline.
+     */
+    data class TradeDeclined(
+        override val targetChannelId: ChannelId,
+        override var channelSeq: Int? = null,
+        val tradeId: Int,
+        val by: Int,
+        val dead: Boolean
+    ) : GameEvent {
+        override val description: String get() = "$by declined trade $tradeId."
+    }
+
+    /**
+     *
+     * @property resources Player hands post-transaction
+     */
+    data class TradeExecuted(
+        override val targetChannelId: ChannelId,
+        override var channelSeq: Int? = null,
+        val tradeId: Int,
+        val initiator: Int,
+        val acceptor: Int,
+        val resources: Map<Int, ResourceMap>
+    ) : GameEvent {
+        override val description: String get() = "$acceptor accepted trade $tradeId."
+    }
 
     data class TurnEnded(
         override val targetChannelId: ChannelId,

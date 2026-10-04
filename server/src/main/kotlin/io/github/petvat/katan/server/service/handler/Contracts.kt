@@ -9,10 +9,14 @@ import io.github.petvat.katan.server.service.event.GameEvent
 import io.github.petvat.katan.shared.protocol.ErrorCode
 
 sealed interface CommandHandler<C : Command, R : Channel<*>> {
+    /**
+     * Exectues command by [execute] but ticks the channel sequence number if the execution succeeded.
+     */
     fun handle(client: ConnectedClient, channel: R, command: C): Event {
         val event = execute(client, channel, command)
 
 
+        // TODO: Make sure this is not done twice another place.
         if (event !is Event.Failure) {
             val tickedSeq = channel.nextSeq()
             event.channelSeq = tickedSeq
@@ -37,10 +41,6 @@ interface GameCommandHandler<C : GameCommand> : CommandHandler<C, GameChannel> {
         val gameRuleEngine = GameRuleEngine(game.rules)
 
         val event = executeGameAction(channel, player, gameRuleEngine, command)
-
-        if (event !is Event.Failure) {
-            event.channelSeq = channel.nextSeq()
-        }
         return event
     }
 

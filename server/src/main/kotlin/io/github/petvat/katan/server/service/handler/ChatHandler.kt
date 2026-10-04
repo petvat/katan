@@ -13,10 +13,10 @@ class ChatHandler : ChatCommandHandler {
     override fun execute(client: ConnectedClient, channel: ChatChannel, command: Chat): Event {
         if (client.auth is Auth.Unauth) return Event.Failure("Unauth.", ErrorCode.DENIED)
 
-        val messsage = ChatMessage(client.auth.id, command.message)
-        channel.chatHistory.add(messsage)
+        val message = ChatMessage(client.auth.id, command.message)
+        channel.chatHistory.add(message)
 
-        return ChatEvent("${client.auth.id} sent a message", messsage)
+        return ChatEvent(channel.id, description = "${client.auth.id} sent a message", message = message)
 
     }
 }

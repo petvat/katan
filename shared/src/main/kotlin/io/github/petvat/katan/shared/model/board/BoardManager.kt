@@ -1,8 +1,284 @@
 package io.github.petvat.katan.shared.model.board
 
 import io.github.petvat.katan.shared.hexlib.*
-import io.github.petvat.katan.shared.model.game.ResourceMap
-import java.util.List.copyOf
+import io.github.petvat.katan.shared.model.game.RuleBook
+
+
+/**
+ *
+ * BoardManager is responsible for the spatial and positional logic of the board.
+ *
+ */
+class BoardManager(ruleBook: RuleBook) {
+
+    fun countVictoryPoints(board: Board): Map<Int, Int> {
+        val vps = mutableMapOf<Int, Int>()
+        board.intersections.forEach {
+            val village = it.village
+            val owner = village.owner
+            val vp = village.villageKind.vp
+            vps[owner] = (vps[owner] ?: 0) + vp
+        }
+        return vps
+    }
+
+    private fun isValidCoordinate(board: Board, ecoord: EdgeCoord): Boolean {
+
+        // |
+        val horizontalOffsets = arrayOf(
+            -1, -1,
+            1, 1
+        )
+        // \
+        val downOffsets = arrayOf(
+            0, -1,
+            0, 1
+        )
+        // upOffsets
+        val upOffsets = arrayOf(
+            -1, 0,
+            1, 0
+        )
+
+        val offsets = if (ecoord.q + ecoord.r % 2 == 0) {
+            horizontalOffsets
+        } else if (ecoord.q % 2 == 0) {
+            downOffsets
+        } else {
+            upOffsets
+        }
+        val adjacentTiles = calculateOffsets(ecoord, offsets).map { (q, r) -> HexCoord(q, r) }
+
+        return board.tiles.map { t -> t.hexCoordinate }.any { adjacentTiles.contains(it) }
+    }
+
+    /**
+     * Get adjacents intersection coordinates to intersection
+     * Usecase: check valid settlement placements
+     */
+    private fun getAdjacentIntersections(board: Board, coord: NodeCoord): List<NodeCoord> {
+        val adjacents: MutableList<NodeCoord> = mutableListOf()
+        adjacents.add(NodeCoord(coord.q + 1, coord.r + 1))
+        adjacents.add(NodeCoord(coord.q - 1, coord.r - 1))
+        if (coord.q % 2 == 0) {
+            adjacents.add(NodeCoord(coord.q - 1, coord.r + 1))
+        } else {
+            adjacents.add(NodeCoord(coord.q + 1, coord.r - 1))
+        }
+        return adjacents.filter { isValidCoordinate(board, it) }
+    }
+
+    private fun isValidCoordinate(board: Board, icoord: NodeCoord): Boolean {
+        val offsets = arrayOf(
+            0, 1,
+            -2, -1,
+            0, -1
+        )
+        val adjacentTiles: MutableList<HexCoord> = mutableListOf()
+
+        for (i in offsets.indices.step(2)) {
+            if (icoord.q % 2 == 0) {
+                adjacentTiles.add(HexCoord(icoord.q + offsets[i], icoord.r + offsets[i + 1]))
+            } else {
+                adjacentTiles.add(HexCoord(icoord.q + offsets[i + 1], icoord.r + offsets[i]))
+            }
+        }
+        return board.tiles.map { it.hexCoordinate }.any { adjacentTiles.contains(it) }
+    }
+
+    private fun getCoordinatesPathsOwnedBy(board: Board, player: Int): List<EdgeCoord> {
+        return board.paths.filter { p -> p.road.owner == player }
+            .map { p -> p.coordinate }.toList()
+    }
+
+    /**
+     * Checks if there is an intersection on an intersection coordinate, i.e. if this intersection is occupied.
+     */
+    fun intersectionAt(coordinate: NodeCoord, intersections: List<Node>): Boolean =
+        intersectionAt(coordinate.q, coordinate.r, intersections)
+
+
+    fun intersectionAt(q: Int, r: Int, intersections: List<Node>): Boolean {
+        return intersections.map { i -> i.coordinate }.contains(NodeCoord(q, r))
+    }
+
+    /**
+     * Get adjacent edges to an intersection.
+     */
+    private fun getAdjacentPaths(board: Board, icoord: NodeCoord): List<EdgeCoord> {
+        val offsets = if (icoord.q % 2 == 0) arrayOf(
+            // top
+            0, 0,
+            -1, -1,
+            -1, 0
+        ) else {
+            // bottom
+            arrayOf(
+                0, 0,
+                0, -1,
+                -1, -1
+            )
+        }
+        return calculateOffsets(icoord, offsets).map { (q, r) -> EdgeCoord(q, r) }
+            .filter { isValidCoordinate(board, it) }
+    }
+
+    /**
+     * @param offsets expects array to iterate over in pairs of 2
+     */
+    private fun calculateOffsets(
+        coordinate: Coordinates,
+        offsets: Array<Int>,
+
+        ): List<Pair<Int, Int>> {
+        val coordinateOffsets: MutableList<Pair<Int, Int>> = mutableListOf()
+        for (i in offsets.indices.step(2)) {
+            coordinateOffsets.add(
+                Pair(
+                    coordinate.q + offsets[i],
+                    coordinate.r + offsets[i + 1]
+                )
+            )
+        }
+        return coordinateOffsets
+    }
+
+    /**
+     * Get adjacent edges to an edge.
+     */
+    private fun getAdjacentPaths(ecoord: EdgeCoord): List<EdgeCoord> {
+
+        // |
+        val horizontalOffsets = arrayOf(
+            -1, 0,
+            0, 1,
+            0, -1,
+            1, 0
+        )
+        // \
+        val downOffsets = arrayOf(
+            -1, 0,
+            -1, -1,
+            1, 0,
+            1, 1
+        )
+        // /
+        val upOffsets = arrayOf(
+            0, 1,
+            1, 1,
+            -1, -1,
+            0, -1
+        )
+
+        val offsets: Array<Int> = if (ecoord.q + ecoord.r % 2 == 0) {
+            // Path is horizontal
+            horizontalOffsets
+        } else if (ecoord.q % 2 == 0) {
+            // Path is downwards
+            downOffsets
+        } else {
+            // path is upwards
+            upOffsets
+        }
+        return calculateOffsets(ecoord, offsets).map { (q, r) -> EdgeCoord(q, r) }
+    }
+
+    /**
+     * Check if a building on this intersection would violate distance rule.
+     *
+     * @param intersectionCoordinate to check
+     * @return true if comply distance rule
+     */
+    fun distanceRule(board: Board, intersectionCoordinate: NodeCoord): Boolean {
+        // TODO: Make dynamic
+        return board.intersections
+            .map { i -> i.coordinate }
+            .any { it in getAdjacentIntersections(board, intersectionCoordinate) }
+    }
+
+    fun invalidIntersectionsByDistanceRule(board: Board): Set<NodeCoord> {
+        return board.intersections
+            .flatMap { i ->
+                listOf(i.coordinate) + getAdjacentIntersections(board, i.coordinate)
+            }.toSet()
+    }
+
+
+    fun canBuildSettlement(
+        board: Board,
+        player: Int,
+        coordinate: NodeCoord
+    ): Boolean {
+        // road into intersection owned by player and follows distance rule
+        return (getCoordinatesPathsOwnedBy(board, player).any {
+            getAdjacentPaths(board, coordinate).contains(it)
+        } && !invalidIntersectionsByDistanceRule(board).contains(coordinate))
+    }
+
+    /**
+     * Checks whether player can build a city on coordinate.
+     * The intersection needs to have a settlement.
+     */
+    private fun canBuildCity(
+        board: Board,
+        player: Int,
+        coordinate: NodeCoord
+    ): Boolean {
+        return board.intersections
+            .filter { i -> i.village.owner == player && i.village.villageKind == VillageKind.CITY }
+            .map { i -> i.coordinate }
+            .contains(coordinate)
+    }
+
+    fun canBuildVillage(
+        board: Board,
+        player: Int,
+        coordinate: NodeCoord,
+        villageKind: VillageKind
+    ): Boolean {
+
+        return when (villageKind) {
+            VillageKind.SETTLEMENT -> canBuildSettlement(board, player, coordinate)
+            VillageKind.CITY -> canBuildCity(board, player, coordinate)
+        }
+    }
+
+    /**
+     * Road frontier will be different for different roads.
+     * TODO: fix later
+     */
+    fun canBuildRoad(
+        board: Board,
+        player: Int,
+        coordinate: EdgeCoord,
+        roadKind: RoadKind
+    ): Boolean {
+        return (!board.paths.map { p -> p.coordinate }.contains(coordinate) ||
+            getCoordinatesPathsOwnedBy(board, player)
+                .any { getAdjacentPaths(coordinate).contains(it) }
+            )
+        // return getRoadFrontier(player).contains(coordinate)
+    }
+
+    fun getAdjacentIntersections(tile: Tile): List<NodeCoord> {
+        return HexUtils.adjacentIntersections(tile.hexCoordinate)
+    }
+
+    fun getAdjacentBuildings(board: Board, tile: Tile): Set<Village> {
+        val adjacentintersectionCoordiantes = getAdjacentIntersections(tile)
+        return board.intersections
+            .filter { i ->
+                adjacentintersectionCoordiantes.any { coord -> coord == i.coordinate }
+            }
+            .map { i -> i.village }.toSet()
+    }
+
+    fun getAdjacentTiles(board: Board, intersectionCoordinate: NodeCoord): List<Tile> {
+        val hexes = HexUtils.hexesTouchingNode(intersectionCoordinate)
+        return board.tiles.filter { h -> h.hexCoordinate in hexes }
+    }
+}
+
 
 //
 ///**

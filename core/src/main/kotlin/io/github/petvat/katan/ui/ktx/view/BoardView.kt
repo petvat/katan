@@ -1,145 +1,220 @@
 package io.github.petvat.katan.ui.ktx.view
 
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector3
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.ui.Assets
 import io.github.petvat.katan.shared.hexlib.*
-import io.github.petvat.katan.ui.ktx.BoardRenderUtils
-import io.github.petvat.katan.ui.projection.GameProjection
-import io.github.petvat.katan.ui.viewmodel.GameVM
+import io.github.petvat.katan.ui.projection.BoardOverlay
+import io.github.petvat.katan.ui.viewmodel.BoardViewModel
+import io.github.petvat.katan.ui.viewmodel.GameViewModel
 import kotlin.math.roundToInt
 
 
-/**
- * Represents a renderable entity.
- *
- * @property texture The texture to be rendered
- * @property x The x position
- * @property y The y position
- * @property depth The depth of the texture, used for ordering
- * @property contains Determines whether some point is inside this renderable
- * @property visible If it should be rendered
- */
-data class Renderable(
-    val texture: TextureRegion,
-    val x: Float,
-    val y: Float,
-    val depth: Int,
-    val contains: (x: Float, y: Float) -> Boolean,
-    var visible: Boolean = true
-)
+//class BoardInputController(private val onTap: (Coordinates) -> Unit) {
+//    fun handleTouch(screenX: Int, screenY: Int, camera: OrthographicCamera, frontier: Map<out Coordinates, PCoord>) {
+//        val world = camera.unproject(Vector3(screenX.toFloat(), screenY.toFloat(), 0f))
+//        frontier.entries.find { (_, p) -> }
+//    }
+//
+//    private fun circleContains(cx: Float, cy: Float, r: Float, px: Float, py: Float): Boolean {
+//        val dx = px - cx;
+//        val dy = py - cy;
+//        return dx * dx + dy * dy < r * r
+//    }
+//}
+
 
 /**
- * Board renderer for LibGDX.
+ * Batch-drawn board renderer. Not a scene2d actor.
+ *
+ * Wiring: subscribes to BoardVM::overlay once; caches and re-renders each frame.
+ * Static layer (tiles/tokens) is resolved to TextureRegions once, here.
  */
 class BoardView(
-    override val viewModel: GameVM,
-    gameProjection: GameProjection,
-    private val batch: SpriteBatch,
+    private val viewModel: BoardViewModel,
     private val assets: Assets,
-    private val layout: Layout
-) : View<GameVM> {
-    private val logger = KotlinLogging.logger { }
+) {
+    private val tileTextures: Map<PCoord, TextureRegion> =
+        viewModel.scaffold.tiles.mapValues { (_, asset) -> assets.region(asset) }
 
-    private var debugFont = BitmapFont()
+    private val tokenTextures: Map<PCoord, TextureRegion> =
+        viewModel.scaffold.tokens.mapValues { (_, value) -> assets.token(value) }
 
-    private var settlementFrontierMap: Map<ICoordinates, PCoordinate> = mapOf()
-    private var cityFrontierMap: Map<ICoordinates, PCoordinate> = mapOf()
-    private var roadFrontierMap: Map<EdgeCoordinates, PCoordinate> = mapOf()
-    private var setupSettlementFrontierMap: Map<ICoordinates, PCoordinate> =
-        BoardRenderUtils.mapIntersectionCoordinates(
-            layout,
-            gameProjection.board.tiles.map { it.hexCoordinate }
-        )
-    private var activeFrontierMap: Map<out Coordinates, PCoordinate> = emptyMap()
+    private val debugLabels: Map<HexCoord, PCoord> = viewModel.scaffold.hexes
+    private var debugFont = com.badlogic.gdx.graphics.g2d.BitmapFont()
 
-    /**
-     * Maps logic intersection coordinates to screen coordinates.
-     */
-    private var intersectionMap = BoardRenderUtils.mapIntersectionCoordinates(
-        layout,
-        gameProjection.board.tiles.map { it.hexCoordinate }
-    ) // At this point this is highest size possible
+    private var overlay: BoardOverlay = viewModel.overlay
 
-    /**
-     * Maps logic edge coordinates to screen coordinates.
-     *
-     */
-    private var edgeMap: Map<EdgeCoordinates, PCoordinate> = BoardRenderUtils.mapEdgeCoordinates(
-        layout,
-        gameProjection.board.tiles.map { it.hexCoordinate }
-    )
+    private val iZoneTexture: TextureRegion = assets.nodeZone(viewModel.myColor)
+    private val eZoneTexture: TextureRegion = assets.edgeZone(viewModel.myColor)
 
-    /**
-     * Map that tells the sprite batch what texture to render on a coordinate.
-     */
-    private var tileRenderMap: MutableMap<PCoordinate, TextureRegion> =
-        BoardRenderUtils.mapCompleteIsland(layout, assets, gameProjection.board.tiles, 3).toMutableMap()
+    private val izoneTextures: Map<PCoord, TextureRegion> =
+        overlay.frontier.map { (lc, ph) -> ph to assets.nodeZone(viewModel.myColor) }.toMap()
 
-    private var debugHexPoints: MutableMap<HexCoordinates, PCoordinate> =
-        BoardRenderUtils.debugHexPoints(layout, gameProjection.board.tiles).toMutableMap()
+    private val ezoneTextures: Map<PCoord, TextureRegion> =
+        overlay.frontier.map { (lc, ph) -> ph to assets.edgeZone(viewModel.myColor) }.toMap()
 
-
-    /**
-     * Map that tells the sprite batch what token to render.
-     */
-    private var tokenRenderMap =
-        BoardRenderUtils.mapTokenTexture(gameProjection.board.tiles, layout, assets).toMutableMap()
-
-    /**
-     * TODO: Find way to add roads
-     */
-    private var roadRenderMap = mutableMapOf<PCoordinate, TextureRegion>()
-    private var villageRenderMap = mutableMapOf<PCoordinate, TextureRegion>()
-    private var robberLocation: Pair<HexCoordinates, PCoordinate> =
-        gameProjection.board.robberLocation to HexUtils.hexToPixel(layout, gameProjection.board.robberLocation)
-
-    /**
-     * The radius of the intersection hightlight clickable area in pixels.
-     */
-    private val intersectionZoneRadius = 20
-    private val intersectionZoneTexture: TextureRegion = assets.intersectionZoneMap[gameProjection.thisPlayer.color]!!
-
+    private val hitRadius = 20f
 
     init {
-        registerOnPropertyChanges()
+        viewModel.onPropertyChange(BoardViewModel::overlay) { newOverlay ->
+            overlay = newOverlay
+        }
     }
 
+    /** Called by the owning screen from its input handler. */
     fun handleTouch(screenX: Int, screenY: Int, camera: OrthographicCamera) {
-        // Unproject: screen pixels -> world coordinates
-        val worldCoords = camera.unproject(Vector3(screenX.toFloat(), screenY.toFloat(), 0f))
-
-        val hit = when {
-            viewModel.settlementPlacingMode -> findHit(settlementFrontierMap, worldCoords.x, worldCoords.y)
-            viewModel.cityPlacingMode -> findHit(cityFrontierMap, worldCoords.x, worldCoords.y)
-            viewModel.roadPlacingMode -> findHit(roadFrontierMap, worldCoords.x, worldCoords.y)
-            else -> null
-        }
-
-        hit?.let { (coordinates, _) ->
-            viewModel.onBoardTap(coordinates)
-        }
+        if (overlay.frontier.isEmpty()) return
+        val world = camera.unproject(Vector3(screenX.toFloat(), screenY.toFloat(), 0f))
+        val hit = overlay.frontier.entries.find { (_, p) ->
+            val dx = world.x - p.x.toFloat()
+            val dy = world.y - p.y.toFloat()
+            dx * dx + dy * dy <= hitRadius * hitRadius
+        } ?: return
+        viewModel.onBoardTap(hit.key)
     }
 
-    private fun findHit(
-        frontier: Map<out Coordinates, PCoordinate>,
-        worldX: Float,
-        worldY: Float
-    ): Map.Entry<Coordinates, PCoordinate>? {
-        return frontier.entries.find { (_, phys) ->
-            circleContains(phys.x.toFloat(), phys.y.toFloat(), intersectionZoneRadius.toFloat(), worldX, worldY)
+    /** Called by the owning screen each frame. */
+    fun render(batch: SpriteBatch) {
+        batch.begin()
+        // 1. island + shore + sea
+        tileTextures.forEach { (p, tex) -> drawCentered(batch, tex, p) }
+        // 2. number tokens
+        tokenTextures.forEach { (p, tex) -> drawCentered(batch, tex, p, yOff = 5f) }
+        // 3. roads, villages
+        overlay.roads.forEach { (p, m) -> drawCentered(batch, assets.road(m.color, m.orientation), p) }
+        overlay.villages.forEach { (p, m) -> drawCentered(batch, assets.village(m.color, m.kind), p) }
+        // 4. robber (add assets.robber() + a robber texture when you have one)
+        // drawCentered(batch, assets.robber(), overlay.robber)
+        // 5. placement highlights on top
+        // TODO FIXME: EDGE ZONES!
+        overlay.frontier.values.forEach { p -> drawCentered(batch, iZoneTexture, p) }
+        // DEBUG: hex labels
+        debugLabels.forEach { (hex, p) ->
+            debugFont.draw(batch, "${hex.q},${hex.r}", p.x.toFloat(), p.y.toFloat())
         }
+        batch.end()
     }
 
-    private fun circleContains(cx: Float, cy: Float, radius: Float, px: Float, py: Float): Boolean {
-        val dx = px - cx
-        val dy = py - cy
-        return dx * dx + dy * dy < radius * radius  // squared distance -- avoids sqrt, same result
+    private fun drawCentered(batch: SpriteBatch, tex: TextureRegion, p: PCoord, yOff: Float = 0f) {
+        batch.draw(
+            tex,
+            p.x.roundToInt().toFloat() - tex.regionWidth / 2f,
+            p.y.roundToInt().toFloat() - tex.regionHeight / 2f + yOff
+        )
     }
+}
+
+//
+///**
+// * Board renderer for LibGDX.
+// */
+//class BoardView(
+//    val viewModel: BoardViewModel,
+//    private val batch: SpriteBatch,
+//    private val assets: Assets,
+//    private val layout: Layout
+//) : View {
+//    private val logger = KotlinLogging.logger { }
+//
+//    private var debugFont = BitmapFont()
+//
+//
+//    private var settlementFrontierMap: Map<NodeCoord, PCoord> = mapOf()
+//    private var cityFrontierMap: Map<NodeCoord, PCoord> = mapOf()
+//    private var roadFrontierMap: Map<EdgeCoord, PCoord> = mapOf()
+//    private var setupSettlementFrontierMap: Map<NodeCoord, PCoord> =
+//        BoardRenderUtils.mapNodes(
+//            layout,
+//            gameProjection.board.tiles.map { it.hexCoordinate }
+//        )
+//    private var activeFrontierMap: Map<out Coordinates, PCoord> = emptyMap()
+//
+//    /**
+//     * Maps logic intersection coordinates to screen coordinates.
+//     */
+//    private var intersectionMap = BoardRenderUtils.mapNodes(
+//        layout,
+//        gameProjection.board.tiles.map { it.hexCoordinate }
+//    ) // At this point this is highest size possible
+//
+//    /**
+//     * Maps logic edge coordinates to screen coordinates.
+//     *
+//     */
+//    private var edgeMap: Map<EdgeCoord, PCoord> = BoardRenderUtils.mapEdges(
+//        layout,
+//        gameProjection.board.tiles.map { it.hexCoordinate }
+//    )
+//
+//    /**
+//     * Map that tells the sprite batch what texture to render on a coordinate.
+//     */
+//    private var tileRenderMap: MutableMap<PCoord, TextureRegion> =
+//        BoardRenderUtils.mapCompleteIsland(layout, assets, gameProjection.board.tiles, 3).toMutableMap()
+//
+//    private var debugHexPoints: MutableMap<HexCoord, PCoord> =
+//        BoardRenderUtils.debugHexPoints(layout, gameProjection.board.tiles).toMutableMap()
+//
+//
+//    /**
+//     * Map that tells the sprite batch what token to render.
+//     */
+//    private var tokenRenderMap =
+//        BoardRenderUtils.mapTokenTexture(gameProjection.board.tiles, layout, assets).toMutableMap()
+//
+//    /**
+//     * TODO: Find way to add roads
+//     */
+//    private var roadRenderMap = mutableMapOf<PCoord, TextureRegion>()
+//    private var villageRenderMap = mutableMapOf<PCoord, TextureRegion>()
+//    private var robberLocation: Pair<HexCoord, PCoord> =
+//        gameProjection.board.robberLocation to HexUtils.hexToPixel(layout, gameProjection.board.robberLocation)
+//
+//    /**
+//     * The radius of the intersection hightlight clickable area in pixels.
+//     */
+//    private val intersectionZoneRadius = 20
+//    private val intersectionZoneTexture: TextureRegion = assets.intersectionZoneMap[gameProjection.thisPlayer.color]!!
+//
+//
+//    init {
+//        registerOnPropertyChanges()
+//    }
+//
+//    fun handleTouch(screenX: Int, screenY: Int, camera: OrthographicCamera) {
+//        // Unproject: screen pixels -> world coordinates
+//        val worldCoords = camera.unproject(Vector3(screenX.toFloat(), screenY.toFloat(), 0f))
+//
+//        val hit = when {
+//            viewModel.settlementPlacingMode -> findHit(settlementFrontierMap, worldCoords.x, worldCoords.y)
+//            viewModel.cityPlacingMode -> findHit(cityFrontierMap, worldCoords.x, worldCoords.y)
+//            viewModel.roadPlacingMode -> findHit(roadFrontierMap, worldCoords.x, worldCoords.y)
+//            else -> null
+//        }
+//
+//        hit?.let { (coordinates, _) ->
+//            viewModel.onBoardTap(coordinates)
+//        }
+//    }
+//
+//    private fun findHit(
+//        frontier: Map<out Coordinates, PCoord>,
+//        worldX: Float,
+//        worldY: Float
+//    ): Map.Entry<Coordinates, PCoord>? {
+//        return frontier.entries.find { (_, phys) ->
+//            circleContains(phys.x.toFloat(), phys.y.toFloat(), intersectionZoneRadius.toFloat(), worldX, worldY)
+//        }
+//    }
+//
+//    private fun circleContains(cx: Float, cy: Float, radius: Float, px: Float, py: Float): Boolean {
+//        val dx = px - cx
+//        val dy = py - cy
+//        return dx * dx + dy * dy < radius * radius  // squared distance -- avoids sqrt, same result
+//    }
 
 
 //    /**
@@ -170,64 +245,64 @@ class BoardView(
 //            }
 //        }
 //    }
-
-    private fun drawAll(
-        coordinates: List<PCoordinate>,
-        texture: TextureRegion,
-        functionX: (PCoordinate, TextureRegion) -> Float = { coord, tex ->
-            coord.x.roundToInt().toFloat() - tex.regionWidth / 2
-        },
-        functionY: (PCoordinate, TextureRegion) -> Float = { coord, tex ->
-            coord.y.roundToInt().toFloat() - tex.regionHeight / 2
-        }
-    ) {
-        coordinates.forEach {
-            batch.draw(
-                texture,
-                functionX(it, texture),
-                functionY(it, texture)
-            )
-        }
-    }
-
-    fun render() {
-        batch.begin()
-        drawAll(tileRenderMap)
-        drawAll(
-            tokenRenderMap,
-            functionY = { coord, tex -> coord.y.roundToInt().toFloat() - (tex.regionHeight / 2) + 5 })
-        drawAll(roadRenderMap)
-        drawAll(villageRenderMap)
-        drawAll(
-            activeFrontierMap.values.toList(),
-            intersectionZoneTexture
-        )
-        // DEBUG
-        debugHexPoints.forEach { (a, b) ->
-            debugFont.draw(batch, "${a.q},${a.r}", b.x.toFloat(), b.y.toFloat())
-        }
-
-        batch.end()
-    }
-
-    /**
-     *
-     * @param functionX Offset function
-     * @param functionY Offset function
-     */
-    private fun drawAll(
-        map: Map<PCoordinate, TextureRegion>,
-        functionX: (PCoordinate, TextureRegion) -> Float = { coord, tex ->
-            coord.x.roundToInt().toFloat() - tex.regionWidth / 2
-        },
-        functionY: (PCoordinate, TextureRegion) -> Float = { coord, tex ->
-            coord.y.roundToInt().toFloat() - tex.regionHeight / 2
-        }
-    ) {
-        map.forEach { (coord, tex) ->
-            batch.draw(tex, functionX(coord, tex), functionY(coord, tex))
-        }
-    }
+//
+//    private fun drawAll(
+//        coordinates: List<PCoord>,
+//        texture: TextureRegion,
+//        functionX: (PCoord, TextureRegion) -> Float = { coord, tex ->
+//            coord.x.roundToInt().toFloat() - tex.regionWidth / 2
+//        },
+//        functionY: (PCoord, TextureRegion) -> Float = { coord, tex ->
+//            coord.y.roundToInt().toFloat() - tex.regionHeight / 2
+//        }
+//    ) {
+//        coordinates.forEach {
+//            batch.draw(
+//                texture,
+//                functionX(it, texture),
+//                functionY(it, texture)
+//            )
+//        }
+//    }
+//
+//    fun render() {
+//        batch.begin()
+//        drawAll(tileRenderMap)
+//        drawAll(
+//            tokenRenderMap,
+//            functionY = { coord, tex -> coord.y.roundToInt().toFloat() - (tex.regionHeight / 2) + 5 })
+//        drawAll(roadRenderMap)
+//        drawAll(villageRenderMap)
+//        drawAll(
+//            activeFrontierMap.values.toList(),
+//            intersectionZoneTexture
+//        )
+//        // DEBUG
+//        debugHexPoints.forEach { (a, b) ->
+//            debugFont.draw(batch, "${a.q},${a.r}", b.x.toFloat(), b.y.toFloat())
+//        }
+//
+//        batch.end()
+//    }
+//
+//    /**
+//     *
+//     * @param functionX Offset function
+//     * @param functionY Offset function
+//     */
+//    private fun drawAll(
+//        map: Map<PCoord, TextureRegion>,
+//        functionX: (PCoord, TextureRegion) -> Float = { coord, tex ->
+//            coord.x.roundToInt().toFloat() - tex.regionWidth / 2
+//        },
+//        functionY: (PCoord, TextureRegion) -> Float = { coord, tex ->
+//            coord.y.roundToInt().toFloat() - tex.regionHeight / 2
+//        }
+//    ) {
+//        map.forEach { (coord, tex) ->
+//            batch.draw(tex, functionX(coord, tex), functionY(coord, tex))
+//        }
+//    }
 
 //    private fun mapIntersectionCoordinates(
 //        layout: Layout,
@@ -343,58 +418,58 @@ class BoardView(
 //        }
 //        return seaTextureMap
 //    }
-
-    override fun registerOnPropertyChanges() {
-
-        viewModel.onPropertyChange(GameVM::settlementPlacingMode) { active ->
-            activeFrontierMap = if (active) settlementFrontierMap else emptyMap()
-        }
-        viewModel.onPropertyChange(GameVM::cityPlacingMode) { active ->
-            activeFrontierMap = if (active) cityFrontierMap else emptyMap()
-        }
-        viewModel.onPropertyChange(GameVM::roadPlacingMode) { active ->
-            activeFrontierMap = if (active) roadFrontierMap else emptyMap()
-        }
-        viewModel.onPropertyChange(GameVM::initSettlementPlacingMode) { active ->
-            logger.debug { "viewModel.initSettlementPlacingMode PropertyNotify" }
-            activeFrontierMap = if (active) setupSettlementFrontierMap else emptyMap()
-        }
-
-        viewModel.onPropertyChange(GameVM::settlementPlacingMode) {
-            logger.debug { "viewModel.settlementPlacingMode PropertyNotify" }
-
-        }
-
-        viewModel.onPropertyChange(GameVM::projection) { proj ->
-            logger.debug { "viewModel.projection PropertyNotify" }
-
-
-            proj.board.intersections.forEach {
-                val color = proj.colors[it.village.owner]
-                villageRenderMap[intersectionMap[it.coordinate]!!] = assets.villageTextureMap[color]!!
-            }
-
-            proj.board.paths.forEach {
-                val color = proj.colors[it.road.owner]
-                villageRenderMap[edgeMap[it.coordinate]!!] = assets.roadTexture[color]!!
-            }
-
-            robberLocation = proj.board.robberLocation to HexUtils.hexToPixel(layout, proj.board.robberLocation)
-
-
-            // Update placing mode maps.
-
-            setupSettlementFrontierMap = intersectionMap
-                .filterKeys { key -> key in proj.board.setupFrontier }
-
-            settlementFrontierMap = intersectionMap
-                .filterKeys { key -> key in proj.board.settlementFrontier }
-
-            cityFrontierMap = intersectionMap
-                .filterKeys { key -> key in proj.board.cityFrontier }
-
-            roadFrontierMap = edgeMap
-                .filterKeys { key -> key in proj.board.roadFrontier }
-        }
-    }
-}
+//
+//    override fun registerOnPropertyChanges() {
+//
+//        viewModel.onPropertyChange(GameViewModel::settlementPlacingMode) { active ->
+//            activeFrontierMap = if (active) settlementFrontierMap else emptyMap()
+//        }
+//        viewModel.onPropertyChange(GameViewModel::cityPlacingMode) { active ->
+//            activeFrontierMap = if (active) cityFrontierMap else emptyMap()
+//        }
+//        viewModel.onPropertyChange(GameViewModel::roadPlacingMode) { active ->
+//            activeFrontierMap = if (active) roadFrontierMap else emptyMap()
+//        }
+//        viewModel.onPropertyChange(GameViewModel::initSettlementPlacingMode) { active ->
+//            logger.debug { "viewModel.initSettlementPlacingMode PropertyNotify" }
+//            activeFrontierMap = if (active) setupSettlementFrontierMap else emptyMap()
+//        }
+//
+//        viewModel.onPropertyChange(GameViewModel::settlementPlacingMode) {
+//            logger.debug { "viewModel.settlementPlacingMode PropertyNotify" }
+//
+//        }
+//
+//        viewModel.onPropertyChange(GameViewModel::projection) { proj ->
+//            logger.debug { "viewModel.projection PropertyNotify" }
+//
+//
+//            proj.board.intersections.forEach {
+//                val color = proj.colors[it.village.owner]
+//                villageRenderMap[intersectionMap[it.coordinate]!!] = assets.villageTextureMap[color]!!
+//            }
+//
+//            proj.board.paths.forEach {
+//                val color = proj.colors[it.road.owner]
+//                villageRenderMap[edgeMap[it.coordinate]!!] = assets.roadTexture[color]!!
+//            }
+//
+//            robberLocation = proj.board.robberLocation to HexUtils.hexToPixel(layout, proj.board.robberLocation)
+//
+//
+//            // Update placing mode maps.
+//
+//            setupSettlementFrontierMap = intersectionMap
+//                .filterKeys { key -> key in proj.board.setupFrontier }
+//
+//            settlementFrontierMap = intersectionMap
+//                .filterKeys { key -> key in proj.board.settlementFrontier }
+//
+//            cityFrontierMap = intersectionMap
+//                .filterKeys { key -> key in proj.board.cityFrontier }
+//
+//            roadFrontierMap = edgeMap
+//                .filterKeys { key -> key in proj.board.roadFrontier }
+//        }
+//    }
+//}

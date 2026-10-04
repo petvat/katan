@@ -4,11 +4,8 @@ package io.github.petvat.katan.lwjgl3
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
-import io.github.petvat.katan.controller.*
 import io.github.petvat.katan.event.EventSystem
-import io.github.petvat.katan.model.ClientState
-import io.github.petvat.katan.networking.NetworkSession
-import io.github.petvat.katan.networking.NioKatanClient
+import io.github.petvat.katan.model.KatanClient
 import io.github.petvat.katan.ui.ktx.KtxKatan
 
 /** Launches the desktop (LWJGL3) application. */
@@ -17,19 +14,11 @@ fun main() {
     if (StartupHelper.startNewJvmIfRequired())
         return
 
-    val client = NioKatanClient()
-    val tracker = PendingRequestTracker()
-    val sender = RequestSender()
-    val model = ClientState()
     val eventSystem = EventSystem()
 
-    val responder = ResponseProcessor(tracker, model, eventSystem)
-    val gameAc = GameActions(sender, model)
-    val chatAc = ChatActions(sender, model)
-    val lobbyAc = LobbyActions(sender, model)
-    val networkSession = NetworkSession(sender, responder)
+    val model = KatanClient(events = eventSystem)
 
-    val ktxView = KtxKatan(model, lobbyAc, gameAc, chatAc, networkSession, eventSystem)
+    val ktxView = KtxKatan(model, eventSystem)
 
     val dm = Lwjgl3ApplicationConfiguration.getDisplayMode();
     val config = Lwjgl3ApplicationConfiguration().apply {

@@ -1,9 +1,6 @@
 package io.github.petvat.katan.shared.model.board
 
-import io.github.petvat.katan.shared.hexlib.HexCoordinates
-import io.github.petvat.katan.shared.protocol.dto.BoardDTO
-import io.github.petvat.katan.shared.protocol.dto.Transmittable
-import kotlinx.serialization.Serializable
+import io.github.petvat.katan.shared.hexlib.HexCoord
 
 
 /**
@@ -11,7 +8,7 @@ import kotlinx.serialization.Serializable
  */
 data class Board(
     val tiles: MutableList<Tile>,
-    val intersections: Collection<Intersection> = emptyList(),
+    val intersections: Collection<Node> = emptyList(),
     val paths: Collection<Edge> = emptyList(),
-    val robberLocation: HexCoordinates
+    val robberLocation: HexCoord
 )

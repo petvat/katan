@@ -4,12 +4,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.kotcrab.vis.ui.VisUI
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.controller.ChatActions
-import io.github.petvat.katan.controller.GameActions
-import io.github.petvat.katan.controller.LobbyActions
 import io.github.petvat.katan.event.EventSystem
-import io.github.petvat.katan.model.ClientState
-import io.github.petvat.katan.networking.NetworkSession
+import io.github.petvat.katan.model.KatanClient
 import io.github.petvat.katan.ui.Assets
 import io.github.petvat.katan.ui.ktx.screen.*
 import io.github.petvat.katan.ui.viewmodel.ScreenType
@@ -22,11 +18,7 @@ import ktx.app.KtxGame
  *
  */
 class KtxKatan(
-    val model: ClientState,
-    val lobbyService: LobbyActions,
-    val gameActions: GameActions,
-    val chatActions: ChatActions,
-    val networkSession: NetworkSession,
+    val model: KatanClient,
     val eventBus: EventSystem
 
 ) :
@@ -57,7 +49,6 @@ class KtxKatan(
 
 
     override fun render() {
-        networkSession.poll()
         super.render() // delegates to the active screen's render, as KtxGame normally does
     }
 

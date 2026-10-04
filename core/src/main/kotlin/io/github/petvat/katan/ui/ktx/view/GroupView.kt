@@ -14,7 +14,7 @@ import ktx.scene2d.textButton
 class GroupView(
     viewModel: GroupViewModel,
     skin: Skin
-) : KtxView<GroupViewModel>(skin, viewModel), KTable {
+) : KtxView(skin), KTable {
 
     // TODO: Fill with view models chat log copy.
     private val chatWidget: ChatWidget

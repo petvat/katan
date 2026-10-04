@@ -1,13 +1,14 @@
 package io.github.petvat.katan.server.service.channel
 
 import io.github.petvat.katan.server.service.client.ClientId
-import io.github.petvat.katan.server.service.engine.GameSnapshot
+import io.github.petvat.katan.server.service.engine.GameState
 import io.github.petvat.katan.shared.model.game.Phase
 import io.github.petvat.katan.server.service.engine.Player
-import io.github.petvat.katan.server.service.engine.RuleBook
 import io.github.petvat.katan.shared.UserId
 import io.github.petvat.katan.shared.model.board.BoardGenerator
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.ResourceMap
+import io.github.petvat.katan.shared.model.game.RuleBook
 import io.github.petvat.katan.shared.model.game.Settings
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -53,11 +54,14 @@ object GroupFactory {
 object GameFactory {
 
     private fun initTurnOrder(players: Int) = (0 until players).shuffled()
+    private fun assignColors(numPlayers: Int): Map<Int, PlayerColor> {
+        return ((1..numPlayers).toList().shuffled() zip PlayerColor.entries.take(numPlayers).shuffled()).toMap()
+    }
+
 
     fun create(settings: Settings, members: Collection<UserId>, chat: ChatChannel?): GameChannel {
 
         val gameId = generateId(IdType.GAME)
-        val ruleBook = RuleBook.from(settings)
 
         val turnOrder = initTurnOrder(members.size)
 
@@ -75,19 +79,15 @@ object GameFactory {
                 settlementsLeft = settings.maxSettlements
             )
         }
-
-        val board = BoardGenerator.generateBoard(settings)
-        val phase = Phase.SETUP
-        val turnPlayer = turnOrder.first()
-
-        val snapshot = GameSnapshot(
-            rules = ruleBook,
+        val snapshot = GameState(
+            rules = RuleBook.from(settings),
             players = players,
-            board = board,
-            phase = phase,
+            board = BoardGenerator.generateBoard(settings),
+            phase = Phase.SETUP,
             turnOrder = turnOrder,
-            turnPlayer = turnPlayer,
-            eventHistory = emptyList()
+            turnPlayer = turnOrder.first(),
+            eventHistory = emptyList(),
+            colors = assignColors(members.size)
         )
 
         return GameChannel(

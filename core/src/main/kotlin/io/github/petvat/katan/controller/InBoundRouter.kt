@@ -2,73 +2,164 @@ package io.github.petvat.katan.controller
 
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.model.*
+import io.github.petvat.katan.model.state.ClientState
 import io.github.petvat.katan.shared.protocol.OutMessage
 import io.github.petvat.katan.shared.protocol.Response
 
-class ResponseProcessor(
-    private val tracker: PendingRequestTracker,
-    private val state: ClientState,
-    private val eventBus: EventSystem
-) {
-    fun update(message: OutMessage) {
-
-        // TODO: Track requests
-
-        when (val response = message.payload) {
-            is Response.Error -> {
-                eventBus.fire(ErrorEvent(reason = response.detail, code = response.code))
-            }
-
-            is Response.GroupCreated -> {
-                state.group = GroupState(response.groupId, mutableMapOf(state.id to state.name), response.settings)
-                response.chatId?.let {
-                    state.chat = ChatState(response.chatId!!, mutableMapOf(state.id to state.name), mutableListOf())
-                }
-                eventBus.fire(CreateEvent)
-            }
-
-            is Response.Registered -> {
-                state.id = response.clientId
-                state.lobby = response.lobby
-                state.resumeToken = response.resumeToken
-                state.name = response.name
-                eventBus.fire(LoginEvent)
-
-            }
-
-            is Response.DiceRolled -> {
-                state.game = state.game.rolledDice(response.resources, response.othersResources, response.moveRobber)
-                eventBus.fire(RolledDiceEvent(response.roll1, response.roll2, response.moveRobber))
-            }
-
-            is Response.Build -> {
-                state.game = state.game.addBuilding(
-                    response.builder,
-                    response.buildkind,
-                    response.coordinates,
-                    response.victoryPoints
-                )
-                eventBus.fire(BuildEvent(response.builder, response.buildkind, response.coordinates))
-            }
-
-            is Response.Chat -> {
-                state.chat = state.chat?.chatMessage(response.from, response.message)
-                eventBus.fire(ChatEvent(response.from, response.message))
-            }
-
-            is Response.Joined -> { /* update groups, fire event */
-                state.group = GroupState(
-                    response.groupId,
-                    response.members.toMutableMap(),
-                    response.settings
-                )
-                eventBus.fire(JoinEvent)
-            }
-
-            else -> Unit
-        }
-    }
-}
+//
+//class InBoundRouter(
+//    private val state: ClientState,
+//    private val events: EventSystem
+//) {
+//    fun route(message: OutMessage) {
+//        when (val response = message.payload) {
+//            is Response.DiceRolled -> {
+//
+//            }
+//
+//            is Response.Build -> {
+//                state.game = state.game.addBuilding(
+//                    response.builder,
+//                    response.buildkind,
+//                    response.coordinates,
+//                    response.victoryPoints
+//                )
+//                events.fire(BuildEvent(response.builder, response.buildkind, response.coordinates))
+//            }
+//
+//            is Response.Chat -> {
+//                state.chatSession!!.state = state.chatSession!!.state.chatMessage(response.from, response.message)
+//                eventSystem.fire(ChatEvent(response.from, response.message))
+//            }
+//
+//            is Response.GroupUpdate -> {
+//                state.lobbySession!!.state =
+//                    state.lobbySession!!.state + (response.groupSummary.id to response.groupSummary)
+//                // no event — LobbyViewModel diffs lobbySession.state directly
+//            }
+//
+//            is Response.Registered -> {
+//                eventSystem.fire(LoginEvent)
+//            }
+//
+//            else -> Unit
+//        }
+//    }
+//}
+//
+//
+//class ResponseProcessor(
+//    private val state: KatanState,
+//    private val eventSystem: EventSystem,
+//) {
+//    fun update(message: OutMessage) {
+//        when (val response = message.payload) {
+//
+//            is Response.DiceRolled -> {
+//                state.gameSession!!.state =
+//                    state.gameSession!!.state.rolledDice(
+//                        response.resources,
+//                        response.othersResources,
+//                        response.moveRobber
+//                    )
+//                eventSystem.fire(RolledDiceEvent(response.roll1, response.roll2, response.moveRobber))
+//            }
+//
+//            is Response.Build -> {
+//                state.gameSession!!.state = state.gameSession!!.state.addBuilding(
+//                    response.builder,
+//                    response.buildkind,
+//                    response.coordinates,
+//                    response.victoryPoints
+//                )
+//                // no event — BoardViewModel and PlayersViewModel diff gameSession.state directly
+//            }
+//
+//            is Response.Chat -> {
+//                state.chatSession!!.state = state.chatSession!!.state.chatMessage(response.from, response.message)
+//                eventSystem.fire(ChatEvent(response.from, response.message))
+//            }
+//
+//            is Response.GroupUpdate -> {
+//                state.lobbySession!!.state =
+//                    state.lobbySession!!.state + (response.groupSummary.id to response.groupSummary)
+//                // no event — LobbyViewModel diffs lobbySession.state directly
+//            }
+//
+//            is Response.Registered -> {
+//                eventSystem.fire(LoginEvent)
+//            }
+//
+//            else -> Unit
+//        }
+//    }
+//}
+//
+//
+//class ResponseProcessor(
+//    private val tracker: PendingRequestTracker,
+//    private val state: ClientState,
+//    private val eventBus: EventSystem
+//) {
+//    fun update(message: OutMessage) {
+//
+//        // TODO: Track requests
+//
+//        when (val response = message.payload) {
+//            is Response.Error -> {
+//                eventBus.fire(ErrorEvent(reason = response.detail, code = response.code))
+//            }
+//
+//            is Response.GroupCreated -> {
+//                state.group = GroupState(response.groupId, mutableMapOf(state.id to state.name), response.settings)
+//                response.chatId?.let {
+//                    state.chat = ChatState(response.chatId!!, mutableMapOf(state.id to state.name), mutableListOf())
+//                }
+//                eventBus.fire(CreateEvent)
+//            }
+//
+//            is Response.Registered -> {
+//                state.id = response.clientId
+//                state.lobby = response.lobby
+//                state.resumeToken = response.resumeToken
+//                state.name = response.name
+//                eventBus.fire(LoginEvent)
+//
+//            }
+//
+//            is Response.DiceRolled -> {
+//                state.game = state.game.rolledDice(response.resources, response.othersResources, response.moveRobber)
+//                eventBus.fire(RolledDiceEvent(response.roll1, response.roll2, response.moveRobber))
+//            }
+//
+//            is Response.Build -> {
+//                state.game = state.game.addBuilding(
+//                    response.builder,
+//                    response.buildkind,
+//                    response.coordinates,
+//                    response.victoryPoints
+//                )
+//                eventBus.fire(BuildEvent(response.builder, response.buildkind, response.coordinates))
+//            }
+//
+//            is Response.Chat -> {
+//                state.chat = state.chat?.chatMessage(response.from, response.message)
+//                eventBus.fire(ChatEvent(response.from, response.message))
+//            }
+//
+//            is Response.Joined -> { /* update groups, fire event */
+//                state.group = GroupState(
+//                    response.groupId,
+//                    response.members.toMutableMap(),
+//                    response.settings
+//                )
+//                eventBus.fire(JoinEvent)
+//            }
+//
+//            else -> Unit
+//        }
+//    }
+//}
 
 
 //
@@ -130,7 +221,7 @@ class ResponseProcessor(
 //
 //    private fun userJoined(response: Response.UserJoined): UserJoinedEvent {
 //        state.groups = state.groups.map { group ->
-//            if (group.id == response.id) {
+//            if (group.clientId == response.clientId) {
 //                group.copy(
 //                    clients = (group.clients + (response.userId to response.name)).toMutableMap()
 //                )
@@ -144,7 +235,7 @@ class ResponseProcessor(
 //
 //    private fun joined(response: Response.Joined): JoinEvent {
 //        val g = GroupState(
-//            response.id,
+//            response.clientId,
 //            clients = response.clients.toMutableMap(),
 //            settings = response.settings
 //        )

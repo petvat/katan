@@ -24,7 +24,7 @@ class RollDicePresenter(channelRegistry: ChannelRegistry) :
             resources = event.resources[playerNumber]!!.toDto(),
             othersResources = event.resources
                 .filter { entry -> entry.key != playerNumber }
-                .mapValues { (_, value) -> value.count() },
+                .mapValues { (_, value) -> value.total },
             moveRobber = event.nextPhase == Phase.MOVE_ROBBER,
             gameId = channel.id.value,
             // description = event.description,

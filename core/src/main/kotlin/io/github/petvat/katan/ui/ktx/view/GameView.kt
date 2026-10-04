@@ -10,23 +10,22 @@ import com.badlogic.gdx.utils.Align
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.ui.ktx.widget.*
 import io.github.petvat.katan.ui.projection.GameProjection
-import io.github.petvat.katan.ui.viewmodel.GameVM
-import io.github.petvat.katan.ui.viewmodel.GroupViewModel
+import io.github.petvat.katan.ui.viewmodel.GameViewModel
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
 /**
  * The class represents the main ktxCtx view.
  *
- * @param viewModel The underlying [GameVM] that this view is tracking.
+ * @param viewModel The underlying [GameViewModel] that this view is tracking.
  * @param skin The [Skin] this widget should use.
  */
 @Scene2dDsl
 class GameView(
-    gameProjection: GameProjection,
-    viewModel: GameVM,
+    hud: GameProjection,
+    val viewModel: GameViewModel,
     skin: Skin
-) : KTable, KtxView<GameVM>(skin, viewModel) {
+) : KTable, KtxView(skin) {
 
     private val logger = KotlinLogging.logger { }
 
@@ -34,7 +33,7 @@ class GameView(
 
     private val buildBtn: TextButton
 
-    private val chat: ChatWidget
+    private val chatWidget: ChatWidget
 
     private val buildWidget: BuildTable
 
@@ -51,11 +50,11 @@ class GameView(
         setFillParent(true)
         align(Align.center)
         touchable = Touchable.childrenOnly // Fix input processing touch event
-        playersInfoWidget = scene2d.playersTable(gameProjection.otherPlayers, skin) {
+        playersInfoWidget = scene2d.playersTable(hud.otherPlayers, skin) {
             this.top()
             this.center()
         }
-        chat = scene2d.chat(callback = viewModel::sendMessage, skin = skin) {
+        chatWidget = scene2d.chat(callback = viewModel::sendMessage, skin = skin) {
             this.align(Align.bottomLeft)
             this.bottom()
             this.left()
@@ -74,7 +73,7 @@ class GameView(
         }
 
         thisPlayerInfoTable = scene2d.thisPlayerTable(
-            gameProjection.thisPlayer,
+            hud.thisPlayer,
             skin
         ) {
             this.bottom()
@@ -95,7 +94,7 @@ class GameView(
 
         add(playersInfoWidget).colspan(4).growX().maxWidth(1000f)
         row().expandY()
-        add(chat).bottom()
+        add(chatWidget).bottom()
         add(thisPlayerInfoTable).expandX().bottom()
         add(buildTable).bottom().growX()
         add(rollDiceBtn).bottom()
@@ -115,28 +114,25 @@ class GameView(
     override fun registerOnPropertyChanges() {
         logger.debug { "GameView:RegisterOnPropertyChanges" }
 
-        viewModel.onPropertyChange(GameVM::projection) { projection ->
-            renderPlayers(projection)
-            logger.debug { "viewModel.onPropertyChanges" }
-            // TODO: Add
-            // renderTurn(projection.currentTurnPlayer)
+        viewModel.onPropertyChange(GameViewModel::hud) {
+            renderPlayers(it)
+            renderTurn(it)
         }
 
-        viewModel.onPropertyChange(GroupViewModel::lastMessage) {
-            chat.addMessage(it.first, it.second)
-
+        viewModel.onPropertyChange(GameViewModel::chat) {
+            chatWidget.addAll(it.chatlog)
         }
 
-        viewModel.onPropertyChange(GameVM::rollDiceMode) {
+        viewModel.onPropertyChange(GameViewModel::rollDiceMode) {
             toggle(rollDiceBtn, it)
         }
 
-        viewModel.onPropertyChange(GameVM::buildMode) {
+        viewModel.onPropertyChange(GameViewModel::buildMode) {
             toggle(buildBtn, it)
             logger.debug { "Toggled build mode: $it" }
         }
 
-        viewModel.onPropertyChange(GameVM::diceRoll) { roll ->
+        viewModel.onPropertyChange(GameViewModel::diceRoll) { roll ->
 //            roll?.let { (d1, d2) ->
 //                diceAnimationWidget.playRoll(d1, d2) {
 //                    viewModel.onDiceAnimationComplete()
@@ -155,65 +151,14 @@ class GameView(
     private fun renderTurn(projection: GameProjection) {
         // Render glow effect or something?
     }
-
-
-//
-//    override fun registerOnPropertyChanges() {
-//
-//        viewModel.onPropertyChange(GameViewModel::currentTurnPlayer) {
-//            if (viewModel.thisPlayerTurn) {
-//                thisPlayerInfoTable.activateTurn()
-////                if (!viewModel.setupPhase) {
-////                    toggle(rollDiceBtn, true)
-////                }
-//            } else {
-//                thisPlayerInfoTable.deactivateTurn() // redundant.
-//                playersInfoWidget.activateTurn(it)
-//            }
-//        }
-//
-//        viewModel.onPropertyChange(GameViewModel::lastGroupMessage) {
-//            logger.debug { "Reached ktxCtx view property change!" }
-//            chat.addMessage(it.first, it.second)
-//        }
-//
-//        viewModel.onPropertyChange(GameViewModel::buildMode) {
-//            toggle(buildBtn, it)
-//        }
-//
-//        viewModel.onPropertyChange(GameViewModel::rollDiceMode) {
-//            toggle(rollDiceBtn, it)
-//        }
-//
-//        viewModel.onPropertyChange(GameViewModel::diceRoll) {
-//            // TODO: Rolldice widget start
-//            // This should start an animation and display the dice roll.
-//        }
-//
-//        viewModel.onPropertyChange(GameViewModel::chatLogProperty) {
-//            // chat.addMessage(it.last().first, it.last().second) TODO: USE
-//            chat.addAll(it)
-//        }
-//
-//        viewModel.onPropertyChange(GameViewModel::thisPlayerVM) {
-//            thisPlayerInfoTable.update(it.inventory, it.victoryPoints)
-//        }
-//
-//        viewModel.onPropertyChange(GameViewModel::otherPlayersVM) {
-//            it.forEach { player ->
-//                // TODO: Use function?
-//                playersInfoWidget.update(player.playerNumber, player.victoryPoints, player.cardCount)
-//            }
-//        }
-//    }
 }
 
 
 @Scene2dDsl
 fun <S> KWidget<S>.gameView(
-    model: GameVM,
-    projection: GameProjection,
+    vm: GameViewModel,
+    hud: GameProjection,
     skin: Skin,
     init: (@Scene2dDsl GameView).(S) -> Unit = {},
-): GameView = actor(GameView(projection, model, skin), init)
+): GameView = actor(GameView(hud, vm, skin), init)
 

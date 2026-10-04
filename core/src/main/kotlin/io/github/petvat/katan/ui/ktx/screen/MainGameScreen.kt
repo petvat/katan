@@ -8,13 +8,15 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import io.github.petvat.katan.event.EventSystem
-import io.github.petvat.katan.shared.hexlib.PCoordinate
+import io.github.petvat.katan.model.BoardHelpers
+import io.github.petvat.katan.shared.hexlib.PCoord
 import io.github.petvat.katan.shared.hexlib.Layout
 import io.github.petvat.katan.ui.ktx.view.BoardView
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.view.gameView
 import io.github.petvat.katan.ui.ktx.view.tradeView
-import io.github.petvat.katan.ui.viewmodel.GameVM
+import io.github.petvat.katan.ui.projection.BoardProjector
+import io.github.petvat.katan.ui.viewmodel.GameScreenViewModel
 import ktx.scene2d.Scene2DSkin
 import ktx.scene2d.actors
 import kotlin.math.abs
@@ -52,8 +54,10 @@ class MainGameScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bu
 
     private lateinit var boardRenderer: BoardView
 
-    override lateinit var viewModel: GameVM
+    override lateinit var viewModel: GameScreenViewModel
 
+
+    // TODO: USING THIS?
     var lastTouchX = 0f
     var lastTouchY = 0f
     val dragSensitivity = 0.5f
@@ -92,27 +96,27 @@ class MainGameScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bu
 
     override fun buildStage() {
 
+        val game = requireNotNull(ktxCtx.model.state.game) {
+            "MainGameScreen built before initialization."
+        }
+
         layout = Layout(
-            PCoordinate(TEX_WIDTH / sqrt(3.0), (TEX_HEIGHT / 2) + 2), // Inradius width and height
-            PCoordinate(0.0, 0.0) // Origin hex relative to viewport
+            PCoord(TEX_WIDTH / sqrt(3.0), (TEX_HEIGHT / 2) + 2), // Inradius width and height
+            PCoord(0.0, 0.0) // Origin hex relative to viewport
         )
 
-        viewModel = GameVM(ktxCtx.model.game, ktxCtx.gameActions, ktxCtx.chatActions)
+        viewModel = GameScreenViewModel(ktxCtx.model.state, ktxCtx.model.commands, layout)
 
         boardRenderer = BoardView(
-            viewModel,
-            viewModel.projection,
-            batch,
-            assets,
-            layout
+            viewModel.board,
+            assets
         )
-        // TODO: Might be needed somewhere: tiles = ktxCtx.gameState.gameManager!!.board.tiles.toMutableList() Break reason?
 
         inputMultiplexer.addProcessor(inputProcessor)
 
         stage.actors {
-            tradeView(viewModel, Scene2DSkin.defaultSkin) { isVisible = false } // Overlay of trade system
-            gameView(model = viewModel, projection = viewModel.projection, Scene2DSkin.defaultSkin)
+            tradeView(viewModel.game, Scene2DSkin.defaultSkin) { isVisible = false } // Overlay of trade system
+            gameView(vm = viewModel.game, hud = viewModel.game.hud, Scene2DSkin.defaultSkin)
         }
     }
 
@@ -131,7 +135,7 @@ class MainGameScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bu
         batch.projectionMatrix = camera.combined
         camera.update()
 
-        boardRenderer.render()
+        boardRenderer.render(batch)
 
         stage.viewport.apply() // Apply the stage viewport to render the UI correctly.
 

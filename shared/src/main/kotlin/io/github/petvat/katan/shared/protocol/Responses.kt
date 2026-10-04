@@ -2,10 +2,11 @@ package io.github.petvat.katan.shared.protocol
 
 import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.model.board.BuildKind
-import io.github.petvat.katan.shared.model.game.ResourceMapData
+import io.github.petvat.katan.shared.model.game.ResourceMap
+import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.protocol.dto.GameSnapshotPlayerDTO
-import io.github.petvat.katan.shared.protocol.dto.GameSnapshotSpectatorDTO
+import io.github.petvat.katan.shared.protocol.dto.ParticipantGameSnapshot
+import io.github.petvat.katan.shared.protocol.dto.SpectatorGameSnapshot
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -86,11 +87,11 @@ sealed interface Response {
     /** NOTE: currently assumes gameId == groupId. */
     @Serializable
     @SerialName("game_init")
-    data class Init(val privateGameState: GameSnapshotPlayerDTO) : Response
+    data class Init(val privateGameState: ParticipantGameSnapshot) : Response
 
     @Serializable
     @SerialName("game_init_spec")
-    data class InitSpectator(val publicGameState: GameSnapshotSpectatorDTO) : Response
+    data class InitSpectator(val publicGameState: SpectatorGameSnapshot) : Response
 
     @Serializable
     @SerialName("dice_rolled")
@@ -99,7 +100,7 @@ sealed interface Response {
         val playerNumber: Int,
         val roll1: Int,
         val roll2: Int,
-        val resources: ResourceMapData,
+        val resources: ResourceMap,
         val othersResources: Map<Int, Int>,
         val moveRobber: Boolean
     ) : Response
@@ -133,7 +134,7 @@ sealed interface Response {
         val buildkind: BuildKind,
         val coordinates: Coordinates,
         val victoryPoints: Map<Int, Int>,
-        val thisPlayer: ResourceMapData,
+        val thisPlayer: ResourceMap,
         val otherPlayers: Map<Int, Int>
     ) : Response
 
@@ -148,9 +149,10 @@ sealed interface Response {
 
     // ---- Game responses ----
 
+
     @Serializable
     @SerialName("game_resync")
-    data class GameResync(val privateGameState: GameSnapshotPlayerDTO) : Response
+    data class GameResync(val privateGameState: ParticipantGameSnapshot) : Response
 
     @Serializable
     @SerialName("victory_claimed")
@@ -161,6 +163,24 @@ sealed interface Response {
     data class EndTurn(val gameId: String) : Response
 
     @Serializable
+    @SerialName("trade_executed")
+    data class TradeExecuted(
+        val gameId: String,
+        val tradeId: Int,
+        val acceptor: Int,
+        val resources: ResourceMap,          // recipient's own hand (personalized)
+        val othersResources: Map<Int, Int>   // public counts of the affected pair
+    ) : Response
+
+    @Serializable
+    @SerialName("trade_declined")
+    data class TradeDeclined(
+        val gameId: String,
+        val tradeId: Int,
+        val declinedBy: Int,
+    ) : Response
+
+    @Serializable
     @SerialName("robber_moved")
     data class RobberMoved(val gameId: String, val playerNumber: Int, val coordinates: Coordinates) : Response
 
@@ -168,21 +188,11 @@ sealed interface Response {
     @SerialName("trade_inited")
     data class InitTrade(
         val gameId: String,
-        val playerNumber: Int,
-        val tradeId: Int,
-        val targetPlayers: Set<Int>,
-        val offer: ResourceMapData,
-        val inReturn: ResourceMapData
+        val trade: Trade
     ) : Response
 
-    @Serializable
-    @SerialName("trade_response")
-    data class TradeResponse(
-        val gameId: String,
-        val playerNumber: Int,
-        val tradeId: Int,
-        val accept: Boolean
-    ) : Response
+//
+
 
     // ---- Universal ----
 
@@ -206,7 +216,7 @@ sealed interface Response {
  * @property channelSeq This event's position in the channel's history.
  *   Null for failures (an Error never became part of channel history,
  *   so it doesn't consume a sequence number) and for pre-auth responses
- *   (Registered/Resumed/ResumeFailed -- no channel exists yet).
+ * @property payload The message content.
  */
 @Serializable
 data class OutMessage(

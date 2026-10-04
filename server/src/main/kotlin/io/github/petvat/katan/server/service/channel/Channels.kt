@@ -1,9 +1,8 @@
 package io.github.petvat.katan.server.service.channel
 
 import io.github.petvat.katan.server.service.concurrency.Lockable
-import io.github.petvat.katan.server.service.engine.GameSnapshot
+import io.github.petvat.katan.server.service.engine.GameState
 import io.github.petvat.katan.server.service.presenter.ConcurrentKeyedRegistry
-import io.github.petvat.katan.server.service.presenter.ConcurrentTypedRegistry
 import io.github.petvat.katan.shared.UserId
 import io.github.petvat.katan.shared.model.game.Settings
 import java.util.concurrent.ConcurrentHashMap
@@ -38,7 +37,7 @@ class ChannelRegistry : ConcurrentKeyedRegistry<ChannelId, Channel<*>>()
 class GameChannel(
     override val id: ChannelId,
     override val subs: ConcurrentHashMap<UserId, GameSubscriber>,
-    var snapshot: GameSnapshot,
+    var snapshot: GameState,
     val userToPlayerId: Map<UserId, Int>, override var seqCounter: Int = 0,
     val chat: ChatChannel?
 ) : Channel<GameSubscriber> {

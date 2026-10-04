@@ -3,128 +3,67 @@ package io.github.petvat.katan.shared.model.game
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
-enum class Resource {
-    WOOD, ORE, WHEAT, WOOL, BRICK, NON_RESOURCE
-}
-
+/**
+ * The five tradable resources.
+ */
+enum class Resource { WOOD, ORE, WHEAT, WOOL, BRICK }
 
 /**
- * TODO: Use this instead because the current [ResourceMap] serialization is messy.
+ * Immutable count of resources.
+ *
  */
 @Serializable
-data class ResourceMapData(
-    val wood: Int,
-    val ore: Int,
-    val wheat: Int,
-    val wool: Int,
-    val brick: Int
-)
-
-class ResourceMap(
-    wood: Int,
-    ore: Int,
-    wheat: Int,
-    wool: Int,
-    brick: Int
+data class ResourceMap(
+    val wood: Int = 0,
+    val ore: Int = 0,
+    val wheat: Int = 0,
+    val wool: Int = 0,
+    val brick: Int = 0
 ) {
-    private var resources = hashMapOf(
-        Resource.WOOD to wood,
-        Resource.ORE to ore,
-        Resource.WHEAT to wheat,
-        Resource.WOOL to wool,
-        Resource.BRICK to brick
+    operator fun get(resource: Resource): Int = when (resource) {
+        Resource.WOOD -> wood
+        Resource.ORE -> ore
+        Resource.WHEAT -> wheat
+        Resource.WOOL -> wool
+        Resource.BRICK -> brick
+    }
+
+    val total: Int get() = wood + ore + wheat + wool + brick
+
+    operator fun plus(other: ResourceMap): ResourceMap = copy(
+        wood = wood + other.wood,
+        ore = ore + other.ore,
+        wheat = wheat + other.wheat,
+        wool = wool + other.wool,
+        brick = brick + other.brick
     )
 
-    constructor() : this(
-        0, 0, 0, 0, 0
+    operator fun minus(other: ResourceMap): ResourceMap = copy(
+        wood = wood - other.wood,
+        ore = ore - other.ore,
+        wheat = wheat - other.wheat,
+        wool = wool - other.wool,
+        brick = brick - other.brick
     )
 
-    constructor(resourceMap: ResourceMap) : this(
-        resourceMap[Resource.WOOD],
-        resourceMap[Resource.ORE],
-        resourceMap[Resource.WHEAT],
-        resourceMap[Resource.WOOL],
-        resourceMap[Resource.BRICK]
-    )
 
-    operator fun get(resource: Resource): Int {
-        return resources.getOrElse(resource) { 0 }
+    /** Gain `amount` of one resource (harvest, trade payout). */
+    fun plus(resource: Resource, amount: Int): ResourceMap = when (resource) {
+        Resource.WOOD -> copy(wood = wood + amount)
+        Resource.ORE -> copy(ore = ore + amount)
+        Resource.WHEAT -> copy(wheat = wheat + amount)
+        Resource.WOOL -> copy(wool = wool + amount)
+        Resource.BRICK -> copy(brick = brick + amount)
     }
 
-    fun get(): HashMap<Resource, Int> {
-        return HashMap(resources)
+    fun minus(resource: Resource, amount: Int): ResourceMap = plus(resource, -amount)
+
+
+    fun affords(cost: ResourceMap): Boolean =
+        wood >= cost.wood && ore >= cost.ore && wheat >= cost.wheat &&
+            wool >= cost.wool && brick >= cost.brick
+
+    companion object {
+        val EMPTY = ResourceMap()
     }
-
-    fun getAmount(resource: Resource): Int {
-        return resources.getOrElse(resource) { 0 }
-    }
-
-    // REMOVE
-    fun getMap(): HashMap<Resource, Int> {
-        return HashMap(resources)
-    }
-
-    fun count(): Int {
-        return resources.values.sum()
-    }
-
-    operator fun plus(other: ResourceMap): Boolean {
-        resources.keys.forEach { key ->
-            val current = resources[key] ?: 0
-            resources[key] = current + (other.get()[key] ?: 0)
-        }
-        return true
-    }
-
-    /**
-     * Subtracts a resource map from this resource map
-     */
-    operator fun minus(other: ResourceMap): Boolean {
-        val result = HashMap<Resource, Int>()
-        for ((resource, amount) in resources) {
-            val otherAmount = other.getAmount(resource)
-            val remainingAmount = getAmount(resource) - otherAmount
-            if (remainingAmount < 0) {
-                return false
-            }
-            result[resource] = remainingAmount
-        }
-        resources = result
-        return true
-    }
-
-    operator fun minus(resource: Resource): Boolean {
-        val value = resources[resource]
-        if (value != null && value > 0) {
-            resources[resource] = value - 1
-            return true
-        }
-        return false
-    }
-
-    fun transaction(resource: Resource, amount: Int) {
-        val current = resources[resource] ?: 0
-        resources[resource] = current + amount
-    }
-
-    fun difference(other: ResourceMap): ResourceMap {
-        val difference = ResourceMap(this)
-        difference.minus(other);
-        return difference
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as ResourceMap
-
-        return resources == other.resources
-    }
-
-    override fun hashCode(): Int {
-        return resources.hashCode()
-    }
-
 }
-

@@ -8,7 +8,7 @@ import ktx.scene2d.*
 
 class MenuScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bus) {
 
-    override val viewModel = StartMenuViewModel(game.networkSession, game.transitionService, bus)
+    override val viewModel = StartMenuViewModel(game.model, game.transitionService, bus)
 
     override fun buildStage() {
         stage.actors {

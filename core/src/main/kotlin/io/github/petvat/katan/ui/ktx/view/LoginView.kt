@@ -12,9 +12,9 @@ import ktx.scene2d.*
 
 
 class LoginView(
-    viewModel: LoginViewModel,
+    val viewModel: LoginViewModel,
     skin: Skin
-) : KtxView<LoginViewModel>(skin, viewModel), KTable {
+) : KtxView(skin), KTable {
 
     // private val  settingsWidget
 

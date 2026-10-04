@@ -29,7 +29,7 @@ abstract class BlockingClient<T, S> {
     private val logger = KotlinLogging.logger { }
     private lateinit var serverChannel: SocketChannel
     private lateinit var selector: Selector
-    val messageQueue = LinkedBlockingQueue<S>()
+    val messageQueue = LinkedBlockingQueue<S & Any>()
     private val reader = MessageReader()
 
     fun isConnected(): Boolean = ::serverChannel.isInitialized && serverChannel.isConnected

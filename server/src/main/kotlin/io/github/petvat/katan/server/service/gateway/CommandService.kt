@@ -34,16 +34,26 @@ interface CommandDispatcher<C : Command, Ch : Channel<*>> {
     ): Map<ConnectedClient, OutMessage> {
 
         val channel = channelManager.get(channelId)
-            ?: return mapOf(requester to OutMessage(replyTo = seq, payload = Response.Error(ErrorCode.NOT_FOUND)))
+            ?: return mapOf(
+                requester to OutMessage(
+                    replyTo = seq,
+                    payload = Response.Error(ErrorCode.NOT_FOUND, detail = "Channel does not exist.")
+                )
+            )
 
         @Suppress("UNCHECKED_CAST")
         if (!isPermitted(requester, channel as Ch))
-            return mapOf(requester to OutMessage(replyTo = seq, payload = Response.Error(ErrorCode.DENIED)))
+            return mapOf(
+                requester to OutMessage(
+                    replyTo = seq,
+                    payload = Response.Error(ErrorCode.DENIED, detail = "Not permitted.")
+                )
+            )
 
         val handler = handlerRegistry.getHandlerFor(command)
 
         val block: suspend () -> Map<UserId, OutMessage> = {
-            val event = handler.execute(requester, channel, command)
+            val event = handler.handle(requester, channel, command)
 
             if (event is Event.Failure) {
                 // Failure never enters channel history -> no channelSeq, only the requester's own user gets it.

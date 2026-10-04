@@ -7,16 +7,14 @@ import io.github.petvat.katan.ui.viewmodel.ViewModel
 /**
  * Scene2d view.
  */
-abstract class KtxView<T : ViewModel>(
+abstract class KtxView(
     skin: Skin,
-    override val viewModel: T,
-) : Table(skin), View<T>
+) : Table(skin), View
 
 
 /**
  * Any view.
  */
-interface View<T : ViewModel> {
-    val viewModel: T
+interface View {
     fun registerOnPropertyChanges()
 }

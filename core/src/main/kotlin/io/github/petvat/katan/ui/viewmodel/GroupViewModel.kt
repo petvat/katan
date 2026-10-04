@@ -1,42 +1,52 @@
 package io.github.petvat.katan.ui.viewmodel
 
 
-import io.github.petvat.katan.controller.IChatActions
-import io.github.petvat.katan.controller.IGameActions
 import io.github.petvat.katan.event.*
-import io.github.petvat.katan.model.GroupState
+import io.github.petvat.katan.model.command.LobbyCommands
+import io.github.petvat.katan.model.state.ChatSession
+import io.github.petvat.katan.model.state.ClientState
+import io.github.petvat.katan.model.state.GroupSession
+import io.github.petvat.katan.shared.model.game.Settings
+import io.github.petvat.katan.ui.projection.Projector
 
 class GroupViewModel(
-    private val group: GroupState,
-    private val chatService: IChatActions,
-    private val gameService: IGameActions,
+    val state: ClientState,
+    private val commands: LobbyCommands,
     private val transitionService: ViewTransitionService,
 ) : ViewModel() {
 
-    var lastMessage: Pair<String, String> by propertyNotify("" to "")
+    val group by mirror(
+        { state.group },
+        requireNotNull(state.group) { "GroupScreen built before join." },
+        { Projector.project(it) }
+    )
+    val chat by mirror(
+        { state.chat },
+        requireNotNull(state.chat) { "GroupScreen built before join." },
+        { Projector.project(it) }
+    )
 
-    fun handleInit() {
-        gameService.init()
+    fun startGame() {
+        // TODO: Settings
+        commands.create(Settings())
     }
 
-    fun handleChat(message: String) {
-        chatService.sendMessage(message)
+    fun leave() {
+        commands.leave()
+    }
+
+    fun updateSettings(settings: Settings) {
+        //
     }
 
     override fun onEvent(event: Event) {
         when (event) {
-            is InitEvent -> {
+            InitGameEvent -> {
                 transitionService(ScreenType.GAME)
             }
 
-            is UserJoinedEvent -> {
-
-            }
-
-            is ChatEvent -> {
-                lastMessage = event.from to event.message
-            }
-
+            LeaveEvent -> TODO()
+            UserJoinedEvent -> TODO()
             else -> Unit
         }
     }

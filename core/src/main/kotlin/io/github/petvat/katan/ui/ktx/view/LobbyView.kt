@@ -8,11 +8,12 @@ import io.github.petvat.katan.ui.ktx.widget.*
 import io.github.petvat.katan.ui.viewmodel.LobbyViewModel
 import ktx.actors.onClick
 import ktx.scene2d.*
+import kotlin.collections.toList
 
 class LobbyView(
-    viewModel: LobbyViewModel,
+    val viewModel: LobbyViewModel,
     skin: Skin
-) : KtxView<LobbyViewModel>(skin, viewModel), KTable {
+) : KtxView(skin), KTable {
 
     private val logger = KotlinLogging.logger { }
 
@@ -28,8 +29,8 @@ class LobbyView(
 
         val innertlb = scene2d.table {
             background = skin.getDrawable("area")
-            this@LobbyView.groupsWidget = scene2d.groupsWidget(viewModel::handleJoin, skin) { }
-            this@LobbyView.createWidget = scene2d.createWidget(viewModel::handleCreate, skin) { }
+            this@LobbyView.groupsWidget = scene2d.groupsWidget(this@LobbyView.viewModel::handleJoin, skin) { }
+            this@LobbyView.createWidget = scene2d.createWidget(this@LobbyView.viewModel::handleCreate, skin) { }
             this@LobbyView.backBtn = scene2d.textButton("Back") {
                 onClick { println("back - TODO") }
                 align(Align.center)

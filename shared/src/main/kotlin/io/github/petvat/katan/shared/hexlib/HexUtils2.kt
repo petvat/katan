@@ -1,39 +1,15 @@
 package io.github.petvat.katan.shared.hexlib
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.*
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.math.sqrt
+
+private val logger = KotlinLogging.logger { }
 
 /**
- * Utility functions for hexagons.
- *
- * ## Coordinate system
- *
- * Uses doubled axial coordinates. Moving W->E increments q. Moving NW->SE increments r.
- * Hex centers sit at (even, even). To accommodate edges and intersections in the same
- * integer space, each hex coordinate is doubled (q*2, r*2) before computing adjacents.
- *
- * Intersection coordinates have one odd component (either q or r, not both).
- * Edge coordinates have one odd and one even component, OR two odds — they are the
- * coordinates passed between intersection/edge adjacency functions.
- *
- * ## Adjacency rules
- *
- * ### Edge linking two intersections A(a1,a2) and B(b1,b2):
- * Find the shared (denominating) value between the two coordinates.
- * - If **even**: edge = intersection with highest (q+r) sum.
- * - If **odd**: edge = (a1-1, a2) if a1 > a2, else (a1, a2-1).
- *
- * ### Intersection linking two edges A(a1,a2) and B(b1,b2):
- * - If a1 == b1 (shared q):
- *     - if shared value is highest → intersection = (max.q+1, max.r)
- *     - else → intersection = max(A,B)
- * - If a2 == b2 (shared r):
- *     - if shared value is highest → intersection = (max.q, max.r+1)
- *     - else → intersection = max(A,B)
- * - Else → intersection = max(A,B)
+ * Utility functions for hexagonal grids.
  */
 object HexUtils {
 
@@ -41,29 +17,13 @@ object HexUtils {
      * Direction vectors for adjacent hexes (single coordinates), from top-left clockwise.
      */
     private val directionVectors = arrayOf(
-        -1, 0,
-        0, 1,
-        1, 1,
-        1, 0,
-        0, -1,
-        -1, -1
+        -1, 0, // top-left
+        0, 1, // top-right
+        1, 1, // right
+        1, 0, // bottom-right
+        0, -1, // bottom-left
+        -1, -1 // left
     )
-//    private val directionVectors = arrayOf(
-//        -1, 0,
-//        0, -1,
-//        1, -1,
-//        1, 0,
-//        0, 1,
-//        -1, 1
-//    )
-
-    /**
-     * Direction vectors scaled to doubled coordinate space.
-     * Used for hex-to-hex navigation when hexes sit at (even, even).
-     *
-     * NOTE: Not used.
-     */
-    val directionVectorsDoubled = directionVectors.map { it * 2 }.toList()
 
     /**
      * Offsets from a doubled hex coordinate to its 6 intersection coordinates.
@@ -76,31 +36,21 @@ object HexUtils {
         1, 0,   // bottom
         0, -1,   // bottom-left
     )
-//    private val intersectionOffsets = arrayOf(
-//        -1, 0,    // top-left
-//        0, -1,   // top
-//        1, -2,   // top-right
-//        -2, 1,   // bottom-right
-//        1, 0,   // bottom
-//        0, 1,   // bottom-left
-//    )
-
-
-    // -------------------------------------------------------------------------
-    // Coordinate transforms
-    // -------------------------------------------------------------------------
 
     /**
      * Transforms single axial hex coordinates to doubled form (q*2, r*2).
      * Required before computing intersection/edge coordinates.
      */
-
-    fun transformToDoubled(hexes: List<HexCoordinates>): List<HexCoordinates> {
-        return hexes.map { HexCoordinates(it.q * 2, it.r * 2) }.toList()
+    fun transformToDoubled(hexes: List<HexCoord>): List<HexCoord> {
+        return hexes.map { HexCoord(it.q * 2, it.r * 2) }.toList()
     }
 
-    fun transformToDoubled(hex: HexCoordinates): HexCoordinates {
-        return HexCoordinates(hex.q * 2, hex.r * 2)
+    /**
+     * Transforms single axial hex coordinates to doubled form (q*2, r*2).
+     * Required before computing intersection/edge coordinates.
+     */
+    private fun transformToDoubled(hex: HexCoord): HexCoord {
+        return HexCoord(hex.q * 2, hex.r * 2)
     }
 
     /**
@@ -108,19 +58,15 @@ object HexUtils {
      * Used when passing coordinates back into hex operations that expect single form
      * (e.g. robber location).
      */
-    fun transformToSingle(hexes: Collection<HexCoordinates>): MutableList<HexCoordinates> {
-        return hexes.map { HexCoordinates(it.q / 2, it.r / 2) }
+    private fun transformToSingle(hexes: Collection<HexCoord>): MutableList<HexCoord> {
+        return hexes.map { HexCoord(it.q / 2, it.r / 2) }
             .toMutableList()
     }
 
-    private fun isDoubled(hex: HexCoordinates): Boolean {
+    private fun isDoubled(hex: HexCoord): Boolean {
         // A hex is in doubled form if both q and r are even.
         return hex.q % 2 == 0 && hex.r % 2 == 0
     }
-
-    // -------------------------------------------------------------------------
-    // Intersection <-> Edge adjacency
-    // -------------------------------------------------------------------------
 
     /**
      * Returns the shared coordinate value between two edge coordinate pairs,
@@ -136,7 +82,6 @@ object HexUtils {
         }
     }
 
-
     /**
      * Returns the edge that connects two adjacent nodes.
      *
@@ -144,9 +89,9 @@ object HexUtils {
      * @param b Second node coordinate
      * @return The edge linking them, or null if they are not adjacent (i.e., do not share an edge).
      */
-    fun edgeLinkingNodes(a: ICoordinates, b: ICoordinates): EdgeCoordinates? {
+    fun edgeLinkingNodes(a: NodeCoord, b: NodeCoord): EdgeCoord? {
         // Candidate edge: component-wise minimum
-        val candidate = EdgeCoordinates(
+        val candidate = EdgeCoord(
             q = minOf(a.q, b.q),
             r = minOf(a.r, b.r)
         )
@@ -182,10 +127,10 @@ object HexUtils {
 //    }
 
 
-    fun nodesLinkingEdge(edge: EdgeCoordinates): List<ICoordinates> {
+    fun nodesLinkingEdge(edge: EdgeCoord): List<NodeCoord> {
         return if (edge.q % 2 == 0 && edge.r % 2 == 0) {
-            listOf(ICoordinates(edge.q, edge.r + 1), ICoordinates(edge.q + 1, edge.r))
-        } else listOf(ICoordinates(edge.q, edge.r), ICoordinates(edge.q + 1, edge.r + 1))
+            listOf(NodeCoord(edge.q, edge.r + 1), NodeCoord(edge.q + 1, edge.r))
+        } else listOf(NodeCoord(edge.q, edge.r), NodeCoord(edge.q + 1, edge.r + 1))
     }
 
 
@@ -194,10 +139,10 @@ object HexUtils {
      *
      * @param edge1 First edge
      * @param edge2 Second edge
-     * @return The common [ICoordinates] if the edges share exactly one node, otherwise null.
+     * @return The common [NodeCoord] if the edges share exactly one node, otherwise null.
      *         Returns null if the edges are the same edge (share 2 nodes) or if they don't touch.
      */
-    fun nodeLinkingEdges(edge1: EdgeCoordinates, edge2: EdgeCoordinates): ICoordinates? {
+    fun nodeLinkingEdges(edge1: EdgeCoord, edge2: EdgeCoord): NodeCoord? {
         val nodes1 = nodesLinkingEdge(edge1).toSet()
         val nodes2 = nodesLinkingEdge(edge2).toSet()
         val common = nodes1.intersect(nodes2)
@@ -243,93 +188,69 @@ object HexUtils {
     // -------------------------------------------------------------------------
 
 
-    fun hexToPixel(l: Layout, coord: HexCoordinates): PCoordinate {
+    fun hexToPixel(l: Layout, coord: HexCoord): PCoord {
         // [x] = inradius.x * [a1 b1][q]
         // [y] = inradius.y   [c1 d1][r]
-//        val x = l.inradius.x.toDouble() * (l.a1 * coord.q + l.b1 * coord.r)
-//        val y =
-//            l.inradius.y.toDouble() * (l.c1 * coord.q + l.d1 * coord.r) * -1 // HACK: A sign error somewhere invertes the y-axis
-//
-
         val x = l.inradius.x * (l.a1 * coord.q + l.b1 * coord.r)
         val y = l.inradius.y * (l.c1 * coord.q + l.d1 * coord.r)
 
-        return PCoordinate(x + l.origin.x, y + l.origin.y)
-    }
-
-    fun pixelToHex(l: Layout, coord: PCoordinate): HexCoordinates {
-        TODO()
+        return PCoord(x + l.origin.x, y + l.origin.y)
     }
 
     /**
      * Returns the pixel offset to a specific corner of a hex.
      * @param corner 0 is top-left, increments clockwise.
      */
-    private fun hexCornerOffset(l: Layout, corner: Int): PCoordinate {
+    private fun hexCornerOffset(l: Layout, corner: Int): PCoord {
         val angle = 2.0 * PI * (l.startAngle + corner) / 6
-//        val angleDeg = 60 * corner - 30
-//        val angleRad = PI / 180 * angleDeg
-        return PCoordinate(l.inradius.x * -cos(angle), l.inradius.y * sin(angle))
-    }
 
-
-    fun hexCorner(l: Layout, hex: HexCoordinates, corner: Int): PCoordinate {
-        val center = hexToPixel(l, hex)
-        val offset = hexCornerOffset(l, corner)
-        return PCoordinate(center.x + offset.x, center.y + offset.y)
-
+        return PCoord(l.inradius.x * -cos(angle), l.inradius.y * sin(angle))
     }
 
     /**
      * Returns the 6 corner screen coordinates of a hex.
      */
-    fun hexCorners(l: Layout, hex: HexCoordinates): List<PCoordinate> {
+    fun hexCorners(l: Layout, hex: HexCoord): List<PCoord> {
         val center = hexToPixel(l, hex)
         return (0 until 6).map { i ->
             val offset = hexCornerOffset(l, i)
-            PCoordinate(center.x + offset.x, center.y + offset.y)
+            PCoord(center.x + offset.x, center.y + offset.y)
         }
     }
 
-
     /**
-     * Computes the mapping from logical intersection coordinates to screen coordinates
-     * for all intersections adjacent to the given (single) hex coordinates.
+     * Computes the mapping from logical node coordinates to screen coordinates
+     * for all nodes adjacent to the given (single) hex coordinates.
      *
      * Input hexes are in single axial form and are doubled internally.
      */
-    fun intersectionCoordinates(
+    fun nodeCoords(
         layout: Layout,
-        hexCoordinates: List<HexCoordinates>
-    ): MutableMap<ICoordinates, PCoordinate> {
-        val intersectionMap = mutableMapOf<ICoordinates, PCoordinate>()
+        hexCoord: List<HexCoord>
+    ): MutableMap<NodeCoord, PCoord> {
+        val intersectionMap = mutableMapOf<NodeCoord, PCoord>()
 
-        for (i in hexCoordinates.indices) {
-            val doubled = transformToDoubled(hexCoordinates[i])
-            val center = hexToPixel(layout, hexCoordinates[i])
+        for (i in hexCoord.indices) {
+            val doubled = transformToDoubled(hexCoord[i])
+            val center = hexToPixel(layout, hexCoord[i])
 
             for ((corner, j) in (intersectionOffsets.indices step 2).withIndex()) {
                 val offset = hexCornerOffset(layout, corner)
 
 
-                val icoord = ICoordinates(
+                val icoord = NodeCoord(
                     (doubled.q) + intersectionOffsets[j],
                     (doubled.r) + intersectionOffsets[j + 1]
                 )
-                intersectionMap[icoord] = PCoordinate(center.x + offset.x, center.y + offset.y)
+                intersectionMap[icoord] = PCoord(center.x + offset.x, center.y + offset.y)
 
                 println(
-                    "hex=${hexCoordinates[i]} " +
+                    "hex=${hexCoord[i]} " +
                         "corner=$corner " +
                         "icoord=$icoord " +
                         "pixel=${center.x + offset.x}, ${center.y + offset.y}"
                 )
             }
-
-            // HACK: Something happens. Not all coordinates are present,
-            //  probably because some are overshadowed by later entry -> One ICoordinates produce multiple screen coords.
-            // TODO: Confirmed fix!
-
         }
         return intersectionMap
     }
@@ -361,15 +282,15 @@ object HexUtils {
 //    }
 
 
-    fun edgeCoordinates(
+    fun edgeCoords(
         layout: Layout,
-        hexCoordinates: List<HexCoordinates>
-    ): Map<EdgeCoordinates, Pair<PCoordinate, PCoordinate>> {
-        val dhexes = transformToDoubled(hexCoordinates)
+        hexCoords: List<HexCoord>
+    ): Map<EdgeCoord, Pair<PCoord, PCoord>> {
+        val dhexes = transformToDoubled(hexCoords)
 
         return dhexes.flatMap { hex ->
-            val edges = transformToSingle(adjacentHexes(hex))
-                .map { EdgeCoordinates(it.q, it.r) }
+            val edges = transformToSingle(hexesTouchingHex(hex))
+                .map { EdgeCoord(it.q, it.r) }
                 .toMutableList()
                 .also {
                     Collections.rotate(
@@ -392,18 +313,12 @@ object HexUtils {
         }.toMap()
     }
 
-    // -------------------------------------------------------------------------
-    // Map generation
-    // -------------------------------------------------------------------------
-
     /**
      * Generates a hexagonal-shaped map with [width] hexes along the widest axis.
-     *
-     * TODO: BROKEN!!! Probably dure to direction vectors!
      */
-    fun generateHexagonalMap(width: Int): Collection<HexCoordinates> {
-        val hexes: MutableList<HexCoordinates> = mutableListOf()
-        hexes.add(HexCoordinates(0, 0))
+    fun generateHexagonalMap(width: Int): Collection<HexCoord> {
+        val hexes: MutableList<HexCoord> = mutableListOf()
+        hexes.add(HexCoord(0, 0))
 
         val offsets = directionVectors.toList()
         Collections.rotate(offsets, -4)
@@ -415,7 +330,7 @@ object HexUtils {
                 var dirQ = 0
                 var dirR = 0
                 repeat(k) {
-                    hexes.add(HexCoordinates(hexOffsetQ + dirQ, hexOffsetR + dirR))
+                    hexes.add(HexCoord(hexOffsetQ + dirQ, hexOffsetR + dirR))
                     dirQ += offsets[i]
                     dirR += offsets[i + 1]
                 }
@@ -427,8 +342,8 @@ object HexUtils {
     /**
      * Returns all hex coordinates forming a ring at [width] steps from origin.
      */
-    fun hexRing(width: Int): List<HexCoordinates> {
-        val hexes: MutableList<HexCoordinates> = mutableListOf()
+    fun hexRing(width: Int): List<HexCoord> {
+        val hexes: MutableList<HexCoord> = mutableListOf()
         val offsets = directionVectors.toList()
         Collections.rotate(offsets, -4) // HACK: ???
 
@@ -438,7 +353,7 @@ object HexUtils {
             var dirQ = 0
             var dirR = 0
             repeat(width) {
-                hexes.add(HexCoordinates(hexOffsetQ + dirQ, hexOffsetR + dirR))
+                hexes.add(HexCoord(hexOffsetQ + dirQ, hexOffsetR + dirR))
                 dirQ += offsets[i]
                 dirR += offsets[i + 1]
             }
@@ -451,19 +366,18 @@ object HexUtils {
      */
     fun screenHexCoordinates(
         layout: Layout,
-        hexes: Collection<HexCoordinates>
-    ): MutableList<PCoordinate> {
+        hexes: Collection<HexCoord>
+    ): MutableList<PCoord> {
         return hexes.map { hexToPixel(layout, it) }.toMutableList()
     }
 
-    // -------------------------------------------------------------------------
-    // Adjacency queries
-    // -------------------------------------------------------------------------
 
-
-    fun adjacentHexes(a: HexCoordinates): List<HexCoordinates> {
+    /**
+     * Returns adjacent hexes to a hex.
+     */
+    fun hexesTouchingHex(a: HexCoord): List<HexCoord> {
         return (directionVectors.indices step 2).map { i ->
-            HexCoordinates(a.q + directionVectors[i], a.r + directionVectors[i + 1])
+            HexCoord(a.q + directionVectors[i], a.r + directionVectors[i + 1])
         }
     }
 
@@ -475,7 +389,7 @@ object HexUtils {
      * - q odd  ("pointy" vertex): offsets are (-1,0), (1,0), (0,-2)
      * - q even ("flat"  vertex): offsets are (-2,-1), (0,1), (0,-1)
      */
-    fun adjacentHexes(a: ICoordinates): List<HexCoordinates> {
+    fun hexesTouchingNode(a: NodeCoord): List<HexCoord> {
         val offsets = if (a.q % 2 == 0) {
 
             // q even - top
@@ -493,7 +407,7 @@ object HexUtils {
             )
         }
         return (offsets.indices step 2).map { i ->
-            HexCoordinates(a.q + offsets[i], a.r + offsets[i + 1])
+            HexCoord(a.q + offsets[i], a.r + offsets[i + 1])
         }
     }
 
@@ -501,10 +415,10 @@ object HexUtils {
      * Returns the 6 intersection coordinates adjacent to a (doubled) hex coordinate.
      * Doubles the coordinate internally if it is not already doubled.
      */
-    fun adjacentIntersections(hexCoordinate: HexCoordinates): List<ICoordinates> {
+    fun adjacentIntersections(hexCoordinate: HexCoord): List<NodeCoord> {
         val coord = if (!isDoubled(hexCoordinate)) transformToDoubled(hexCoordinate) else hexCoordinate
         return (intersectionOffsets.indices step 2).map { i ->
-            ICoordinates(coord.q + intersectionOffsets[i], coord.r + intersectionOffsets[i + 1])
+            NodeCoord(coord.q + intersectionOffsets[i], coord.r + intersectionOffsets[i + 1])
         }
     }
 
@@ -512,7 +426,7 @@ object HexUtils {
      * Returns the (up to 3) edge coordinates adjacent to an intersection,
      * filtered to only those that exist on the given board.
      */
-    fun getAdjacentPaths(icoord: ICoordinates, hexes: List<HexCoordinates>): List<EdgeCoordinates> {
+    fun getAdjacentPaths(icoord: NodeCoord, hexes: List<HexCoord>): List<EdgeCoord> {
         val offsets = if (icoord.q % 2 == 0) {
             // pointy (top/bottom) vertex
             arrayOf(
@@ -529,7 +443,7 @@ object HexUtils {
             )
         }
         return calculateOffsets(icoord, offsets)
-            .map { (q, r) -> EdgeCoordinates(q, r) }
+            .map { (q, r) -> EdgeCoord(q, r) }
             .filter { isValidCoordinate(it, hexes) }
     }
 
@@ -537,32 +451,32 @@ object HexUtils {
      * Returns the (up to 4) edge coordinates adjacent to an edge.
      * Edge orientation is inferred from parity of coordinates.
      */
-    fun getAdjacentPaths(ecoord: EdgeCoordinates): List<EdgeCoordinates> {
+    fun getAdjacentPaths(ecoord: EdgeCoord): List<EdgeCoord> {
         // Three orientations: horizontal (|), downward (\), upward (/)
         val horizontalOffsets = arrayOf(-1, 0, 0, 1, 0, -1, 1, 0)
         val downOffsets = arrayOf(-1, 0, -1, -1, 1, 0, 1, 1)
         val upOffsets = arrayOf(0, 1, 1, 1, -1, -1, 0, -1)
 
-        val offsets = if (ecoord.q + ecoord.r % 2 == 0) horizontalOffsets
+        val offsets = if ((ecoord.q + ecoord.r) % 2 == 0) horizontalOffsets
         else if (ecoord.q % 2 == 0) downOffsets
         else upOffsets
 
-        return calculateOffsets(ecoord, offsets).map { (q, r) -> EdgeCoordinates(q, r) }
+        return calculateOffsets(ecoord, offsets).map { (q, r) -> EdgeCoord(q, r) }
     }
 
     /**
      * Returns the adjacent intersection coordinates to a given intersection,
      * filtered to those that exist on the given board.
      */
-    fun getAdjacentIntersections(a: ICoordinates, hexes: List<HexCoordinates>): List<ICoordinates> {
+    fun getAdjacentIntersections(a: NodeCoord, hexes: List<HexCoord>): List<NodeCoord> {
         val adjacents = mutableListOf(
-            ICoordinates(a.q + 1, a.r + 1),
-            ICoordinates(a.q - 1, a.r - 1)
+            NodeCoord(a.q + 1, a.r + 1),
+            NodeCoord(a.q - 1, a.r - 1)
         )
         if (a.q % 2 == 0) {
-            adjacents.add(ICoordinates(a.q - 1, a.r + 1))
+            adjacents.add(NodeCoord(a.q - 1, a.r + 1))
         } else {
-            adjacents.add(ICoordinates(a.q + 1, a.r - 1))
+            adjacents.add(NodeCoord(a.q + 1, a.r - 1))
         }
         return adjacents.filter { isValidCoordinate(it, hexes) }
     }
@@ -575,11 +489,11 @@ object HexUtils {
      * Returns true if the intersection exists on the board, i.e. at least one of its
      * 3 adjacent hexes is present in [hexes].
      *
-     * Adjacent hexes are derived from [adjacentHexes] which uses the correct parity
+     * Adjacent hexes are derived from [hexesTouchingNode] which uses the correct parity
      * rule per the coordinate spec.
      */
-    fun isValidCoordinate(icoord: ICoordinates, hexes: List<HexCoordinates>): Boolean {
-        return adjacentHexes(icoord).any { it in hexes }
+    fun isValidCoordinate(icoord: NodeCoord, hexes: List<HexCoord>): Boolean {
+        return hexesTouchingNode(icoord).any { it in hexes }
     }
 
     /**
@@ -588,7 +502,7 @@ object HexUtils {
      *
      * Three edge orientations detected by coordinate parity, matching [getAdjacentPaths].
      */
-    fun isValidCoordinate(ecoord: EdgeCoordinates, hexes: List<HexCoordinates>): Boolean {
+    fun isValidCoordinate(ecoord: EdgeCoord, hexes: List<HexCoord>): Boolean {
         val horizontalOffsets = arrayOf(-1, -1, 1, 1)
         val downOffsets = arrayOf(0, -1, 0, 1)
         val upOffsets = arrayOf(-1, 0, 1, 0)
@@ -598,7 +512,7 @@ object HexUtils {
         else upOffsets
 
         return calculateOffsets(ecoord, offsets)
-            .map { (q, r) -> HexCoordinates(q, r) }
+            .map { (q, r) -> HexCoord(q, r) }
             .any { it in hexes }
     }
 
@@ -667,10 +581,10 @@ object HexUtils {
 }
 
 fun main() {
-    val l = Layout(PCoordinate(10.0, 10.0), PCoordinate(0.0, 0.0))
-    val coord = HexCoordinates(0, 0)
+    val l = Layout(PCoord(10.0, 10.0), PCoord(0.0, 0.0))
+    val coord = HexCoord(0, 0)
     println("Corners of (0,0): ${HexUtils.hexCorners(l, coord)}")
-    println("Intersections of (0,0): ${HexUtils.intersectionCoordinates(l, listOf(coord))}")
+    println("Intersections of (0,0): ${HexUtils.nodeCoords(l, listOf(coord))}")
 
 
     println(HexUtils.generateHexagonalMap(3))

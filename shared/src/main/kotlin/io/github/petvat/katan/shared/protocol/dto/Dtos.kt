@@ -1,8 +1,8 @@
 package io.github.petvat.katan.shared.protocol.dto
 
-import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
-import io.github.petvat.katan.shared.hexlib.HexCoordinates
-import io.github.petvat.katan.shared.hexlib.ICoordinates
+import io.github.petvat.katan.shared.hexlib.EdgeCoord
+import io.github.petvat.katan.shared.hexlib.HexCoord
+import io.github.petvat.katan.shared.hexlib.NodeCoord
 import io.github.petvat.katan.shared.model.board.Board
 import io.github.petvat.katan.shared.model.board.RoadKind
 import io.github.petvat.katan.shared.model.board.Tile
@@ -10,42 +10,33 @@ import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.model.game.*
 import kotlinx.serialization.Serializable
 
-/**
- * Top-level snapshot DTOs.
- *
- * GameSnapshotPlayerView and GameSnapshotSpectatorView are deliberately
- * separate types, not one type with a nullable `yourHand`. A spectator
- * client literally cannot deserialize/access hand data that was never
- * serialized in the first place -- the guarantee is structural, not a
- * "trust me, it's always null for spectators" convention.
- *
- * ASSUMPTION: Phase, Trade, GameEvent, RuleBook not seen -- PhaseDTO and
- * TradeDTO below are reasonable guesses; GameEvent/RuleBook I've left out
- * of both snapshots entirely on purpose, see notes below each.
- */
-
 @Serializable
 data class TradeDTO(
     val tradeId: Int,
     val initiator: Int,
     val targetPlayers: Set<Int>,
-    val offer: ResourceMapData,
-    val inReturn: ResourceMapData
+    val offer: ResourceMap,
+    val inReturn: ResourceMap
 )
 
+/**
+ *
+ */
 @Serializable
-data class PlayerPublicDTO(
+data class PublicPlayer(
     val number: Int,
     val resourceCardCount: Int,
     val devCardCount: Int,
     val victoryPointCount: Int
 )
 
+/**
+ * Private view of player.
+ */
 @Serializable
-data class PlayerDTO(
+data class PrivatePlayer(
     val number: Int,
-    // TODO: Hand
-    val resources: ResourceMapData,
+    val resources: ResourceMap,
     val victoryPointCount: Int,
     var roadsLeft: Int,
     var citiesLeft: Int,
@@ -54,31 +45,34 @@ data class PlayerDTO(
 
 
 @Serializable
-data class GameSnapshotPlayerDTO(
-    val player: PlayerDTO,
+data class ParticipantGameSnapshot(
+    val player: PrivatePlayer,
     val board: BoardDTO,
-    val otherPlayers: List<PlayerPublicDTO>,
-    val phase: Phase, // TODO: MOVE PHASE TO SHARED
+    val otherPlayers: List<PublicPlayer>,
+    val phase: Phase,
+    val colors: Map<Int, PlayerColor>,
     val turnOrder: List<Int>,
     val turnPlayer: Int,
-    val ongoingTrades: List<TradeDTO>
+    val ongoingTrades: List<Trade>,
+    val rules: RuleBook
 )
 
 @Serializable
-data class GameSnapshotSpectatorDTO(
+data class SpectatorGameSnapshot(
     val board: BoardDTO,
-    val players: List<PlayerPublicDTO>,
+    val players: List<PublicPlayer>,
     val phase: Phase,
     val turnOrder: List<Int>,
     val turnPlayer: Int,
-    val ongoingTrades: List<TradeDTO>
+    val ongoingTrades: List<Trade>,
+    val rules: RuleBook
 )
 
 /**
  * Accessible to all users.
  */
 @Serializable
-data class GroupExternalDTO(
+data class PublicGroup(
     val id: String,
     val numClients: Int,
     val maxClients: Int,
@@ -86,7 +80,7 @@ data class GroupExternalDTO(
 )
 
 @Serializable
-data class GroupInternalDTO(
+data class PrivateGroup(
     val id: String,
     val clients: Map<String, String>,
     val settings: Settings,
@@ -109,13 +103,13 @@ data class RoadDTO(
 
 @Serializable
 data class IntersectionDTO(
-    val coordinate: ICoordinates,
+    val coordinate: NodeCoord,
     val village: VillageDTO
 )
 
 @Serializable
 data class EdgeDTO(
-    val coordinate: EdgeCoordinates,
+    val coordinate: EdgeCoord,
     val road: RoadDTO
 )
 
@@ -137,5 +131,5 @@ data class BoardDTO(
     var tiles: List<Tile>,
     val intersections: List<IntersectionDTO>,
     val paths: List<EdgeDTO>,
-    val robberLocation: HexCoordinates
+    val robberLocation: HexCoord
 )

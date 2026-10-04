@@ -1,142 +1,135 @@
 package io.github.petvat.katan.model
 
-import com.badlogic.gdx.Game
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.petvat.katan.event.ConnectionLostEvent
+import io.github.petvat.katan.event.EventSystem
+import io.github.petvat.katan.model.command.ChatCommandsImpl
+import io.github.petvat.katan.model.command.KatanCommands
+import io.github.petvat.katan.model.command.GameCommandsImpl
+import io.github.petvat.katan.model.command.LobbyCommandsImpl
+import io.github.petvat.katan.model.net.ConnectionLostException
+import io.github.petvat.katan.model.net.InBoundRouter
+import io.github.petvat.katan.model.net.KatanChannel
+import io.github.petvat.katan.model.net.MessageChannel
+import io.github.petvat.katan.model.net.RequestTracker
+import io.github.petvat.katan.model.state.ClientState
 import io.github.petvat.katan.shared.hexlib.Coordinates
-import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
-import io.github.petvat.katan.shared.hexlib.ICoordinates
+import io.github.petvat.katan.shared.hexlib.EdgeCoord
+import io.github.petvat.katan.shared.hexlib.NodeCoord
 import io.github.petvat.katan.shared.model.board.*
 import io.github.petvat.katan.shared.model.game.Phase
 import io.github.petvat.katan.shared.model.game.PlayerColor
+import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.shared.model.game.ResourceMapData
+import io.github.petvat.katan.shared.protocol.Request
+import java.util.concurrent.TimeUnit
 
 
-class ClientState {
-
-    lateinit var id: String
-
-    lateinit var name: String
-
-    lateinit var resumeToken: String
-
-    lateinit var lobby: String
-
-    lateinit var group: GroupState
-
-
-    lateinit var game: GameState
-
-    var chat: ChatState? = null
-
-    val groupSummaries: List<GroupSummary> = mutableListOf()
-}
-
-
-data class ChatState(
-    val id: String,
-    val members: Map<String, String>,
-    val chatLog: List<Pair<String, String>>
-)
-
-
-data class GameState(
-    val player: Int,
-    val otherPlayers: List<Int>,
-    val id: String,
-    val colors: Map<Int, PlayerColor>,
-    val turnOrder: List<Int>,
-    var turnPlayer: Int,
-    val resources: ResourceMapData,
-    val otherResources: Map<Int, Int>,
-    val victoryPoints: Map<Int, Int>,
-    val phase: Phase,
-    var board: Board
-
-)
-
-fun ChatState.chatMessage(from: String, message: String) =
-    this.copy(
-        chatLog = chatLog + (from to message)
-    )
-
-fun GameState.addDiceRoll(
-    resources: ResourceMapData,
-    othersResources: Map<Int, Int>,
-) =
-    this.copy(
-        resources = resources,
-        otherResources = otherResources
-    )
-
-
-fun GameState.rolledDice(resources: ResourceMapData, othersResources: Map<Int, Int>, moveRobber: Boolean): GameState {
-    return this.copy(
-        resources = resources,
-        otherResources = otherResources.mapValues { (k, _) ->
-            othersResources[k]!! // TODO: Check
-        },
-        phase = if (moveRobber) Phase.MOVE_ROBBER else this.phase
-    )
-}
-
-fun GameState.addBuilding(
-    builder: Int,
-    building: BuildKind,
-    coordinates: Coordinates,
-    victoryPoints: Map<Int, Int>
-): GameState {
-
-    val newBoard = when (building) {
-        is BuildKind.Road ->
-            board.copy(
-                paths = board.paths + Edge(
-                    coordinates as EdgeCoordinates,
-                    Road(building.kind, builder)
-                )
-            )
-
-        is BuildKind.Village ->
-            when (building.kind) {
-                VillageKind.SETTLEMENT ->
-                    board.copy(
-                        intersections = board.intersections + Intersection(
-                            coordinates as ICoordinates,
-                            Village(VillageKind.SETTLEMENT, builder)
-                        )
-                    )
-
-                VillageKind.CITY ->
-                    board.copy(
-                        intersections = board.intersections.map { intersection ->
-                            if (intersection.coordinate == coordinates) {
-                                intersection.copy(
-                                    village = intersection.village.copy(
-                                        villageKind = VillageKind.CITY
-                                    )
-                                )
-                            } else intersection
-                        }
-                    )
-            }
+class KatanClient(
+    private val events: EventSystem,
+    val state: ClientState = ClientState(),
+    private val channel: MessageChannel = KatanChannel()
+) {
+    private val logger = KotlinLogging.logger { }
+    private val tracker = RequestTracker(channel)
+    private val router = InBoundRouter(state, tracker, events) { channelId ->
+        // Gap in a channel's delta stream: pull a fresh full snapshot.
+        logger.warn { "channelSeq gap on '$channelId'. Requesting resync" }
+        tracker.send(channelId, Request.Init)
     }
 
-    return copy(
-        board = newBoard,
-        victoryPoints = victoryPoints
+    val commands = KatanCommands(
+        game = GameCommandsImpl(tracker, state),
+        lobby = LobbyCommandsImpl(tracker, state),
+        chat = ChatCommandsImpl(tracker, state)
     )
+
+    @Volatile
+    private var running = false
+    private var pump: Thread? = null
+
+    fun connect(host: String?, port: Int?): Boolean {
+        if (!channel.connect(host ?: "localhost", port ?: 1234)) return false
+        startPump()
+        return true
+    }
+
+    fun disconnect() {
+        running = false
+        channel.shutdown()
+        tracker.failAll(ConnectionLostException("Client disconnected"))
+        state.reset()
+    }
+
+    private fun startPump() {
+        if (running) return
+        running = true
+        pump = Thread(::pumpLoop, "katan-inbound").apply {
+            isDaemon = true
+        }.also { it.start() }
+    }
+
+    private fun pumpLoop() {
+        val queue = channel.incoming()
+        while (running) {
+            val message = try {
+                queue.poll(POLL_INTERVAL, TimeUnit.MILLISECONDS)
+
+            } catch (_: InterruptedException) {
+                break
+            }
+            if (message == null) {
+                tracker.sweepExpired()
+                if (!channel.connected()) {
+                    onConnectionLost()
+                    break
+                }
+                continue
+            }
+            try {
+                router.route(message)
+            } catch (t: Throwable) {
+                logger.error(t) { "Routing failed for ${message.payload::class.simpleName}" }
+            }
+        }
+    }
+
+    private fun onConnectionLost() {
+        running = false
+        tracker.failAll(ConnectionLostException())
+        events.fire(ConnectionLostEvent) // VM decides: menu / reconnect via auth.resumeToken
+    }
+
+    companion object {
+        const val POLL_INTERVAL = 250L
+    }
 }
 
-data class GroupSummary(
-    val id: String,
-    val numClients: Int,
-    val capacity: Int,
-)
+//
+//data class LobbyState(
+//    val id: String,
+//    val groups: Map<String, GroupSummary>
+//)
+//
+//
+//data class ChatState(
+//    val id: String,
+//    val members: List<String>,
+//    val chatLog: List<Pair<String, String>>
+//)
 
-data class GroupState(
-    val groupId: String, // TODO: Move GroupId to shared
-    val clients: MutableMap<String, String>, // TODO: ClientData
-    val settings: Settings
-)
+
+//data class GroupSummary(
+//    val id: String,
+//    val numClients: Int,
+//    val capacity: Int,
+//)
+//
+//data class GroupState(
+//    val groupId: String, // TODO: Move GroupId to shared
+//    val clients: MutableMap<String, String>, // TODO: ClientData
+//    val settings: Settings
+//)
 
 
 /**
@@ -178,10 +171,10 @@ data class GroupState(
 //    var gamePhase = 0
 //
 //
-//    fun createGroup(id: String, level: PermissionLevel, settings: Settings) {
+//    fun createGroup(clientId: String, level: PermissionLevel, settings: Settings) {
 //        group = // HACK: NAAH, can't create a DTO like this. That's just silly.
 //            PrivateGroupDTO(
-//                id,
+//                clientId,
 //                mutableMapOf(sessionId to name),
 //                level,
 //                chatLog = mutableListOf(),
@@ -194,9 +187,9 @@ data class GroupState(
 //        this.group.members += sessionId to name
 //    }
 //
-//    fun userJoin(id: String, name: String) {
+//    fun userJoin(clientId: String, name: String) {
 //        // NOTE: Losing data here!
-//        group.members[id] = name
+//        group.members[clientId] = name
 //    }
 //
 //    fun incrementTurn() {

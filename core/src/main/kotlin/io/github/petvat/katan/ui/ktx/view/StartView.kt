@@ -8,9 +8,9 @@ import ktx.scene2d.*
 
 
 class StartMenuView(
-    viewModel: StartMenuViewModel,
+    val viewModel: StartMenuViewModel,
     skin: Skin
-) : KtxView<StartMenuViewModel>(skin, viewModel), KTable {
+) : KtxView(skin), KTable {
 
     // private val  settingsWidget
 
@@ -33,7 +33,7 @@ class StartMenuView(
 //        row()
 
             textButton("Connect") {
-                onChangeEvent { this@StartMenuView.viewModel.connectToclient() } // inlined
+                onChangeEvent { this@StartMenuView.viewModel.connect() } // inlined
             }
             row().space(10f)
             textButton("Settings") {

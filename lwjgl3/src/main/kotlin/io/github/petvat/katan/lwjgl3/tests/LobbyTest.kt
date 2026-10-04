@@ -46,7 +46,7 @@ private class LobbyTest() : AbstractTestScreen() {
         )
 
         repeat(10) {
-            viewModel.onEvent(GroupUpdateEvent(GroupSummary("id $it", 2, 4)))
+            viewModel.onEvent(GroupUpdateEvent(GroupSummary("clientId $it", 2, 4)))
         }
 
 

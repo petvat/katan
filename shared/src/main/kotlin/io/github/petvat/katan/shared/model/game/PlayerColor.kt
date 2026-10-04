@@ -1,5 +1,6 @@
 package io.github.petvat.katan.shared.model.game
 
+
 enum class PlayerColor {
-    ORANGE, BLUE, RED, WHITE
+    CLR1, CLR2, CLR3, CLR4
 }

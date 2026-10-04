@@ -1,226 +1,182 @@
 package io.github.petvat.katan.ui.viewmodel
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.controller.ChatActions
-import io.github.petvat.katan.controller.GameActions
 import io.github.petvat.katan.event.*
-import io.github.petvat.katan.model.GameState
-import io.github.petvat.katan.model.GroupState
-import io.github.petvat.katan.model.RuleEngine
-import io.github.petvat.katan.model.RuleEngine.updateCityFrontier
-import io.github.petvat.katan.model.RuleEngine.updateSettlementFrontier
-import io.github.petvat.katan.shared.hexlib.*
-import io.github.petvat.katan.shared.model.board.*
-import io.github.petvat.katan.shared.model.game.PlayerColor
-import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.game.ResourceMapData
-
+import io.github.petvat.katan.model.command.KatanCommands
+import io.github.petvat.katan.model.state.ChatSession
+import io.github.petvat.katan.model.state.ClientState
+import io.github.petvat.katan.model.state.GameSession
+import io.github.petvat.katan.shared.model.board.BuildKind
+import io.github.petvat.katan.ui.projection.Projector
 
 /**
- *
- * Implementers: BoardRenderer, GameView
- *
- * Interface between Model and view. Holds data that is updated on events.
+ * This view model is the UI part of the game.
  */
-//class GameViewModel(
-//    private val gameService: GameActions, // TODO: Use gameState instead! Model does the logic, viewmodel simply makes the data manageable by a view.
-//    private val chatService: ChatActions,
-//    group: GroupState,
-//    val game: GameState,
+class GameViewModel(
+    private val state: ClientState,
+    private val commands: KatanCommands,
+    private val boardViewModel: BoardViewModel, // TODO: Not great
+) : ViewModel() {
+    private val logger = KotlinLogging.logger { }
+
+    val chat by mirror(
+        { state.chat },
+        requireNotNull(state.chat) { "GameScreen built before init." },
+        { Projector.project(it) }
+    )
+
+    val hud by mirror(
+        { state.game },
+        requireNotNull(state.game) { "GameScreen built before init." },
+        { Projector.project(it) },
+        gate = { !diceAnimationRunning }
+    )
+
+    var diceRoll by propertyNotify<Pair<Int, Int>?>(null)
+        private set
+
+    /** Theater flag: freezes [hud] while the dice animation plays. */
+    private var diceAnimationRunning = false
+
+    fun handleRollDice() = commands.game.rollDice()
+    fun sendMessage(message: String) = commands.chat.send(message)
+    fun onBuildSelected(build: BuildTarget) = boardViewModel.selectPlacingTarget(build)
+
+    override fun onEvent(event: Event) {
+        when (event) {
+            is RolledDiceEvent -> {
+                logger.debug { "$event" }
+                diceAnimationRunning = true // close gate: HUD frozen at pre-roll values
+                diceRoll = event.roll1 to event.roll2
+            }
+
+            else -> {
+                logger.debug { "$event" }
+            }
+        }
+    }
+
+    /**
+     * Called by GameView once the dice animation lands.
+     */
+    fun onDiceAnimationComplete() {
+        diceAnimationRunning = false // gate opens; next refresh() flushes the HUD
+        diceRoll = null // reset so an identical future roll still notifies
+    }
+}
+//
+//class GameVM(
+//    val gameState: GameState,
+//    val chatState: ChatState,
+//    private val gameActions: IGameActions,
+//    private val chatActions: IChatActions
 //) : ViewModel() {
-//
-//    companion object {
-//        data class OtherPlayerViewModel(
-//            val playerNumber: Int,
-//            val name: String,
-//            val color: PlayerColor,
-//            val victoryPoints: Int,
-//            val cardCount: Int
-//        )
-//
-//        data class ThisPlayerViewModel(
-//            val inventory: ResourceMapData,
-//            val victoryPoints: Int,
-//        )
-//    }
-//
 //    private val logger = KotlinLogging.logger { }
 //
+//    var projection by propertyNotify(Projector.project(state))
+//        private set
 //
-//    /**
-//     * Transform tiles to doubled. We need to do this to work with edges/intersections.
-//     */
-//    var tilesDoubled = game.board.tiles
-//        .map {
-//            Tile(
-//                HexUtils.transformToDoubled(it.hexCoordinate),
-//                it.resource,
-//                it.rollListenValue
-//            )
-//        }.toList()
-//
-//    var roadFrontier: Set<EdgeCoordinates> = emptySet()
-//    var settlementFrontier: Set<ICoordinates> = emptySet()
-//    var cityFrontier: Set<ICoordinates> = emptySet()
-//    var setUpFrontier: Set<ICoordinates> = emptySet()
-//
-//
-//    // PRESENTATION STATE
-//
-//    var currentTurnPlayer by propertyNotify(game.turnPlayer)
-//    var diceRoll by propertyNotify(Pair(-1, -1))
-//    var thisPlayerVM: ThisPlayerViewModel by propertyNotify(
-//        ThisPlayerViewModel(
-//            game.resources, game.victoryPoints[game.player]!!
-//        )
-//    )
-//    var otherPlayersVM: List<OtherPlayerViewModel> by propertyNotify(
-//        game.otherPlayers.map {
-//            OtherPlayerViewModel(
-//                playerNumber = it,
-//                name = "TODO: Name, PlayerDTO needs ID.",
-//                color = it.color, // TODO
-//                cardCount = it.cityCount, // TODO
-//                victoryPoints = game.victoryPoints[it]!!
-//            )
-//        }
-//    )
-//
-//    // TODO: Chat log view gameState. REMOVE!
-//    var chatLog by propertyNotify(group.chatLog)
-//    var lastGroupMessage by propertyNotify("" to "") // Nice?
-//    var rollDiceMode by propertyNotify(false)
-//    var buildMode by propertyNotify(false)
-//
-//    // UI MODES
-//
-//    // For card animation
-//    var playerResourceDiff: ResourceMap = ResourceMap(0, 0, 0, 0, 0)
+//    var initSettlementPlacingMode by propertyNotify(false)
+//    var initRoadSettlementPlacingMode by propertyNotify(false)
 //
 //    var roadPlacingMode by propertyNotify(false)
 //    var settlementPlacingMode by propertyNotify(false)
 //    var cityPlacingMode by propertyNotify(false)
 //
+//    var rollDiceMode by propertyNotify(false)
+//    var buildMode by propertyNotify(false)
+//    var diceRoll by propertyNotify<Pair<Int, Int>?>(null)
 //
-//    private val setupTurnOrder: MutableList<Int> // TODO: MOVE TO STATE MODEL
+//    private var pendingAnimationCallback: (() -> Unit)? = null
+//
+//    fun handleRollDice() = gameActions.rollDice()
+//
+//    fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) = gameActions.build(buildKind, coordinates)
+//
+//    fun sendMessage(message: String) = chatActions.sendMessage(message)
+//
+//    fun onBuildSelected(buildKind: BuildKind) {
+//        when (buildKind) {
+//            is BuildKind.Village -> when (buildKind.kind) {
+//                VillageKind.SETTLEMENT -> {
+//                    settlementPlacingMode = true
+//                    logger.debug { "OnBuildSelected:VillageKind.SETTLEMENT" }
+//
+//                }
+//
+//                VillageKind.CITY -> cityPlacingMode = true
+//            }
+//
+//            is BuildKind.Road -> roadPlacingMode = true
+//        }
+//    }
 //
 //
-//    init {
-//        val reversed = game.turnOrder.reversed()
-//        setupTurnOrder = game.turnOrder.toMutableList()
-//        setupTurnOrder.addAll(reversed)
+//    fun onBoardTap(coordinates: Coordinates) {
+//        when {
+//            initRoadSettlementPlacingMode -> {
+//                gameActions.build(BuildKind.Village(VillageKind.SETTLEMENT), coordinates)
+//                settlementPlacingMode = false  // exit placement mode immediately after tap
+//            }
 //
+//            settlementPlacingMode -> {
+//                gameActions.build(BuildKind.Village(VillageKind.SETTLEMENT), coordinates)
+//                settlementPlacingMode = false  // exit placement mode immediately after tap
+//            }
+//
+//            cityPlacingMode -> {
+//                gameActions.build(BuildKind.Village(VillageKind.CITY), coordinates)
+//                cityPlacingMode = false
+//            }
+//
+//            roadPlacingMode -> {
+//                gameActions.build(BuildKind.Road(RoadKind.ROAD), coordinates)
+//                roadPlacingMode = false
+//            }
+//        }
 //    }
 //
 //    override fun onEvent(event: Event) {
 //        when (event) {
-//            is ChatEvent -> {
-//                lastGroupMessage = event.from to event.message
-//            }
-//
-//            is NextTurnEvent -> {
-//                currentTurnPlayer = event.playerNumber
-//                logger.debug { "Turn event, next player is $currentTurnPlayer." }
-//                if (!setupPhase) {
-//                    rollDiceMode = true
-//                } else {
-//                    settlementPlacingMode = true
-//                }
-//            }
-//
-//            is PlaceInitialSettlementEvent -> {
-//                settlementFrontier = RuleEngine.updateSetupFrontier(game.player, game.board)
+//            is MyTurnSetupEvent -> {
+//                // TODO: animation
+//                settlementPlacingMode = true
 //            }
 //
 //            is RolledDiceEvent -> {
 //                diceRoll = event.roll1 to event.roll2
-//
-//                // Update the resources of this player
-//                thisPlayerVM = thisPlayerVM.copy(
-//                    inventory = event.playerResources,
-//                )
-//
-//                // Update the resources of other players
-//                otherPlayersVM.map {
-//                    it.copy(
-//                        cardCount = event.otherPlayersCardCounts[it.playerNumber]!!
-//                    )
-//                }
-//
-//                if (game.turnPlayer == game.player) {
-//                    buildMode = true
+//                pendingAnimationCallback = {
+//                    refreshProjection()
+//                    rollDiceMode = false
+//                    buildMode = state.turnPlayer == state.player
 //                }
 //            }
 //
 //            is BuildEvent -> {
-//                when (event.buildKind) {
-//                    is BuildKind.Road -> {
-//                        roadFrontier = RuleEngine.updateRoadFrontier(game.player, game.board)
-//                    }
-//
-//                    is BuildKind.Village -> {
-//                        if (event.buildKind.kind == VillageKind.SETTLEMENT) {
-//                            cityFrontier = updateCityFrontier(game.player, game.board)
-//                        }
-//                        if (event.buildKind.kind == VillageKind.CITY) {
-//                            settlementFrontier = updateSettlementFrontier(game.player, game.board)
-//                        }
-//                        // Updates the victory points
-//                        if (event.playerNumber == game.player) {
-//                            thisPlayerVM =
-//                                thisPlayerVM.copy(victoryPoints = thisPlayerVM.victoryPoints + 1)
-//
-////                            _thisPlayerModel.value =
-////                                _thisPlayerModel.value.copy(victoryPoints = _thisPlayerModel.value.victoryPoints + 1)
-//                        } else {
-////                            _otherPlayerViewModels.forEach {
-////                                if (it.value.playerNumber == event.playerNumber) {
-////                                    it.value = it.value.copy(
-////                                        victoryPoints = it.value.victoryPoints + 1,
-////                                    )
-////                                }
-////                            }
-//                            otherPlayersVM.map {
-//                                if (it.playerNumber == event.playerNumber) {
-//                                    it.copy(victoryPoints = it.victoryPoints + 1)
-//                                } else {
-//                                    it
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
+//                refreshProjection()
 //            }
 //
-//            is PlaceBuildingCommand<*> -> {
-//                // This will tell the renderer to include the highlights when rendering.
-//                // the renderer is responsible for these fields.
-//                when (event.buildKind) {
-//                    is BuildKind.Village -> {
-//                        if (event.buildKind.kind == VillageKind.SETTLEMENT) {
-//                            settlementPlacingMode = true
-//                        } else if (event.buildKind.kind == VillageKind.CITY) {
-//                            cityPlacingMode = true
-//                        }
-//                    }
+//            is MyTurnEvent -> {
+//                rollDiceMode = true
+//                refreshProjection()
+//            }
 //
-//                    is BuildKind.Road -> {
-//                        roadPlacingMode = true
-//                        // TODO: Toggle Highlight,
-//                    }
-//                }
+//            is NextTurnEvent -> {
+//                refreshProjection()
 //            }
 //
 //            else -> Unit
 //        }
 //    }
 //
-//    fun handleChat(message: String) = chatService.sendMessage(message) // TODO: EH
+//    /** Called by GameView once the dice animation actually finishes playing. */
+//    fun onDiceAnimationComplete() {
+//        pendingAnimationCallback?.invoke()
+//        pendingAnimationCallback = null
+//        diceRoll = null // reset so a future identical roll (e.g. 3,4 again) still triggers propertyNotify
+//    }
 //
-//    fun handleRollDice() = gameService.rollDice()
-//
-//    fun handleBuild(buildKind: BuildKind, coordinates: Coordinates) = gameService.handleBuild(buildKind, coordinates)
-//
+//    private fun refreshProjection() {
+//        projection = Projector.project(state)
+//    }
 //}
-//
-//

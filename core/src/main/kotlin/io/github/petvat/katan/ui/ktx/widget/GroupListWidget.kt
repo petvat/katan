@@ -3,7 +3,7 @@ package io.github.petvat.katan.ui.ktx.widget
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.model.GroupSummary
+import io.github.petvat.katan.model.state.GroupExternal
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
@@ -115,13 +115,13 @@ class GroupListWidget(skin: Skin, val callback: (String) -> Unit) : Table(skin),
 
     }
 
-    fun update(groups: List<GroupSummary>) {
+    fun update(groups: List<GroupExternal>) {
         groups.forEach { group ->
             val name = "New group"
             val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
                 name,
                 "Mode: Not yet implemented",
-                group.numClients.toString(),
+                group.memberCount.toString(),
                 group.capacity.toString(),
                 skin,
                 { this@GroupListWidget.callback(group.id) })
@@ -160,7 +160,7 @@ class GroupListWidget(skin: Skin, val callback: (String) -> Unit) : Table(skin),
 //                group.numClients.toString(),
 //                "?",
 //                skin,
-//                { this@GroupListTable.callback(group.id, name) })
+//                { this@GroupListTable.callback(group.clientId, name) })
 //
 //            val cell = contentTable.add(element)
 //            cell.growX().spaceRight(5f)
@@ -197,7 +197,7 @@ class GroupListWidget(skin: Skin, val callback: (String) -> Unit) : Table(skin),
 //                group.numClients.toString(),
 //                "?",
 //                skin,
-//            ) { this@GroupListWidget.callback(group.id, name) }
+//            ) { this@GroupListWidget.callback(group.clientId, name) }
 //            val cell = groupList.add(element)
 //            cell.row()
 //            // elements.add(element)

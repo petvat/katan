@@ -6,7 +6,6 @@ import io.github.petvat.katan.shared.UserId
 
 sealed interface GroupEvent : Event {
     data class Init(
-        override val replyTo: Int,
         override val targetChannelId: ChannelId,
         override var channelSeq: Int? = null,
         val groupId: ChannelId,
@@ -16,14 +15,12 @@ sealed interface GroupEvent : Event {
     }
 
     data class Created(
-        override val replyTo: Int,
         override val targetChannelId: ChannelId, // groupId
         override var channelSeq: Int? = null,
         override val description: String,
     ) : GroupEvent
 
     data class Joined(
-        override val replyTo: Int,
         override val targetChannelId: ChannelId,
         override var channelSeq: Int? = null,
         val userId: UserId,
@@ -33,7 +30,6 @@ sealed interface GroupEvent : Event {
     }
 
     data class Left(
-        override val replyTo: Int,
         override val targetChannelId: ChannelId,
         override var channelSeq: Int? = null,
         val userId: UserId

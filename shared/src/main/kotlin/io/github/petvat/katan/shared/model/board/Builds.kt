@@ -1,13 +1,9 @@
 package io.github.petvat.katan.shared.model.board
 
 
-import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
-import io.github.petvat.katan.shared.hexlib.ICoordinates
-import io.github.petvat.katan.shared.model.game.Resource
+import io.github.petvat.katan.shared.hexlib.EdgeCoord
+import io.github.petvat.katan.shared.hexlib.NodeCoord
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.protocol.dto.RoadDTO
-import io.github.petvat.katan.shared.protocol.dto.Transmittable
-import io.github.petvat.katan.shared.protocol.dto.VillageDTO
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -26,8 +22,6 @@ enum class VillageKind(val productionNumber: Int, val cost: ResourceMap, val vp:
 enum class RoadKind(val cost: ResourceMap) {
     ROAD(ResourceMap(1, 0, 0, 0, 1))
 }
-
-// TODO: MOVE TO SERVER MODULE, DO IT
 
 /**
  * Represents a settlement or a city on the board.
@@ -57,7 +51,7 @@ class Road(
  */
 @Serializable
 data class Edge(
-    val coordinate: EdgeCoordinates,
+    val coordinate: EdgeCoord,
     val road: Road
 )
 
@@ -65,7 +59,7 @@ data class Edge(
  * Active intersection, i.e. an intersection with a village.
  */
 @Serializable
-data class Intersection(
-    val coordinate: ICoordinates,
+data class Node(
+    val coordinate: NodeCoord,
     val village: Village
 )

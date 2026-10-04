@@ -10,11 +10,13 @@ import io.github.petvat.katan.server.service.event.GameEvent
 import io.github.petvat.katan.server.service.channel.GameChannel
 import io.github.petvat.katan.server.service.command.BuildInitSettlment
 import io.github.petvat.katan.server.service.command.EndTurn
-import io.github.petvat.katan.shared.hexlib.EdgeCoordinates
-import io.github.petvat.katan.shared.hexlib.ICoordinates
+import io.github.petvat.katan.server.service.command.InitTrade
+import io.github.petvat.katan.server.service.command.RespondTrade
+import io.github.petvat.katan.server.service.engine.tradesystem.TradeContext
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.protocol.ErrorCode
+
 
 class RollDiceHandler : GameCommandHandler<RollDice> {
 
@@ -29,14 +31,16 @@ class RollDiceHandler : GameCommandHandler<RollDice> {
             return Event.Failure("Cannot roll dice - not dice roll phase.", ErrorCode.DENIED)
         }
 
+
         if (player != game.turnPlayer) {
             return Event.Failure("Cannot roll dice - not your turn.", ErrorCode.DENIED)
         }
+        // TODO: Move to Engine
         val (roll1, roll2) = engine.rollDice()
         val eyes = roll1 + roll2
 
         val (resources, phase) = if (game.rules.moveRobberOn != eyes) {
-            engine.harvestResources(game, eyes) to Phase.BUILD_N_TRADE
+            engine.harvestResources(game.board, eyes, game.board.robberLocation) to Phase.BUILD_N_TRADE
         } else {
             engine.discardResources(game) to Phase.MOVE_ROBBER
         }
@@ -49,7 +53,6 @@ class RollDiceHandler : GameCommandHandler<RollDice> {
                     )
                 }
             )
-
         return GameEvent.DiceRolledSummary(
             targetChannelId = channel.id,
             roll1 = roll1,
@@ -69,36 +72,25 @@ class BuildInitialSettlementHandler : GameCommandHandler<BuildInitSettlment> {
     ): GameEvent {
         val game = channel.snapshot
         if (game.phase != Phase.SETUP) {
-            return Event.Failure("Cannot build initial settlement -  not setup phase.", ErrorCode.DENIED)
+            return Event.Failure("Cannot build initial settlement - not setup phase.", ErrorCode.DENIED)
         }
+        val playerData = game.players.find { it.number == player }!!
 
-        when (val board =
-            engine.buildVillage(game.board, player, command.coordinates as ICoordinates, VillageKind.SETTLEMENT)) {
-            is EngineResult.Failure -> return Event.Failure(board.description, ErrorCode.DENIED)
+        return when (val result =
+            engine.buildInitial(playerData, BuildKind.Village(VillageKind.SETTLEMENT), command.coordinates, game)
+        ) {
+            is EngineResult.Failure -> Event.Failure(result.description, ErrorCode.DENIED)
             is EngineResult.Success -> {
-                val vps = engine.countVictoryPoints(game)
-
-                val playerData = game.players.single { it.number == player }
-
-                val updatedPlayers = game.players.map {
-                    val vp = vps[it.number]!!
-                    playerData.copy(victoryPoints = vp)
-                }
-
-                channel.snapshot = game.copy(board = board.value, players = updatedPlayers)
-
-                return GameEvent.Built(
+                channel.snapshot = result.value
+                GameEvent.Built(
                     targetChannelId = channel.id,
                     coordinates = command.coordinates,
                     buildKind = BuildKind.Village(VillageKind.SETTLEMENT),
-                    vps = engine.countVictoryPoints(game) // Important as any build action could lead to change is VPs for any player
+                    vps = result.value.players.associate { it.number to it.victoryPoints }
                 )
             }
         }
-
-
     }
-
 }
 
 class BuildHandler : GameCommandHandler<Build> {
@@ -110,59 +102,26 @@ class BuildHandler : GameCommandHandler<Build> {
     ): GameEvent {
         val game = channel.snapshot
         if (game.phase != Phase.BUILD_N_TRADE)
-            return Event.Failure("Cannot roll dice in current state ${game.phase}.", ErrorCode.DENIED)
-
-        if (player != game.turnPlayer) {
-            return Event.Failure("Cannot roll dice - not your turn.", ErrorCode.DENIED)
-        }
+            return Event.Failure("Cannot build in current state ${game.phase}.", ErrorCode.DENIED)
+        if (player != game.turnPlayer)
+            return Event.Failure("Cannot build - not your turn.", ErrorCode.DENIED)
         val playerData = game.players.find { it.number == player }!!
 
-
-        if (!engine.hasSufficientResources(playerData, channel.snapshot.rules.getCost(command.buildKind))) {
-            return Event.Failure("Not sufficient resources to build", ErrorCode.DENIED)
-        }
-        val board = when (command.buildKind) {
-            is BuildKind.Village -> {
-                engine.buildVillage(
-                    game.board,
-                    playerData.number,
-                    command.coordinates as ICoordinates,
-                    command.buildKind.kind
-                )
-            }
-
-            is BuildKind.Road -> {
-                engine.buildRoad(
-                    game.board,
-                    playerData.number,
-                    command.coordinates as EdgeCoordinates,
-                    command.buildKind.kind
-                )
-            }
-        }
-
-        when (board) {
-            is EngineResult.Failure -> return Event.Failure(board.description, ErrorCode.DENIED)
+        return when (val result = engine.build(playerData, command.buildKind, command.coordinates, game)) {
+            is EngineResult.Failure -> Event.Failure(result.description, ErrorCode.DENIED)
             is EngineResult.Success -> {
-                val vps = engine.countVictoryPoints(game)
-
-                val updatedPlayers = game.players.map {
-                    val vp = vps[it.number]!!
-                    playerData.copy(victoryPoints = vp)
-                }
-
-                channel.snapshot = game.copy(board = board.value, players = updatedPlayers)
-
-                return GameEvent.Built(
+                channel.snapshot = result.value
+                GameEvent.Built(
                     targetChannelId = channel.id,
                     coordinates = command.coordinates,
                     buildKind = command.buildKind,
-                    vps = engine.countVictoryPoints(game) // Important as any build action could lead to change is VPs for any player
+                    vps = result.value.players.associate { it.number to it.victoryPoints }
                 )
             }
         }
     }
 }
+
 
 class EndTurnHandler : GameCommandHandler<EndTurn> {
 
@@ -181,12 +140,97 @@ class EndTurnHandler : GameCommandHandler<EndTurn> {
         }
 
         channel.snapshot = game.copy(
-            turnPlayer = engine.nextTurn(game)
+            ongoingTrades = emptyList(), // Expire all remaining trades
+            turnPlayer = engine.advanceTurn(game)
         )
 
         return GameEvent.TurnEnded(targetChannelId = channel.id, nextPlayer = channel.snapshot.turnPlayer)
     }
 
+}
+
+
+class InitTradeHandler : GameCommandHandler<InitTrade> {
+    override fun executeGameAction(
+        channel: GameChannel,
+        player: Int,
+        engine: GameRuleEngine,
+        command: InitTrade
+    ): GameEvent {
+        val game = channel.snapshot
+        if (game.phase != Phase.BUILD_N_TRADE)
+            return Event.Failure("Cannot trade in current phase ${game.phase}.", ErrorCode.DENIED)
+        if (player != game.turnPlayer)
+            return Event.Failure("Cannot trade - not your turn.", ErrorCode.DENIED)
+
+        val initiator = game.players.find { it.number == player }!!
+        if (command.targets.isEmpty() || player in command.targets)
+            return Event.Failure("Invalid trade targets.", ErrorCode.DENIED)
+        if (!initiator.resources.affords(command.offer))
+            return Event.Failure("You cannot afford this offer.", ErrorCode.DENIED)
+
+        val tradeId = game.ongoingTrades.maxOfOrNull { it.id }?.plus(1) ?: 0
+        val trade = TradeContext(
+            id = tradeId, initiator = initiator, targets = command.targets,
+            offer = command.offer, inReturn = command.inReturn, acceptedBy = null, alive = true
+        )
+
+        channel.snapshot = game.copy(ongoingTrades = game.ongoingTrades + trade)
+        return GameEvent.TradeInitiated(
+            targetChannelId = channel.id, initiator = player, tradeId = tradeId,
+            targets = command.targets, offer = command.offer, inReturn = command.inReturn
+        )
+    }
+}
+
+class RespondTradeHandler : GameCommandHandler<RespondTrade> {
+    override fun executeGameAction(
+        channel: GameChannel,
+        player: Int,
+        engine: GameRuleEngine,
+        command: RespondTrade
+    ): GameEvent {
+        val game = channel.snapshot
+        val trade = game.ongoingTrades.singleOrNull { it.id == command.tradeId }
+            ?: return Event.Failure("No such trade.", ErrorCode.NOT_FOUND)
+        if (player !in trade.pending)
+            return Event.Failure("This trade is not pending for you.", ErrorCode.DENIED)
+
+        if (!command.accept) {
+            val declined = trade.copy(declinedBy = trade.declinedBy + player)
+            channel.snapshot = game.copy(
+                ongoingTrades = game.ongoingTrades.map { if (it.id == trade.id) declined else it }
+            )
+            return GameEvent.TradeDeclined(
+                targetChannelId = channel.id, tradeId = trade.id, by = player,
+                dead = declined.pending.isEmpty()
+            )
+        }
+
+        val acceptor = game.players.find { it.number == player }!!
+        val transacted = trade.transact(acceptor)
+            ?: return Event.Failure("Trade is no longer executable.", ErrorCode.DENIED)
+
+        val (newInitiator, newAcceptor) = transacted
+        channel.snapshot = game.copy(
+            players = game.players.map { p ->
+                when (p.number) {
+                    newInitiator.number -> newInitiator
+                    newAcceptor.number -> newAcceptor
+                    else -> p
+                }
+            },
+            ongoingTrades = game.ongoingTrades - trade
+        )
+        return GameEvent.TradeExecuted(
+            targetChannelId = channel.id, tradeId = trade.id,
+            initiator = trade.initiator.number, acceptor = player,
+            resources = mapOf(
+                newInitiator.number to newInitiator.resources,
+                newAcceptor.number to newAcceptor.resources
+            )
+        )
+    }
 }
 
 

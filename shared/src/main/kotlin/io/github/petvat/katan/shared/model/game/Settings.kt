@@ -1,6 +1,6 @@
 package io.github.petvat.katan.shared.model.game
 
-import io.github.petvat.katan.shared.hexlib.HexCoordinates
+import io.github.petvat.katan.shared.hexlib.HexCoord
 import kotlinx.serialization.Serializable
 
 enum class GameMode {
@@ -23,7 +23,7 @@ data class Settings(
     val maxCities: Int = MAX_CITIES,
     val maxRoads: Int = MAX_ROADS,
     val cardLimit: Int = DEFAULT_CARD_LIMIT,
-    val initRobberLocation: HexCoordinates = HexCoordinates(0, 0)
+    val initRobberLocation: HexCoord = HexCoord(0, 0)
 ) {
     companion object {
         const val DEFAULT_BOARD_SIZE = 2

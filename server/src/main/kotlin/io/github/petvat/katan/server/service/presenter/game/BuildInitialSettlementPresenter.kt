@@ -36,7 +36,7 @@ class BuildInitialSettlementPresenter(channelRegistry: ChannelRegistry) :
                 .single { it.number == playerNumber }
                 .resources.toDto(), // TODO: Probably better to decouple channel and do this in event receipt.
             otherPlayers = channel.snapshot.players.filter { it.number != playerNumber }
-                .associate { it.number to it.resources.count() }
+                .associate { it.number to it.resources.total }
         )
     }
 

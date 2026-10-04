@@ -1,14 +1,13 @@
 package io.github.petvat.katan.ui.viewmodel
 
-import io.github.petvat.katan.controller.ILobbyActions
-import io.github.petvat.katan.controller.LobbyActions
 import io.github.petvat.katan.event.*
 import io.github.petvat.katan.model.GroupSummary
+import io.github.petvat.katan.model.command.LobbyCommands
 import io.github.petvat.katan.shared.model.game.Settings
 
 
 data class LobbyViewModel(
-    val lobbyService: ILobbyActions, // Make Model bigger! Move controllers out.
+    val commands: LobbyCommands, // Make Model bigger! Move controllers out.
     val transitionService: ViewTransitionService,
     val groups: MutableList<GroupSummary>,
 ) : ViewModel() {
@@ -26,12 +25,12 @@ data class LobbyViewModel(
     }
 
     fun handleJoin(id: String) {
-        lobbyService.join(id)
+        commands.join(id)
     }
 
     fun handleCreate(vararg settings: Array<String> = arrayOf()) {
         // TODO: Parse settings info.
-        lobbyService.create(Settings())
+        commands.create(Settings())
     }
 
 //    fun handleGetGroups() {

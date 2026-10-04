@@ -25,7 +25,8 @@ class CommandHandlerRegistry(
         register(Build::class, BuildHandler())
         register(EndTurn::class, EndTurnHandler())
         register(BuildInitSettlment::class, BuildInitialSettlementHandler())
-
+        register(InitTrade::class, InitTradeHandler())
+        register(RespondTrade::class, RespondTradeHandler())
         // CHAT
         register(Chat::class, ChatHandler())
     }

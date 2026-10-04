@@ -16,14 +16,4 @@ fun Road.toDto() = RoadDTO(roadKind, owner)
 
 fun Edge.toDto() = EdgeDTO(coordinate, road.toDto())
 
-fun Intersection.toDto() = IntersectionDTO(coordinate, village.toDto())
-
-//fun Player.fromDomain() = PlayerDTO(
-//    playerNumber = playerNumber,
-//    resources = inventory,
-//    settlementCount = settlementCount,
-//    cityCount = cityCount,
-//    roadCount = roadCount,
-//    victoryPoints = victoryPoints,
-//    color = color
-//)
+fun Node.toDto() = IntersectionDTO(coordinate, village.toDto())

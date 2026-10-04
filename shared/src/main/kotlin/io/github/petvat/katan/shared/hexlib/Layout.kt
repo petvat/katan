@@ -19,24 +19,22 @@ import kotlin.math.sqrt
  *
  */
 data class Layout(
-    val inradius: PCoordinate,
-    val origin: PCoordinate,
+    val inradius: PCoord,
+    val origin: PCoord,
 ) {
-    // Corrected Hex to Pixel linear transformation (Swapped q and r coefficients to fix the axis flip)
+    // Hex to Pixel linear transformation
     val a1 = sqrt(3.0) / 2.0
     val b1 = sqrt(3.0) / 2.0
 
-    // Swapping the vertical coefficients to correct top-left ( -1, 0 ) vs ( 0, -1 )
     val c1 = -3.0 / 2.0
     val d1 = 3.0 / 2.0
 
-    // Pixel to Hex inverse matrix matching the swap
+    // Pixel to Hex inverse matrix
     val a2 = sqrt(3.0) / 3.0
     val b2 = 1.0 / 3.0
     val c2 = 0.0
     val d2 = 2.0 / 3.0
 
-    // Restored to your original value so the tile art aligns correctly
     val startAngle = 0.5
 }
 

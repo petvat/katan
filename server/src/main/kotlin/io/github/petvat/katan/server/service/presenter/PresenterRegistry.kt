@@ -9,6 +9,7 @@ import io.github.petvat.katan.server.service.presenter.group.JoinGroupPresenter
 import io.github.petvat.katan.server.service.presenter.game.BuildInitialSettlementPresenter
 import io.github.petvat.katan.server.service.presenter.game.BuildPresenter
 import io.github.petvat.katan.server.service.presenter.game.InitGamePresenter
+import io.github.petvat.katan.server.service.presenter.game.TradeExecutedPresenter
 import io.github.petvat.katan.server.service.presenter.group.CreateGroupPresenter
 import io.github.petvat.katan.server.service.presenter.group.LeaveGroupPresenter
 import java.util.concurrent.ConcurrentHashMap
@@ -111,6 +112,7 @@ class PresenterRegistry(
         register(GameEvent.Init::class, InitGamePresenter(channelRegistry))
         register(GameEvent.BuiltInitial::class, BuildInitialSettlementPresenter(channelRegistry))
         register(GameEvent.Built::class, BuildPresenter(channelRegistry))
+        register(GameEvent.TradeExecuted::class, TradeExecutedPresenter(channelRegistry))
 
         // CHAT
         register(ChatEvent::class, ChatPresenter(channelRegistry))

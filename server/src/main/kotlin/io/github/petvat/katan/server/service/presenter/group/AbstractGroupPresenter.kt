@@ -5,6 +5,7 @@ import io.github.petvat.katan.server.service.channel.GroupChannel
 import io.github.petvat.katan.server.service.client.ConnectedClient
 import io.github.petvat.katan.server.service.event.GroupEvent
 import io.github.petvat.katan.server.service.gateway.handleError
+import io.github.petvat.katan.server.service.gateway.handleErrorResponse
 import io.github.petvat.katan.server.service.presenter.Presenter
 import io.github.petvat.katan.shared.UserId
 import io.github.petvat.katan.shared.protocol.ErrorCode
@@ -14,7 +15,7 @@ abstract class AbstractGroupPresenter<E : GroupEvent>(private val channelRegistr
 
     override fun present(requester: ConnectedClient, result: E): Map<UserId, Response> {
         val channel =
-            result.targetChannelId?.let { channelRegistry.get(it) } as? GroupChannel ?: return handleError(
+            result.targetChannelId?.let { channelRegistry.get(it) } as? GroupChannel ?: return handleErrorResponse(
                 userId = requester.auth.id,
                 code = ErrorCode.NOT_FOUND,
                 detail = ""

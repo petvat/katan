@@ -8,7 +8,7 @@ import kotlinx.serialization.json.Json
  * Minimal physical coordinate on the screen.
  *
  */
-data class PCoordinate(val x: Double, val y: Double)
+data class PCoord(val x: Double, val y: Double)
 
 /**
  * Represents a logical coordinate on the board.
@@ -24,30 +24,23 @@ sealed interface Coordinates {
  * Logical hexagon/tile coordiantes.
  */
 @Serializable
-data class HexCoordinates(@SerialName("hex_q") override val q: Int, @SerialName("hex_r") override val r: Int) :
+data class HexCoord(@SerialName("hex_q") override val q: Int, @SerialName("hex_r") override val r: Int) :
     Coordinates
 
 /**
  * Logical intersection coordinates.
  */
 @Serializable
-data class ICoordinates(
-    @SerialName("intersect_q") override val q: Int,
-    @SerialName("intersect_r") override val r: Int
+data class NodeCoord(
+    @SerialName("node_q") override val q: Int,
+    @SerialName("node_r") override val r: Int
 ) : Coordinates
 
 /**
  * Logical edge coordinates.
  */
 @Serializable
-data class EdgeCoordinates(
+data class EdgeCoord(
     @SerialName("edge_q") override val q: Int,
     @SerialName("edge_r") override val r: Int
 ) : Coordinates
-
-
-fun main() {
-    val hex = HexCoordinates(1, 2)
-    val json = Json.encodeToString(hex)
-    println(json)
-}

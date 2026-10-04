@@ -5,17 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 
-/**
- * Minimal placeholder dice animation: flickers random pip values for a
- * short duration, then settles on the real roll. Swap the visuals inside
- * here later for real dice sprites -- the VM/View contract (start, then
- * call back when done) doesn't need to change.
- */
-/**
- * Placeholder dice-roll animation using real die-face images. Flickers
- * through random faces, settles on the real roll, briefly holds, then
- * hides and reports completion.
- */
+
 class DiceAnimationWidget(
     private val animationSequence: Array<Image>,
     skin: Skin

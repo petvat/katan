@@ -32,8 +32,6 @@ abstract class AbstractScreen(val ktxCtx: KtxKatan, private val bus: EventSystem
         stage.viewport.update(width, height, true)
     }
 
-    /**
-     */
     override fun show() {
         inputMultiplexer = InputMultiplexer()
         inputMultiplexer.addProcessor(stage)
@@ -55,6 +53,7 @@ abstract class AbstractScreen(val ktxCtx: KtxKatan, private val bus: EventSystem
     }
 
     override fun render(delta: Float) {
+        viewModel.refresh()
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         stage.act()
@@ -67,14 +66,10 @@ abstract class AbstractScreen(val ktxCtx: KtxKatan, private val bus: EventSystem
 
     protected abstract fun buildStage()
 
-//    fun buildS(vararg views: View<*>) {
-//        views.forEach { view -> stage.addActor(view(Scene2DSkin.defaultSkin, viewModel) }
-//    }
-
     override fun onEvent(event: Event) {
         when (event) {
             is ErrorEvent -> {
-                showError(event.reason)
+                showError(event.reason) // Fallback error display if screen impl does not catch it.
             }
 
             else -> Unit

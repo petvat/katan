@@ -1,6 +1,6 @@
 package io.github.petvat.katan.shared.model.board
 
-import io.github.petvat.katan.shared.hexlib.HexCoordinates
+import io.github.petvat.katan.shared.hexlib.HexCoord
 import io.github.petvat.katan.shared.model.game.Resource
 import kotlinx.serialization.Serializable
 
@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class Tile(
-    val hexCoordinate: HexCoordinates,
+    val hexCoordinate: HexCoord,
     val resource: Resource?,
     val rollListenValue: Int
 )

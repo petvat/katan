@@ -1,8 +1,9 @@
 package io.github.petvat.katan.shared.protocol
 
 import io.github.petvat.katan.shared.hexlib.Coordinates
-import io.github.petvat.katan.shared.hexlib.HexCoordinates
+import io.github.petvat.katan.shared.hexlib.HexCoord
 import io.github.petvat.katan.shared.model.board.BuildKind
+import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.ResourceMapData
 import io.github.petvat.katan.shared.model.game.Settings
 import kotlinx.serialization.SerialName
@@ -60,7 +61,7 @@ sealed interface Request {
 
     @Serializable
     @SerialName("move_robber")
-    data class MoveRobber(val coordinates: HexCoordinates) : Request
+    data class MoveRobber(val coordinates: HexCoord) : Request
 
     @Serializable
     @SerialName("build")
@@ -78,8 +79,8 @@ sealed interface Request {
     @SerialName("init_trade")
     data class InitTrade(
         val targetPlayers: Set<Int>,
-        val offer: ResourceMapData,
-        val inReturn: ResourceMapData
+        val offer: ResourceMap,
+        val inReturn: ResourceMap
     ) : Request
 
     @Serializable
