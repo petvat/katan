@@ -29,9 +29,9 @@ sealed interface ASSETS {
         MOUNTAINS, FIELDS, PASTURE,
         FOREST, DESERT, HILLS,
 
-        TKN_2, TKN_3, TKN_4,
-        TKN_5, TKN_6, TKN_8,
-        TKN_9, TKN_10, TKN_11, TKN_12,
+        TOKEN_2, TOKEN_3, TOKEN_4,
+        TOKEN_5, TOKEN_6, TOKEN_8,
+        TOKEN_9, TOKEN_10, TOKEN_11, TOKEN_12,
 
         // D = Down, U = Up, R = Right, L = Left, A = And
         SEA_DAL, SEA_DAR, SEA_DL, SEA_DR, SEA_L, SEA_R,
@@ -41,7 +41,7 @@ sealed interface ASSETS {
         val path = name.lowercase()
 
         companion object {
-            fun token(value: Int): Board = valueOf("TKN_$value")
+            fun token(value: Int): Board = valueOf("TOKEN_$value")
         }
     }
 
@@ -109,8 +109,8 @@ class Assets {
     }
 
     companion object {
-        const val KATAN_GRAPHICS_F = "./katan-graphics-v2.atlas"
-        const val KATAN_UI_F = "./katan-ui-001.json"
+        const val KATAN_GRAPHICS_F = "./katan-graphics-v3.atlas"
+        //const val KATAN_UI_F = "./katan-ui-001.json"
     }
 
     private fun load() {
