@@ -6,6 +6,7 @@ import io.github.petvat.katan.event.EventSystem
 import io.github.petvat.katan.model.command.ChatCommandsImpl
 import io.github.petvat.katan.model.command.KatanCommands
 import io.github.petvat.katan.model.command.GameCommandsImpl
+import io.github.petvat.katan.model.command.GroupCommandsImpl
 import io.github.petvat.katan.model.command.LobbyCommandsImpl
 import io.github.petvat.katan.model.net.ConnectionLostException
 import io.github.petvat.katan.model.net.InBoundRouter
@@ -41,7 +42,8 @@ class KatanClient(
     val commands = KatanCommands(
         game = GameCommandsImpl(tracker, state),
         lobby = LobbyCommandsImpl(tracker, state),
-        chat = ChatCommandsImpl(tracker, state)
+        chat = ChatCommandsImpl(tracker, state),
+        group = GroupCommandsImpl(tracker, state)
     )
 
     @Volatile
@@ -54,6 +56,9 @@ class KatanClient(
         return true
     }
 
+    /**
+     * TODO: Add this before dying.
+     */
     fun disconnect() {
         running = false
         channel.shutdown()
@@ -87,6 +92,7 @@ class KatanClient(
                 continue
             }
             try {
+                logger.debug { "Received message: $message" }
                 router.route(message)
             } catch (t: Throwable) {
                 logger.error(t) { "Routing failed for ${message.payload::class.simpleName}" }

@@ -4,8 +4,12 @@ import io.github.petvat.katan.server.service.concurrency.Lockable
 import io.github.petvat.katan.server.service.engine.GameState
 import io.github.petvat.katan.server.service.presenter.ConcurrentKeyedRegistry
 import io.github.petvat.katan.shared.UserId
+import io.github.petvat.katan.shared.model.game.GameMeta
 import io.github.petvat.katan.shared.model.game.Settings
+import io.github.petvat.katan.shared.protocol.dto.UserData
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 @JvmInline
 value class ChannelId(
@@ -41,6 +45,7 @@ class GameChannel(
     val userToPlayerId: Map<UserId, Int>, override var seqCounter: Int = 0,
     val chat: ChatChannel?
 ) : Channel<GameSubscriber> {
+
     init {
         require(id.value.startsWith("game:")) {
             "GameChannel.id must start with 'game:', but was '${id.value}'"
@@ -54,11 +59,15 @@ class GameChannel(
 class GroupChannel(
     override val id: ChannelId,
     override val subs: ConcurrentHashMap<UserId, GroupSubscriber>,
+    val host: UserId,
     val settings: Settings,
     val lobby: LobbyChannel,
     val chat: ChatChannel? = null,
     override var seqCounter: Int = 0
 ) : Channel<GroupSubscriber> {
+
+    var chatEnabled = chat != null
+
     init {
         require(id.value.startsWith("group:")) {
             "GroupChannel.id must start with 'group:', but was '${id.value}'"

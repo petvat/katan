@@ -10,12 +10,13 @@ import io.github.petvat.katan.shared.model.board.Node
 import io.github.petvat.katan.shared.model.board.Road
 import io.github.petvat.katan.shared.model.board.Village
 import io.github.petvat.katan.shared.model.board.VillageKind
+import io.github.petvat.katan.shared.model.game.GameMeta
 import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.model.game.Phase
 import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.RuleBook
-
+import io.github.petvat.katan.shared.protocol.dto.UserData
 
 data class GameSession(
     val id: String,
@@ -31,7 +32,8 @@ data class GameSession(
     val phase: Phase,
     val winner: Int? = null,
     val rules: RuleBook,
-    var board: Board
+    var board: Board,
+    val meta: GameMeta
 ) {
     val turnPlayer: Int get() = turnOrder[turnIndex % turnOrder.size]
 }

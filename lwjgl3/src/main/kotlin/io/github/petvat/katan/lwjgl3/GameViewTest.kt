@@ -11,6 +11,7 @@ import io.github.petvat.katan.lwjgl3.tests.AbstractTestScreen
 import io.github.petvat.katan.lwjgl3.tests.gdxTest
 import io.github.petvat.katan.model.command.ChatCommands
 import io.github.petvat.katan.model.command.GameCommands
+import io.github.petvat.katan.model.command.GroupCommands
 import io.github.petvat.katan.model.command.KatanCommands
 import io.github.petvat.katan.model.command.LobbyCommands
 import io.github.petvat.katan.model.state.ClientState
@@ -23,12 +24,13 @@ import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.board.BoardGenerator
 import io.github.petvat.katan.shared.model.game.*
 import io.github.petvat.katan.shared.protocol.Response
-import io.github.petvat.katan.ui.Assets
+import io.github.petvat.katan.shared.protocol.dto.UserData
+import io.github.petvat.katan.ui.KatanAssets
 import io.github.petvat.katan.ui.control.DragCameraController
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.screen.MainGameScreen.Companion.TEX_HEIGHT
 import io.github.petvat.katan.ui.ktx.screen.MainGameScreen.Companion.TEX_WIDTH
-import io.github.petvat.katan.ui.ktx.screen.loadUISkin
+import io.github.petvat.katan.ui.loadUISkin
 import io.github.petvat.katan.ui.ktx.view.BoardView
 import io.github.petvat.katan.ui.ktx.view.gameView
 import io.github.petvat.katan.ui.viewmodel.BuildTarget
@@ -56,7 +58,7 @@ private class GameTest() : AbstractTestScreen() {
 
     val viewport = ExtendViewport(KtxKatan.VW, KtxKatan.VH)
     val camera = viewport.camera as OrthographicCamera
-    val assets = Assets()
+    val assets = KatanAssets()
     val batch = SpriteBatch()
 
     val game = GameSession(
@@ -77,7 +79,15 @@ private class GameTest() : AbstractTestScreen() {
         turnIndex = 0,                       // was: turnPlayer (now a computed property)
         victoryPoints = mapOf(1 to 0, 2 to 0, 3 to 0, 4 to 0),
         onGoingTrades = emptyList(),         // new required field
-        rules = RuleBook.from(Settings())    // new required field
+        rules = RuleBook.from(Settings()),    // new required field
+        meta = GameMeta(
+            playerUserData = mapOf(
+                1 to UserData(userId = "user:1", name = "You"),
+                2 to UserData(userId = "user:2", name = "Alice"),
+                3 to UserData(userId = "user:3", name = "Bob"),
+                4 to UserData(userId = "user:4", name = "Carol"),
+            )
+        )
     )
 
     /**
@@ -107,16 +117,22 @@ private class GameTest() : AbstractTestScreen() {
             override fun endTurn() = null
             override fun claimVictory() = null
             override fun requestResync() = null
+            override fun chat(message: String) = null
         },
         lobby = object : LobbyCommands {
             override fun register(name: String) = null
             override fun resume(token: String) = null
             override fun join(channelId: String) = null
             override fun create(settings: Settings) = null
-            override fun leave() = null
         },
         chat = object : ChatCommands {
             override fun send(message: String) = null
+        },
+        group = object : GroupCommands {
+            override fun chat(message: String) = null
+            override fun leave() = null
+            override fun init() = null
+
         }
     )
 
@@ -152,7 +168,7 @@ private class GameTest() : AbstractTestScreen() {
         val multiplexer = InputMultiplexer(stage, movementController)
         Gdx.input.inputProcessor = multiplexer
         stage.actors {
-            gameView(vm = viewModel.game, hud = viewModel.game.hud, Scene2DSkin.defaultSkin)
+            gameView(vm = viewModel.game, hud = viewModel.game.hud, Scene2DSkin.defaultSkin, KatanAssets())
         }
         super.clearScreen = false
         eventSystem += viewModel

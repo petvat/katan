@@ -8,13 +8,16 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.model.game.ResourceMap
+import io.github.petvat.katan.ui.ASSETS
+import io.github.petvat.katan.ui.KatanAssets
 import io.github.petvat.katan.ui.projection.ThisPlayerProjection
 import ktx.scene2d.*
 
 
 class ThisPlayerTable(
     thisPlayerVM: ThisPlayerProjection,
-    skin: Skin
+    skin: Skin,
+    val assets: KatanAssets
 ) : Table(skin), KTable {
 
     private val ore: Label
@@ -24,12 +27,21 @@ class ThisPlayerTable(
     private val brick: Label
     private val vp: Label
 
-    var oreImg = Image(Texture(Gdx.files.internal("./ore-simple-tex.png")))
-    var brickImg = Image(Texture(Gdx.files.internal("./brick-simple-tex.png")))
-    var woolImg = Image(Texture(Gdx.files.internal("./wool-simple-tex.png")))
-    var woodImg = Image(Texture(Gdx.files.internal("./assets/wood-simple-tex.png")))
+    // var oreImg = Image(Texture(Gdx.files.internal("./ore-simple-tex.png")))
+    //var brickImg = Image(Texture(Gdx.files.internal("./brick-simple-tex.png")))
+    // var woolImg = Image(Texture(Gdx.files.internal("./wool-simple-tex.png")))
+    // var woodImg = Image(Texture(Gdx.files.internal("./assets/wood-simple-tex.png")))
 
     private val turn: Label
+
+    private fun resourceIcon(resource: Resource): Image =
+        Image(assets.region(assetOf(resource)))
+
+    private fun assetOf(resource: Resource): ASSETS.Resource = when (resource) {
+        Resource.WOOD -> ASSETS.Resource.LUMBER
+        Resource.ORE -> ASSETS.Resource.ORE
+        else -> ASSETS.Resource.LUMBER
+    }
 
     init {
         background = skin.getDrawable("area")
@@ -41,14 +53,15 @@ class ThisPlayerTable(
         vp = scene2d.label("Victory points: ${thisPlayerVM.victoryPoints}")
         turn = scene2d.label("") // TODO: replace with something better
 
-        add(woodImg)
+        add(resourceIcon(Resource.WOOD))
         add(wood).pad(5f)
-        add(oreImg)
+        add(resourceIcon(Resource.ORE))
         add(ore).pad(5f)
-        add(woolImg)
+        add(resourceIcon(Resource.WOOL))
         add(wool).pad(5f)
-        add(brickImg)
+        add(resourceIcon(Resource.BRICK))
         add(brick).pad(5f)
+        add(resourceIcon(Resource.WHEAT))
         add(wheat).pad(5f)
         row().colspan(9)
         add(vp).pad(5f)
@@ -90,6 +103,7 @@ class ThisPlayerTable(
 fun <S> KWidget<S>.thisPlayerTable(
     thisPlayerProjection: ThisPlayerProjection,
     skin: Skin,
+    assets: KatanAssets,
     init: ThisPlayerTable.(S) -> Unit = {}
-): ThisPlayerTable = actor(ThisPlayerTable(thisPlayerProjection, skin), init)
+): ThisPlayerTable = actor(ThisPlayerTable(thisPlayerProjection, skin, assets), init)
 

@@ -1,6 +1,6 @@
 package io.github.petvat.katan.lwjgl3.tests
 
-import io.github.petvat.katan.ui.ktx.screen.loadUISkin
+import io.github.petvat.katan.ui.loadUISkin
 import io.github.petvat.katan.ui.ktx.widget.error
 import ktx.app.KtxGame
 import ktx.scene2d.Scene2DSkin

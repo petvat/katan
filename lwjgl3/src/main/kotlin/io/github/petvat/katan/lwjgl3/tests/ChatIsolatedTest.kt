@@ -1,10 +1,12 @@
 package io.github.petvat.katan.lwjgl3.tests
 
 import io.github.petvat.katan.event.EventSystem
-import io.github.petvat.katan.model.GroupState
+import io.github.petvat.katan.model.command.GroupCommands
+import io.github.petvat.katan.model.state.ClientState
 import io.github.petvat.katan.shared.model.game.Settings
-import io.github.petvat.katan.ui.ktx.screen.loadUISkin
-import io.github.petvat.katan.ui.ktx.screen.loadVisUISkin
+import io.github.petvat.katan.shared.protocol.Response
+import io.github.petvat.katan.shared.protocol.dto.UserData
+import io.github.petvat.katan.ui.loadUISkin
 import io.github.petvat.katan.ui.ktx.view.GroupView
 import io.github.petvat.katan.ui.ktx.widget.ChatWidget
 import io.github.petvat.katan.ui.ktx.widget.chat
@@ -18,9 +20,11 @@ import ktx.scene2d.table
 fun main() = gdxTest("Group test", GroupTestLauncher())
 
 
-/**
- * TODO: Provide an abstraction between DTO and client state
- */
+private class MockGroupCommands : GroupCommands {
+    override fun chat(message: String) = null
+    override fun leave() = null
+    override fun init() = null
+}
 
 private class GroupTestLauncher : KtxGame<GroupTest>() {
     override fun create() {
@@ -30,28 +34,40 @@ private class GroupTestLauncher : KtxGame<GroupTest>() {
     }
 }
 
-private class GroupTest() : AbstractTestScreen() {
+private class GroupTest : AbstractTestScreen() {
 
     val eventBus = EventSystem()
 
-    private val group =
-        GroupState("1", mutableMapOf("1" to "P1", "2" to "P2"), Settings())
+    /**
+     * ClientState mutators are private-set, so seed the session through
+     * the public InboundRouter-style handlers instead of direct assignment.
+     */
+    private val state = ClientState().apply {
+        onGroupCreated(
+            Response.GroupCreated(groupId = "1", settings = Settings(), chatId = "1")
+        )
+        onUserJoined(Response.UserJoined(groupId = "1", UserData(userId = "1", name = "P1")))
+        onUserJoined(Response.UserJoined(groupId = "1", UserData(userId = "2", name = "P2")))
+    }
 
     override fun setup() {
-        val viewModel = GroupViewModel(group, MockChatActions(), MockGameActions(), { })
+        val viewModel = GroupViewModel(
+            state,
+            MockGroupCommands(),
+            transitionService = { } // no-op screen transition for the test
+        )
 
         stage.addActor(
             GroupView(viewModel, Scene2DSkin.defaultSkin)
         )
 
         eventBus += viewModel
-        // viewModel.onEvent(ChatEvent("Player1", "Hello"))
     }
 }
 
 private class ChatTestLauncher : KtxGame<ChatIsolatedTest>() {
     override fun create() {
-        loadVisUISkin()
+        loadUISkin()
         addScreen(ChatIsolatedTest())
         setScreen<ChatIsolatedTest>()
     }
@@ -66,14 +82,11 @@ private class ChatIsolatedTest : AbstractTestScreen() {
 
         stage.actors {
             table {
-
                 setFillParent(true)
                 ch = scene2d.chat(messages, Scene2DSkin.defaultSkin, {}) {
                 }
                 add(ch).grow()
             }
-            //}
-
         }
     }
 }

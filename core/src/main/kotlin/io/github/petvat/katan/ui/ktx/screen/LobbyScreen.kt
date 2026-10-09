@@ -13,7 +13,12 @@ class LobbyScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bus) 
 
     override fun buildStage() {
         viewModel =
-            LobbyViewModel(ktxCtx.lobbyService, ktxCtx.transitionService, ktxCtx.model.groupSummaries.toMutableList())
+            LobbyViewModel(
+                ktxCtx.model.state,
+                ktxCtx.model.commands.lobby,
+                ktxCtx.transitionService,
+                ktxCtx.model.state.lobby.values.toMutableList()
+            )
         logger.debug { "Building lobby" }
         stage.actors {
             stage.addActor(LobbyView(viewModel, Scene2DSkin.defaultSkin))

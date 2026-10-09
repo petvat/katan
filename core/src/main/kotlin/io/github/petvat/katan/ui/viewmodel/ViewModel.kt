@@ -1,6 +1,5 @@
 package io.github.petvat.katan.ui.viewmodel
 
-import io.github.petvat.katan.event.Event
 import io.github.petvat.katan.event.EventListener
 import kotlin.properties.Delegates
 import kotlin.properties.ReadOnlyProperty
@@ -39,11 +38,15 @@ abstract class PropertyNotifiable {
         private var projected: R = project(initial)
         private var key: KProperty<*>? = null
 
+        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): StateMirror<T, R> {
+            key = property
+            return this
+        }
+
         override fun getValue(
             thisRef: PropertyNotifiable,
             property: KProperty<*>
         ): R {
-            if (key == null) key = property
             return projected
         }
 
@@ -51,6 +54,7 @@ abstract class PropertyNotifiable {
             if (!gate()) return // frozen: keep serving the last projection
             val latest = source() ?: return
             if (latest == snapshot) return
+            snapshot = latest
             projected = project(latest)
             key?.let { notify(it, projected) }
         }

@@ -158,6 +158,12 @@ tasks.register('dist') {
   dependsOn 'jar'
 }
 
+tasks.register('printCompileClasspath') {
+  doLast {
+    sourceSets.main.compileClasspath.each { println "CP: $it" }
+  }
+}
+
 tasks.register('runCli', JavaExec) {
   group = 'application'
   description = 'Runs the secondary launcher'

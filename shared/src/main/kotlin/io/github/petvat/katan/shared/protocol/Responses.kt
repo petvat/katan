@@ -5,8 +5,10 @@ import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
 import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.model.game.Settings
+import io.github.petvat.katan.shared.protocol.dto.GroupExternal
 import io.github.petvat.katan.shared.protocol.dto.ParticipantGameSnapshot
 import io.github.petvat.katan.shared.protocol.dto.SpectatorGameSnapshot
+import io.github.petvat.katan.shared.protocol.dto.UserData
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -34,11 +36,18 @@ sealed interface Response {
     // ---- Auth responses ----
 
     /**
-     * TODO: ClientData object. For now: name
+     * @property lobby Lobby channel id, for lobby requests
      */
     @Serializable
     @SerialName("registered")
-    data class Registered(val clientId: String, val name: String, val lobby: String, val resumeToken: String) : Response
+    data class Registered(
+        val clientId: String,
+        val userId: String,
+        val name: String,
+        val lobby: String,
+        val resumeToken: String,
+        val existingGroups: List<GroupExternal>
+    ) : Response
 
     @Serializable
     @SerialName("resumed")
@@ -55,7 +64,11 @@ sealed interface Response {
 
     @Serializable
     @SerialName("lobby_update")
-    data class GroupUpdate(val groupId: String, val memberCount: Int, val capacity: Int) : Response
+    data class GroupUpdate(val groupId: String, val memberCount: Int, val capacity: Int) : Response {
+        init {
+            require(groupId.startsWith("group:")) { "GroupUpdate.groupId must be a group channel id, was '$groupId'" } // TODO: Add this for all
+        }
+    }
 
     @Serializable
     @SerialName("group_created")
@@ -64,13 +77,14 @@ sealed interface Response {
     /** TODO: Use UserData instead of raw name/id once that type exists. */
     @Serializable
     @SerialName("user_joined")
-    data class UserJoined(val groupId: String, val userId: String, val name: String) : Response
+    data class UserJoined(val groupId: String, val userData: UserData) : Response
 
     @Serializable
     @SerialName("joined_ok")
     data class Joined(
+        val chatId: String?, // HACK: Null? because inferred?
         val groupId: String,
-        val members: Map<String, String>, // clientId -> name, for now
+        val members: List<UserData>,
         val settings: Settings
     ) : Response
 

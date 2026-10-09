@@ -10,6 +10,13 @@ import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.model.game.*
 import kotlinx.serialization.Serializable
 
+
+@Serializable
+data class UserData(
+    val userId: String,
+    val name: String
+)
+
 @Serializable
 data class TradeDTO(
     val tradeId: Int,
@@ -43,6 +50,14 @@ data class PrivatePlayer(
     var settlementsLeft: Int
 )
 
+/** Lobby listing, delta-updated from GroupUpdate broadcasts. */
+@Serializable
+data class GroupExternal(
+    val id: String,
+    val memberCount: Int,
+    val capacity: Int,
+    val mode: GameMode? = null
+)
 
 @Serializable
 data class ParticipantGameSnapshot(
@@ -54,7 +69,8 @@ data class ParticipantGameSnapshot(
     val turnOrder: List<Int>,
     val turnPlayer: Int,
     val ongoingTrades: List<Trade>,
-    val rules: RuleBook
+    val rules: RuleBook,
+    val meta: GameMeta
 )
 
 @Serializable
@@ -65,7 +81,8 @@ data class SpectatorGameSnapshot(
     val turnOrder: List<Int>,
     val turnPlayer: Int,
     val ongoingTrades: List<Trade>,
-    val rules: RuleBook
+    val rules: RuleBook,
+    val meta: GameMeta
 )
 
 /**
@@ -114,13 +131,13 @@ data class EdgeDTO(
 )
 
 // TODO: Move to fromDomain file
-fun ResourceMap.toDto() = ResourceMapData(
-    this[Resource.WOOD],
-    this[Resource.ORE],
-    this[Resource.WHEAT],
-    this[Resource.WOOL],
-    this[Resource.BRICK]
-)
+//fun ResourceMap.toDto() = ResourceMap(
+//    this[Resource.WOOD],
+//    this[Resource.ORE],
+//    this[Resource.WHEAT],
+//    this[Resource.WOOL],
+//    this[Resource.BRICK]
+//)
 
 
 /**

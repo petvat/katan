@@ -32,6 +32,10 @@ class GameViewModel(
         gate = { !diceAnimationRunning }
     )
 
+    var rollDiceMode by propertyNotify(false)
+        private set
+    var buildMode by propertyNotify(false)
+
     var diceRoll by propertyNotify<Pair<Int, Int>?>(null)
         private set
 
@@ -48,6 +52,12 @@ class GameViewModel(
                 logger.debug { "$event" }
                 diceAnimationRunning = true // close gate: HUD frozen at pre-roll values
                 diceRoll = event.roll1 to event.roll2
+                rollDiceMode = false
+                buildMode = true
+            }
+
+            is MyTurnEvent -> {
+                rollDiceMode = true
             }
 
             else -> {

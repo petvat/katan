@@ -4,6 +4,7 @@ import io.github.petvat.katan.server.service.channel.Channel
 import io.github.petvat.katan.server.service.channel.ChannelId
 import io.github.petvat.katan.server.service.channel.ChannelRegistry
 import io.github.petvat.katan.server.service.channel.GroupChannel
+import io.github.petvat.katan.server.service.channel.ResumeTokenStore
 import io.github.petvat.katan.server.service.client.ClientRegistry
 import io.github.petvat.katan.server.service.client.ConnectedClient
 import io.github.petvat.katan.server.service.client.UserRegistry
@@ -16,15 +17,20 @@ import io.github.petvat.katan.shared.UserId
 import io.github.petvat.katan.shared.protocol.ErrorCode
 import io.github.petvat.katan.shared.protocol.OutMessage
 import io.github.petvat.katan.shared.protocol.Response
+import kotlin.reflect.KClass
 
-
-interface CommandDispatcher<C : Command, Ch : Channel<*>> {
+interface CommandContext {
     val channelManager: ChannelRegistry
     val handlerRegistry: CommandHandlerRegistry
     val presenterRegistry: PresenterRegistry
     val clientRegistry: ClientRegistry
     val userRegistry: UserRegistry
+    val resumeTokenStore: ResumeTokenStore
     val lockManager: LockManager
+}
+
+interface CommandDispatcher<C : Command, Ch : Channel<*>> : CommandContext {
+    val channelType: KClass<out Channel<*>>
 
     suspend fun handleCommand(
         requester: ConnectedClient,
@@ -41,8 +47,18 @@ interface CommandDispatcher<C : Command, Ch : Channel<*>> {
                 )
             )
 
+        // Invariant, enforced centrally: wrong channel type can never be authorized.
         @Suppress("UNCHECKED_CAST")
-        if (!isPermitted(requester, channel as Ch))
+        val typed = channelType.takeIf { it.isInstance(channel) }?.let { channel as Ch }
+            ?: return mapOf(
+                requester to OutMessage(
+                    replyTo = seq,
+                    payload = Response.Error(ErrorCode.FMT, "Command not valid for this channel.")
+                )
+            )
+
+
+        if (!isPermitted(requester, typed))
             return mapOf(
                 requester to OutMessage(
                     replyTo = seq,
@@ -87,11 +103,10 @@ interface CommandDispatcher<C : Command, Ch : Channel<*>> {
 
         // Fan out from "per user" to "per connected client"
         return userResponses.flatMap { (userId, message) ->
-            userRegistry.getClientsByUser(userId).mapNotNull { clientId ->
-                clientRegistry.get(clientId)?.let { handle -> handle to message }
-            }
+            clientRegistry.clientsOf(userId).map { client -> client to message }
         }.toMap()
     }
+
 
     /**
      * Whether to lock channel or not during processing.

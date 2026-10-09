@@ -1,39 +1,34 @@
 package io.github.petvat.katan.model.state
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.shared.hexlib.HexCoord
-import io.github.petvat.katan.shared.model.game.GameMode
 import io.github.petvat.katan.shared.model.game.Phase
 import io.github.petvat.katan.shared.model.game.Settings
 import io.github.petvat.katan.shared.protocol.Response
+import io.github.petvat.katan.shared.protocol.dto.GroupExternal
+import io.github.petvat.katan.shared.protocol.dto.UserData
 
 
 data class AuthState(
     val clientId: String? = null,
+    val userId: String? = null, // TODO: Use
     val name: String? = null,
     val resumeToken: String? = null,
     val lobbyChannel: String? = null
 ) {
-    val isRegistered: Boolean get() = clientId != null
+    val isRegistered: Boolean get() = clientId != null // TODO: Wrong, should be userId
 }
-
-/** Lobby listing, delta-updated from GroupUpdate broadcasts. */
-data class GroupExternal(
-    val id: String,
-    val memberCount: Int,
-    val capacity: Int,
-    val mode: GameMode? = null
-)
 
 data class GroupSession(
     val id: String,
-    val members: Map<String, String>, // clientId -> name
+    val members: List<UserData>,
     val settings: Settings,
     val chatId: String? = null
 )
 
 data class ChatSession(
     val id: String,
-    val log: List<Pair<String, String>> = emptyList() // (fromId, text)
+    val log: List<Pair<String, String>> = emptyList() // (from Name, text)
 )
 
 
@@ -44,6 +39,8 @@ data class ChatSession(
  * (via InboundRouter).
  */
 class ClientState {
+    private val logger = KotlinLogging.logger { }
+
     @Volatile
     var auth: AuthState = AuthState(); private set
 
@@ -60,7 +57,14 @@ class ClientState {
     var game: GameSession? = null; private set
 
     fun onRegistered(r: Response.Registered) {
-        auth = AuthState(r.clientId, r.name, r.resumeToken, lobbyChannel = r.lobby)
+        auth = AuthState(
+            clientId = r.clientId,
+            userId = r.userId,
+            name = r.name,
+            resumeToken = r.resumeToken,
+            lobbyChannel = r.lobby
+        )
+        lobby = r.existingGroups.associateBy { it.id }
     }
 
     fun onResumed(r: Response.Resumed) {
@@ -72,30 +76,37 @@ class ClientState {
     }
 
     fun onGroupCreated(r: Response.GroupCreated) {
-        val self = auth.clientId?.let { it to (auth.name ?: "") }
+
+        val self = UserData(
+            requireNotNull(auth.userId) { "UserId is null." },
+            requireNotNull(auth.name) { "Name is null." })
         group = GroupSession(
             id = r.groupId,
-            members = if (self != null) mapOf(self) else emptyMap(),
+            members = listOf(self),
             settings = r.settings,
             chatId = r.chatId
         )
         chat = r.chatId?.let { ChatSession(it) }
+
+        logger.debug { "Group created with group id ${r.groupId}, chat id ${r.chatId}" }
     }
 
     fun onJoined(r: Response.Joined) {
-        group = GroupSession(r.groupId, r.members, r.settings, chat?.takeIf { it.id == r.groupId }?.id)
+        val chatSession = ChatSession(requireNotNull(r.chatId) { "Chat ID was null. Not inferred." }, emptyList())
+        chat = chatSession
+        group = GroupSession(r.groupId, r.members, r.settings, chatSession.id)
     }
 
     fun onUserJoined(r: Response.UserJoined) {
         group = group
             ?.takeIf { it.id == r.groupId }
-            ?.let { it.copy(members = it.members + (r.userId to r.name)) }
+            ?.let { it.copy(members = it.members + r.userData) }
     }
 
     fun onUserLeft(r: Response.Left) {
         group = group
             ?.takeIf { it.id == r.groupId }
-            ?.let { it.copy(members = it.members - r.userId) }
+            ?.let { g -> g.copy(members = (g.members - g.members.single { it.userId == r.userId })) }
     }
 
     fun onLeft() {
@@ -105,11 +116,14 @@ class ClientState {
     }
 
     fun onChat(r: Response.Chat) {
-        chat = chat?.copy(log = chat!!.log + (r.from to r.message))
+        val current = chat ?: return
+        val senderName = group?.members?.firstOrNull { it.userId == r.from }?.name ?: ""
+        chat = current.copy(log = current.log + (senderName to r.message))
     }
 
     fun onChatResync(r: Response.ChatResync) {
-        chat = chat?.copy(log = r.history)
+        chat =
+            chat?.copy(log = r.history.map { (from, message) -> (group?.members?.single { it.userId == from }!!.name to message) })
     }
 
     fun onGameInit(game: GameSession) {

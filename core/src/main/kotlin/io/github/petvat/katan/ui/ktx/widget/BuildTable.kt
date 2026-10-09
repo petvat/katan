@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.shared.model.board.VillageKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
+import io.github.petvat.katan.ui.KatanAssets
 import io.github.petvat.katan.ui.viewmodel.BuildTarget
 import ktx.actors.onClick
 import ktx.log.logger
@@ -13,6 +14,7 @@ import ktx.scene2d.*
 @Scene2dDsl
 class BuildTable(
     skin: Skin,
+    val assets: KatanAssets,
     val callback: (BuildTarget) -> Unit,
 ) : Table(skin), KTable { // TODO: This should be a window! Then we need a command view -> screen, using eventbus.
 
@@ -43,7 +45,7 @@ class BuildTable(
     }
 
     private fun addBuildItem(title: String, cost: ResourceMap, vp: Int, build: BuildTarget): BuildItemWidget {
-        return scene2d.buildItem(title, cost, vp, skin) {
+        return scene2d.buildItem(title, cost, vp, skin, assets) {
             onClick {
                 this@BuildTable.logger.debug { "Clicked on addBuildItem" }
                 this@BuildTable.callback(build)
@@ -55,9 +57,10 @@ class BuildTable(
 @Scene2dDsl
 fun <S> KWidget<S>.buildTable(
     skin: Skin,
+    assets: KatanAssets,
     callback: (BuildTarget) -> Unit,
     init: BuildTable.(S) -> Unit = {}
-): BuildTable = actor(BuildTable(skin, callback), init)
+): BuildTable = actor(BuildTable(skin, assets, callback), init)
 
 
 

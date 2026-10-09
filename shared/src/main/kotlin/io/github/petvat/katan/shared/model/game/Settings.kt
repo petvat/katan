@@ -15,10 +15,10 @@ data class Settings(
     val numRobber: Int = DEFAULT_NUM_ROBBER,
     val minPlayers: Int = MIN_PLAYERS,
     val maxPlayers: Int = MAX_PLAYERS,
-    val settlementCost: ResourceMapData = SETTLEMENT_COST,
-    val cityCost: ResourceMapData = CITY_COST,
-    val roadCost: ResourceMapData = ROAD_COST,
-    val knightCost: ResourceMapData = KNIGHT_COST,
+    val settlementCost: ResourceMap = SETTLEMENT_COST,
+    val cityCost: ResourceMap = CITY_COST,
+    val roadCost: ResourceMap = ROAD_COST,
+    val knightCost: ResourceMap = KNIGHT_COST,
     val maxSettlements: Int = MAX_SETTLEMENTS,
     val maxCities: Int = MAX_CITIES,
     val maxRoads: Int = MAX_ROADS,
@@ -36,10 +36,10 @@ data class Settings(
         const val MAX_PLAYERS = 4
 
         // COSTS
-        val SETTLEMENT_COST = ResourceMapData(1, 0, 1, 1, 1)
-        val CITY_COST = ResourceMapData(0, 3, 2, 0, 0)
-        val ROAD_COST = ResourceMapData(1, 0, 0, 0, 1)
-        val KNIGHT_COST = ResourceMapData(0, 1, 1, 1, 0)
+        val SETTLEMENT_COST = ResourceMap(1, 0, 1, 1, 1)
+        val CITY_COST = ResourceMap(0, 3, 2, 0, 0)
+        val ROAD_COST = ResourceMap(1, 0, 0, 0, 1)
+        val KNIGHT_COST = ResourceMap(0, 1, 1, 1, 0)
 
         // COUNT
         const val MAX_SETTLEMENTS = 5

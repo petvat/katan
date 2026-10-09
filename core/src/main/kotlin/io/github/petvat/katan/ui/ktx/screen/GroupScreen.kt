@@ -14,7 +14,7 @@ class GroupScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bus) 
 
     override fun buildStage() {
 
-        viewModel = GroupViewModel(ktxCtx.model.group, ktxCtx.chatActions, ktxCtx.gameActions, ktxCtx.transitionService)
+        viewModel = GroupViewModel(ktxCtx.model.state, ktxCtx.model.commands.group, ktxCtx.transitionService)
         stage.actors {
             stage.addActor( // NOTE: ?
                 GroupView(

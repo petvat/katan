@@ -60,7 +60,7 @@ abstract class BlockingClient<T, S> {
                     return@Thread
                 }
                 try {
-                    val messages = reader.readAvailable(serverChannel)
+                    val messages = reader.readAvailable(serverChannel) ?: throw IOException("Closed (EOF).")
                     messages.forEach { json -> enqueue(processResponse(json)) }
                 } catch (e: Exception) {
                     logger.debug { "DISCONNECT: Lost connection with server: ${e.message}" }

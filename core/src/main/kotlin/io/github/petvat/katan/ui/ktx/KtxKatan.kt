@@ -6,8 +6,10 @@ import com.kotcrab.vis.ui.VisUI
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.event.EventSystem
 import io.github.petvat.katan.model.KatanClient
-import io.github.petvat.katan.ui.Assets
+import io.github.petvat.katan.ui.KatanAssets
+import io.github.petvat.katan.ui.disposeSkin
 import io.github.petvat.katan.ui.ktx.screen.*
+import io.github.petvat.katan.ui.loadUISkin
 import io.github.petvat.katan.ui.viewmodel.ScreenType
 import io.github.petvat.katan.ui.viewmodel.ViewTransitionService
 import ktx.app.KtxGame
@@ -31,7 +33,7 @@ class KtxKatan(
 
     private val logger = KotlinLogging.logger { }
 
-    lateinit var assets: Assets
+    lateinit var assets: KatanAssets
 
     lateinit var batch: SpriteBatch
 
@@ -55,7 +57,7 @@ class KtxKatan(
     override fun create() {
 
         logger.debug { "Start screen init." }
-        assets = Assets()
+        assets = KatanAssets()
         batch = SpriteBatch()
 
         loadUISkin()

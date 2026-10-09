@@ -7,6 +7,7 @@ import io.github.petvat.katan.shared.model.board.Tile
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.ui.ASSETS
 import io.github.petvat.katan.ui.projection.BoardRenderMap
+import kotlin.math.abs
 
 /**
  * Pure functions producing the static board scaffold.
@@ -14,12 +15,19 @@ import io.github.petvat.katan.ui.projection.BoardRenderMap
  */
 object BoardRenderUtils {
 
-    fun scaffold(layout: Layout, board: Board, shoreWidthOffset: Int = 2): BoardRenderMap {
+    fun scaffold(layout: Layout, board: Board, extraShoreRings: Int = 0): BoardRenderMap {
         val hexCoords = board.tiles.map { it.hexCoordinate }
+        val hexSet = hexCoords.toSet()
+        // Largest w such that some tile lies on hexRing(w) — the island's radius
+        // in the project's own coordinate metric.
+        val islandRadius = generateSequence(1) { it + 1 }
+            .takeWhile { w -> HexUtils.hexRing(w).any { it in hexSet } }
+            .last()
+        val shoreRing = islandRadius + 1 + extraShoreRings
         return BoardRenderMap(
             tiles = islandTextures(layout, board.tiles) +
-                shoreTextures(layout, shoreWidthOffset) +
-                seaTextures(layout, shoreWidthOffset + 1),
+                shoreTextures(layout, shoreRing) +
+                seaTextures(layout, shoreRing + 1),
             tokens = board.tiles
                 .filter { it.resource != null && it.rollListenValue > 0 }
                 .associate { HexUtils.hexToPixel(layout, it.hexCoordinate) to it.rollListenValue },
@@ -38,7 +46,7 @@ object BoardRenderUtils {
         Resource.WOOD to ASSETS.Board.FOREST,
         Resource.WHEAT to ASSETS.Board.FIELDS,
         Resource.ORE to ASSETS.Board.MOUNTAINS,
-        Resource.BRICK to ASSETS.Board.HILLS,
+        Resource.BRICK to ASSETS.Board.FIELDS, // TODO: Change to HILLS
         null to ASSETS.Board.DESERT
     )
 

@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * This class represents a NIO server.
  *
- *
  * @property start Starts up the server on a single thread
  * @property acceptConnection Accepts a new client connection
  * @property handleResponse Sends a response back to client
@@ -167,13 +166,17 @@ class NioServer(
     /**
      * Read from a channel into a buffer.
      */
-
-    private fun channelRead(socketChannel: SocketChannel): List<String> {
+    private fun channelRead(socketChannel: SocketChannel): List<String>? {
         logger.debug { "Begin read." }
         val reader = readers.getOrPut(socketChannel) { MessageReader() }
 
         return try {
-            reader.readAvailable(socketChannel)
+            val result = reader.readAvailable(socketChannel)
+            if (result == null) {
+                logger.debug { "DICONNECTED TYP 1, CLEAN: $socketChannel" }
+                disconnectClient(socketChannel)
+            }
+            result
         } catch (e: Exception) {
             logger.debug { "DISCONNECTING TYP 2, ABRUPT: ${e.message}" }
             disconnectClient(socketChannel)
@@ -185,10 +188,12 @@ class NioServer(
         val key = socketChannel.keyFor(selector)
         val clientId = key.attachment() as ClientId
 
+        // Tear down I/O immediately
+        readBuffers.remove(socketChannel)
+        key.cancel()
+        socketChannel.close()
+
         clientRegistry.markDisconnected(clientId) { expiredClient ->
-            readBuffers.remove(socketChannel)
-            key.cancel()
-            socketChannel.close()
             logger.info { "Client ${expiredClient.id} expired after grace window." }
         }
         logger.info { "DISCONNECTED: $clientId (grace period started)." }
@@ -201,7 +206,8 @@ class NioServer(
         val clientChannel = key.channel() as SocketChannel
         val clientId = key.attachment() as ClientId
         val messages = channelRead(clientChannel)
-        if (messages.isEmpty()) return@withContext
+            ?: return@withContext // null -> disconnected
+        if (messages.isEmpty()) return@withContext // no data available, but still open
         messages.forEach { msg -> requestChannel.send(clientId to msg) }
     }
 }

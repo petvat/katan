@@ -49,7 +49,7 @@ object HexUtils {
      * Transforms single axial hex coordinates to doubled form (q*2, r*2).
      * Required before computing intersection/edge coordinates.
      */
-    private fun transformToDoubled(hex: HexCoord): HexCoord {
+    fun transformToDoubled(hex: HexCoord): HexCoord {
         return HexCoord(hex.q * 2, hex.r * 2)
     }
 

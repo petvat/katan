@@ -5,15 +5,13 @@ import io.github.petvat.katan.server.service.client.*
 import io.github.petvat.katan.shared.UserId
 import io.github.petvat.katan.shared.protocol.ErrorCode
 import io.github.petvat.katan.shared.protocol.Response
+import io.github.petvat.katan.shared.protocol.dto.GroupExternal
 import java.util.*
 
 class AuthService(
-    private val clientRegistry: ClientRegistry,
-    private val userRegistry: UserRegistry,
-    private val channelRegistry: ChannelRegistry,
-    private val lobbyChannel: LobbyChannel, // TODO: Could ask client to specify lobby.
-    private val resumeTokenStore: ResumeTokenStore,
-) {
+    ctx: ServerContext,
+    val lobbyChannel: LobbyChannel
+) : CommandContext by ctx {
 
     suspend fun handleResume(connection: Connection, token: ResumeToken): Response {
         val clientId = resumeTokenStore.resolve(token)
@@ -51,20 +49,33 @@ class AuthService(
 
         client.auth = auth
         userRegistry.register(auth.id, auth)
+        clientRegistry.link(auth, client.id)
+
         // Subscribe to lobby
         lobbyChannel.subscribe(auth.id, LobbySubscriber.Member)
 
         val token = resumeTokenStore.issue(client.id)
+
+        // TODO: Weird place and hacky retrieval
+        val existingGroups = channelManager
+            .all()
+            .filterIsInstance<GroupChannel>()
+            .filter { it.lobby.id == lobbyChannel.id }
+            .map { GroupExternal(it.id.value, it.subs.size, it.settings.maxPlayers, it.settings.gameMode) }
+
+
         return Response.Registered(
+            userId = auth.id.value,
             name = auth.name,
             clientId = client.id.value,
             resumeToken = token.value,
-            lobby = lobbyChannel.id.value
+            lobby = lobbyChannel.id.value,
+            existingGroups = existingGroups
         )
     }
 
     private fun resolveRegisteredUser(credentials: AuthCredentials.User): Auth.User {
-        val id = UserId(generateId(IdType.USER))
+        val id = generateUserId(IdType.USER)
         val user = Auth.User(credentials.name, credentials.psw, id)
         return user
     }

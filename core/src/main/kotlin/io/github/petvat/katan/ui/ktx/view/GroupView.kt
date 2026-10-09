@@ -12,13 +12,15 @@ import ktx.scene2d.scene2d
 import ktx.scene2d.textButton
 
 class GroupView(
-    viewModel: GroupViewModel,
+    val viewModel: GroupViewModel,
     skin: Skin
 ) : KtxView(skin), KTable {
 
     // TODO: Fill with view models chat log copy.
     private val chatWidget: ChatWidget
     private val startBtn: TextButton
+
+    var renderedCount = 0
 
     init {
         setFillParent(true)
@@ -30,7 +32,7 @@ class GroupView(
             skin = skin,
             callback = viewModel::handleChat
         ) { }
-        startBtn = scene2d.textButton("Start ktxCtx") {
+        startBtn = scene2d.textButton("Start game") {
             onChange { this@GroupView.viewModel.handleInit() }
         }
 
@@ -42,12 +44,10 @@ class GroupView(
     }
 
     override fun registerOnPropertyChanges() {
-        viewModel.onPropertyChange(GroupViewModel::lastMessage) {
-            chatWidget.addMessage(it.first, it.second)
-
+        viewModel.onPropertyChange(GroupViewModel::chat) { c ->
+            val fresh = c.chatlog.drop(renderedCount)
+            fresh.forEach { chatWidget.addMessage(it.first, it.second) }
+            renderedCount = c.chatlog.size
         }
-
     }
-
-
 }

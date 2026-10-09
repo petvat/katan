@@ -106,13 +106,14 @@ class PresenterRegistry(
         register(GroupEvent.Joined::class, JoinGroupPresenter(userRegistry, channelRegistry))
         register(GroupEvent.Created::class, CreateGroupPresenter(channelRegistry))
         register(GroupEvent.Left::class, LeaveGroupPresenter(channelRegistry))
+        // register(GroupEvent.Init::class, InitGamePresenter(channelRegistry))
 
         // GAME
-        register(GameEvent.DiceRolledSummary::class, RollDicePresenter(channelRegistry))
-        register(GameEvent.Init::class, InitGamePresenter(channelRegistry))
-        register(GameEvent.BuiltInitial::class, BuildInitialSettlementPresenter(channelRegistry))
-        register(GameEvent.Built::class, BuildPresenter(channelRegistry))
-        register(GameEvent.TradeExecuted::class, TradeExecutedPresenter(channelRegistry))
+        register(GameEvent.DiceRolledSummary::class, RollDicePresenter(channelRegistry, userRegistry))
+        register(GameEvent.Init::class, InitGamePresenter(channelRegistry, userRegistry))
+        register(GameEvent.BuiltInitial::class, BuildInitialSettlementPresenter(channelRegistry, userRegistry))
+        register(GameEvent.Built::class, BuildPresenter(channelRegistry, userRegistry))
+        register(GameEvent.TradeExecuted::class, TradeExecutedPresenter(channelRegistry, userRegistry))
 
         // CHAT
         register(ChatEvent::class, ChatPresenter(channelRegistry))

@@ -8,9 +8,9 @@ import kotlinx.serialization.Serializable
 data class RuleBook(
     val moveRobberOn: Int,
     val cardLimit: Int,
-    val settlementCost: ResourceMapData,
-    val cityCost: ResourceMapData,
-    val roadCost: ResourceMapData
+    val settlementCost: ResourceMap,
+    val cityCost: ResourceMap,
+    val roadCost: ResourceMap
 ) {
     companion object {
         fun from(settings: Settings) = RuleBook(
@@ -23,7 +23,7 @@ data class RuleBook(
     }
 
     // TODO: Clean up
-    fun getCost(buildKind: BuildKind): ResourceMapData {
+    fun getCost(buildKind: BuildKind): ResourceMap {
         return when (buildKind) {
             is BuildKind.Road -> roadCost
             is BuildKind.Village -> when (buildKind.kind) {

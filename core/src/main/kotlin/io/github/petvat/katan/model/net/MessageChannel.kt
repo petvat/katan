@@ -10,12 +10,9 @@ interface MessageChannel {
     fun connect(host: String, port: Int): Boolean
     fun connected(): Boolean
     fun send(message: InMessage)
-
-
     fun incoming(): BlockingQueue<OutMessage>
     fun shutdown()
 }
-
 
 class KatanChannel : BlockingClient<InMessage, OutMessage>(), MessageChannel {
     override fun processRequest(request: InMessage): String = KatanJson.toJson(request)

@@ -27,7 +27,13 @@ enum class IdType(val prefix: String) {
     ADMIN("admin")
 }
 
-fun generateId(type: IdType) = type.prefix + ": " + UUID.randomUUID().toString()
+fun generateId(type: IdType) = type.prefix + ":" + UUID.randomUUID().toString()
+
+private fun formatId(type: IdType, uuid: UUID) =
+    "${type.prefix}:$uuid"
+
+
+fun generateGameId() = ChannelId(formatId(IdType.GAME, UUID.randomUUID()))
 
 fun generateGroupId() = ChannelId("group:${UUID.randomUUID()}")
 fun generateChatId() = ChannelId("chat:${UUID.randomUUID()}")
@@ -35,19 +41,29 @@ fun generateClientId(type: IdType) = ClientId("${type.prefix}:${UUID.randomUUID(
 fun generateUserId(type: IdType) = UserId("${type.prefix}:${UUID.randomUUID()}")
 
 object GroupFactory {
-    fun create(settings: Settings, members: Collection<UserId>, fromLobby: LobbyChannel): GroupChannel {
+    fun create(
+        host: UserId,
+        settings: Settings,
+        members: Collection<UserId>,
+        fromLobby: LobbyChannel,
+        chatEnabled: Boolean = true
+    ): GroupChannel {
         val groupId = generateGroupId()
         return GroupChannel(
             id = groupId,
-            subs = ConcurrentHashMap(members.associateWith { GroupSubscriber.Member }),
+            host = host,
+            subs = ConcurrentHashMap(members.associateWith { userId ->
+                if (userId == host) GroupSubscriber.Host else GroupSubscriber.Member
+            }),
             settings = settings,
             lobby = fromLobby,
-            chat = ChatChannel(
+            chat = if (chatEnabled) ChatChannel(
                 generateChatId(),
                 ConcurrentHashMap(members.associateWith { ChatSubscriber.Member }),
                 mutableListOf()
+            ) else null,
+
             )
-        )
     }
 }
 
@@ -55,13 +71,13 @@ object GameFactory {
 
     private fun initTurnOrder(players: Int) = (0 until players).shuffled()
     private fun assignColors(numPlayers: Int): Map<Int, PlayerColor> {
-        return ((1..numPlayers).toList().shuffled() zip PlayerColor.entries.take(numPlayers).shuffled()).toMap()
+        return ((0 until numPlayers).toList().shuffled() zip PlayerColor.entries.take(numPlayers).shuffled()).toMap()
     }
 
 
     fun create(settings: Settings, members: Collection<UserId>, chat: ChatChannel?): GameChannel {
 
-        val gameId = generateId(IdType.GAME)
+        val gameId = generateGameId()
 
         val turnOrder = initTurnOrder(members.size)
 
@@ -91,7 +107,7 @@ object GameFactory {
         )
 
         return GameChannel(
-            id = ChannelId(gameId),
+            id = gameId,
             subs = ConcurrentHashMap(members.associateWith { GameSubscriber.Player }),
             userToPlayerId = userToPlayerId,
             snapshot = snapshot,

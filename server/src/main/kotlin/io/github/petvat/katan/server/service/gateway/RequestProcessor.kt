@@ -45,9 +45,14 @@ class RequestProcessor(
                 else -> handleAuthenticated(client, msg)
             }
 
+            logger.debug { "Dispatched seq=${msg.seq}: ${result.size} recipient(s), keys=${result.keys}" }
+            if (client !in result) {
+                logger.warn { "seq=${msg.seq}: requester ${client.id} has NO reply." }
+            }
+
             callback(result.mapValues { (_, out) -> KatanJson.toJson(out) })
         } catch (e: Exception) {
-            logger.error { e.printStackTrace() }
+            logger.error(e) { "Request failed for seq=${msg.seq}" }
             val err = OutMessage(
                 replyTo = msg.seq,
                 payload = Response.Error(ErrorCode.UNTRACED_ERR, e.message ?: "Unknown error")

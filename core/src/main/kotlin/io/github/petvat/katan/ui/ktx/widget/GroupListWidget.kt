@@ -1,9 +1,10 @@
 package io.github.petvat.katan.ui.ktx.widget
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.utils.Align
-import io.github.petvat.katan.model.state.GroupExternal
+import io.github.petvat.katan.shared.protocol.dto.GroupExternal
 import ktx.actors.onChangeEvent
 import ktx.scene2d.*
 
@@ -72,8 +73,10 @@ class GroupListElementWidget(
 /**
  * TODO: Move this to separate file.
  */
-class ScrollPaneWidget<T : Actor>(val skin: Skin) : ScrollPane(null, skin), KGroup {
+class ScrollPaneWidget<T : Actor>(val skin: Skin, labelOnEmpty: String? = null) : ScrollPane(null, skin), KGroup {
     private val contentTable: Table
+    private val emptyLabel: Label
+    private var elementCount = 0
 
     init {
         fadeScrollBars = false
@@ -81,6 +84,11 @@ class ScrollPaneWidget<T : Actor>(val skin: Skin) : ScrollPane(null, skin), KGro
         contentTable = scene2d.table {
             align(Align.top)
         }
+        emptyLabel = scene2d.label(labelOnEmpty ?: "") {
+            setAlignment(Align.center)
+        }
+        contentTable.add(emptyLabel).padTop(20f).row()
+
         actor = contentTable
     }
 
@@ -90,7 +98,18 @@ class ScrollPaneWidget<T : Actor>(val skin: Skin) : ScrollPane(null, skin), KGro
 
     fun add(element: T) {
         val cell = contentTable.add(element).space(4f).growX().row()
+        elementCount++
+        updateEmptyState()
+    }
 
+    fun remove(element: T) {
+        element.remove()
+        elementCount--
+        updateEmptyState()
+    }
+
+    private fun updateEmptyState() {
+        emptyLabel.isVisible = elementCount == 0
     }
 }
 
@@ -120,7 +139,7 @@ class GroupListWidget(skin: Skin, val callback: (String) -> Unit) : Table(skin),
             val name = "New group"
             val element = scene2d.groupElement( // NOTE: need scene2d else does not display correctly (rtfm ...)
                 name,
-                "Mode: Not yet implemented",
+                group.mode.toString() ?: "Not specified", // TODO: CAST
                 group.memberCount.toString(),
                 group.capacity.toString(),
                 skin,
@@ -212,8 +231,9 @@ class GroupListWidget(skin: Skin, val callback: (String) -> Unit) : Table(skin),
 @Scene2dDsl
 fun <S, T : Actor> KWidget<S>.scrollWidget(
     skin: Skin = Scene2DSkin.defaultSkin,
+    labelOnEmpty: String? = null,
     init: ScrollPaneWidget<T>.(S) -> Unit = {}
-): ScrollPaneWidget<T> = actor(ScrollPaneWidget(skin), init)
+): ScrollPaneWidget<T> = actor(ScrollPaneWidget(skin, labelOnEmpty), init)
 
 
 @Scene2dDsl

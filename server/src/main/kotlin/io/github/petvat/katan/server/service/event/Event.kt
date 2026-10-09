@@ -4,6 +4,8 @@ import io.github.petvat.katan.server.service.channel.ChannelId
 import io.github.petvat.katan.shared.protocol.ErrorCode
 
 /**
+ * Events are named for the channel whose subscribers consume them.
+ *
  * @property targetChannelId The channel this event happened in
  * @property channelSeq The sequence number of this event in channel's history
  */

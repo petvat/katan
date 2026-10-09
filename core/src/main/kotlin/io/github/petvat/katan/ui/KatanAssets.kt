@@ -25,9 +25,19 @@ fun EdgeCoord.roadOrientation(): RoadOrientation = when {
 }
 
 sealed interface ASSETS {
+
+    enum class Resource {
+        LUMBER, ORE // WOOL, BRICK, GRAIN
+        ;
+
+        val path = name.lowercase()
+
+    }
+
     enum class Board {
         MOUNTAINS, FIELDS, PASTURE,
-        FOREST, DESERT, HILLS,
+        FOREST, DESERT,
+        //HILLS,
 
         TOKEN_2, TOKEN_3, TOKEN_4,
         TOKEN_5, TOKEN_6, TOKEN_8,
@@ -46,13 +56,15 @@ sealed interface ASSETS {
     }
 
     enum class Player {
-        SETTLEMENT, CITY, ROAD_VERT, ROAD_HOR1, ROAD_HOR2, SELECT_ZONE;
+        SETTLEMENT // CITY, ROAD_VERT, ROAD_HOR1, ROAD_HOR2, TODO: ADD THESE
+        // SELECT_ZONE
+        ;
 
         /**
          * Player specific assets becomes $enum_$color
          */
         fun path(color: PlayerColor) =
-            "${name.lowercase()}_${color.name.lowercase()}"
+            "${name.lowercase()}_red" // TODO: HARDCODED RED
     }
 }
 
@@ -60,7 +72,7 @@ sealed interface ASSETS {
 /**
  * Game assets.
  */
-class Assets {
+class KatanAssets {
 
     private val manager = AssetManager()
 
@@ -78,13 +90,17 @@ class Assets {
             requireNotNull(boardAtlas.findRegion(nameOf(e))) { "Atlas region missing: '${nameOf(e)}'" }
         }
 
+    private val resourceRegions: Map<ASSETS.Resource, TextureRegion> by lazy {
+        regionsOf<ASSETS.Resource> { it.path }
+    }
+
     private val boardRegions: Map<ASSETS.Board, TextureRegion> by lazy {
         regionsOf<ASSETS.Board> { it.path }
     }
 
     private fun zone(color: PlayerColor): TextureRegion =
-        requireNotNull(boardAtlas.findRegion(ASSETS.Player.SELECT_ZONE.path(color))) {
-            "Atlas region missing: '${ASSETS.Player.SELECT_ZONE.path(color)}'"
+        requireNotNull(boardAtlas.findRegion(ASSETS.Player.SETTLEMENT.path(color))) {
+            "Atlas region missing: '${ASSETS.Player.SETTLEMENT.path(color)}'"
         }
 
     private fun playerRegion(kind: ASSETS.Player, color: PlayerColor): TextureRegion =
@@ -93,24 +109,24 @@ class Assets {
         }
 
     fun region(asset: ASSETS.Board) = boardRegions.getValue(asset)
+    fun region(asset: ASSETS.Resource) = resourceRegions.getValue(asset)
     fun token(value: Int) = boardRegions.getValue(ASSETS.Board.token(value))
     fun nodeZone(color: PlayerColor) = zone(color)
     fun edgeZone(color: PlayerColor) = zone(color) // TODO: separate edge-zone asset
 
     fun village(color: PlayerColor, kind: VillageKind) = when (kind) {
         VillageKind.SETTLEMENT -> playerRegion(ASSETS.Player.SETTLEMENT, color)
-        VillageKind.CITY -> playerRegion(ASSETS.Player.CITY, color)
+        VillageKind.CITY -> playerRegion(ASSETS.Player.SETTLEMENT, color)
     }
 
     fun road(color: PlayerColor, orientation: RoadOrientation) = when (orientation) {
-        RoadOrientation.VERT -> playerRegion(ASSETS.Player.ROAD_VERT, color)
-        RoadOrientation.HOR1 -> playerRegion(ASSETS.Player.ROAD_HOR1, color)
-        RoadOrientation.HOR2 -> playerRegion(ASSETS.Player.ROAD_HOR2, color)
+        RoadOrientation.VERT -> playerRegion(ASSETS.Player.SETTLEMENT, color)
+        RoadOrientation.HOR1 -> playerRegion(ASSETS.Player.SETTLEMENT, color)
+        RoadOrientation.HOR2 -> playerRegion(ASSETS.Player.SETTLEMENT, color)
     }
 
     companion object {
-        const val KATAN_GRAPHICS_F = "./katan-graphics-v3.atlas"
-        //const val KATAN_UI_F = "./katan-ui-001.json"
+        const val KATAN_GRAPHICS_F = AssetFiles.BOARD_ATLAS
     }
 
     private fun load() {
@@ -120,9 +136,10 @@ class Assets {
 
         for (texture in boardAtlas.textures) {
             texture.setFilter(
-                Texture.TextureFilter.Linear,
-                Texture.TextureFilter.Nearest
+                Texture.TextureFilter.MipMapNearestLinear,              // magnify: crisp close-up
+                Texture.TextureFilter.Nearest  // minify: stable when zoomed out
             )
+            texture.anisotropicFilter = 4f // optional, reduces angle shimmer
         }
     }
 

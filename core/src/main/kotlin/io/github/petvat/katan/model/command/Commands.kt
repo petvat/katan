@@ -27,6 +27,14 @@ interface GameCommands {
     fun endTurn(): Future
     fun claimVictory(): Future
     fun requestResync(): Future
+    fun chat(message: String): Future
+}
+
+interface GroupCommands {
+    fun chat(message: String): Future
+    fun leave(): Future
+    fun init(): Future
+
 }
 
 // TODO: Group commands
@@ -35,7 +43,6 @@ interface LobbyCommands {
     fun resume(token: String): Future
     fun join(channelId: String): Future
     fun create(settings: Settings): Future
-    fun leave(): Future
 }
 
 interface ChatCommands {
@@ -45,7 +52,8 @@ interface ChatCommands {
 class KatanCommands(
     val game: GameCommands,
     val lobby: LobbyCommands,
-    val chat: ChatCommands
+    val chat: ChatCommands,
+    val group: GroupCommands,
 )
 
 class GameCommandsImpl(
@@ -64,22 +72,38 @@ class GameCommandsImpl(
     override fun endTurn() = send(Request.EndTurn)
     override fun claimVictory() = send(Request.ClaimVictory)
     override fun requestResync() = send(Request.Init)
+    override fun chat(message: String) = send(Request.Chat(message))
+}
+
+class GroupCommandsImpl(
+    private val tracker: RequestTracker,
+    private val state: ClientState
+) : GroupCommands {
+    private fun send(request: Request) = tracker.send(state.group?.id, request)
+    override fun chat(message: String) = tracker.send(state.chat?.id, Request.Chat(message))
+    override fun leave() = send(Request.Leave)
+    override fun init() = send(Request.Init)
+
 }
 
 class LobbyCommandsImpl(
     private val tracker: RequestTracker,
     private val state: ClientState
 ) : LobbyCommands {
-    override fun register(name: String) = tracker.send(channelId = null, request = Request.GuestRegister(name))
-    override fun resume(token: String) = tracker.send(channelId = null, request = Request.Resume(token))
-    override fun join(channelId: String) = tracker.send(channelId = null, request = Request.Join(channelId))
+    override fun register(name: String) = tracker.send(null, request = Request.GuestRegister(name))
+    override fun resume(token: String) =
+        tracker.send(channelId = state.auth.lobbyChannel, request = Request.Resume(token))
+
+    override fun join(channelId: String) =
+        tracker.send(channelId = channelId, request = Request.Join(channelId))
+
     override fun create(settings: Settings) = tracker.send(state.auth.lobbyChannel, Request.Create(settings))
-    override fun leave() = tracker.send(state.group?.id, Request.Leave)
 }
 
 class ChatCommandsImpl(
     private val tracker: RequestTracker,
     private val state: ClientState
 ) : ChatCommands {
-    override fun send(message: String) = tracker.send(state.chat?.id ?: state.group?.id, Request.Chat(message))
+    override fun send(message: String) =
+        tracker.send(requireNotNull(state.chat?.id) { "Chat channel ID is null." }, Request.Chat(message))
 }

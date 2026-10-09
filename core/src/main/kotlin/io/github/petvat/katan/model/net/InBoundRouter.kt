@@ -48,12 +48,12 @@ class InBoundRouter(
             is Response.ResumeFailed -> events.fire(LoginEvent) // or a dedicated ResumeFailedEvent
 
             // ---- lobby / group lifecycle ----
-            is Response.GroupUpdate -> state.onGroupUpdate(payload)   // no event: VMs diff lobby
+            is Response.GroupUpdate -> state.onGroupUpdate(payload)
             is Response.GroupCreated -> {
                 state.onGroupCreated(payload); events.fire(CreateEvent)
             }
 
-            is Response.UserJoined -> state.onUserJoined(payload)     // no event: VMs diff members
+            is Response.UserJoined -> state.onUserJoined(payload)
             is Response.Joined -> {
                 state.onJoined(payload); events.fire(JoinEvent)
             }
@@ -75,11 +75,14 @@ class InBoundRouter(
             is Response.ChatResync -> state.onChatResync(payload)
 
             // ---- game: deltas ----
-            is Response.Init -> state.onGameInit(
-                payload.privateGameState.toDomain(
-                    state.group?.id ?: throw IllegalStateException("No group."),
+            is Response.Init -> {
+                state.onGameInit(
+                    payload.privateGameState.toDomain(
+                        state.group?.id ?: throw IllegalStateException("No group."),
+                    )
                 )
-            )
+                events.fire(InitGameEvent)
+            }
 
             is Response.InitSpectator -> TODO()
             is Response.GameResync -> {

@@ -6,21 +6,35 @@ import io.github.petvat.katan.server.service.client.ConnectedClient
 import io.github.petvat.katan.server.service.event.GameEvent
 import io.github.petvat.katan.server.service.presenter.Presenter
 import io.github.petvat.katan.server.service.channel.GameSubscriber
+import io.github.petvat.katan.server.service.client.UserRegistry
 import io.github.petvat.katan.server.service.gateway.handleError
+import io.github.petvat.katan.server.service.gateway.handleErrorResponse
 import io.github.petvat.katan.shared.UserId
+import io.github.petvat.katan.shared.model.game.GameMeta
 import io.github.petvat.katan.shared.protocol.ErrorCode
 import io.github.petvat.katan.shared.protocol.Response
+import io.github.petvat.katan.shared.protocol.dto.UserData
 
 /**
  * TODO: To model Client = app instance, use UserId in Game and Group. Find all members by UserId.
  */
 abstract class AbstractGamePresenter<E : GameEvent>(
-    private val channelRegistry: ChannelRegistry
+    private val channelRegistry: ChannelRegistry,
+    private val userRegistry: UserRegistry,
 ) : Presenter<E> {
+
+    /**
+     * Easy access other channel meta data.
+     */
+    protected fun metaOf(channel: GameChannel): GameMeta = GameMeta(
+        playerUserData = channel.userToPlayerId.entries.associate { (userId, number) ->
+            number to UserData(name = userRegistry.get(userId)?.name ?: "Player $number", userId = userId.value)
+        }
+    )
 
     override fun present(requester: ConnectedClient, result: E): Map<UserId, Response> {
         val channel =
-            result.targetChannelId?.let { channelRegistry.get(it) } as? GameChannel ?: return handleError(
+            result.targetChannelId?.let { channelRegistry.get(it) } as? GameChannel ?: return handleErrorResponse(
                 requester.auth.id,
                 ErrorCode.NOT_FOUND,
                 ""

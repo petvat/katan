@@ -9,7 +9,7 @@ import ktx.scene2d.actors
 
 class LoginScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bus) {
 
-    override val viewModel = LoginViewModel(game.lobbyService, game.transitionService)
+    override val viewModel = LoginViewModel(game.model.commands.lobby, game.transitionService)
 
     override fun buildStage() {
         stage.actors {

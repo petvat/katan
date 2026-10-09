@@ -1,7 +1,9 @@
 package io.github.petvat.katan.lwjgl3.tests
 
 import io.github.petvat.katan.event.EventSystem
-import io.github.petvat.katan.ui.ktx.screen.loadUISkin
+import io.github.petvat.katan.model.KatanClient
+import io.github.petvat.katan.model.state.ClientState
+import io.github.petvat.katan.ui.loadUISkin
 import io.github.petvat.katan.ui.ktx.view.startView
 import io.github.petvat.katan.ui.viewmodel.StartMenuViewModel
 import ktx.app.KtxGame
@@ -22,7 +24,7 @@ private class StartTest : AbstractTestScreen() {
 
     val bus = EventSystem()
 
-    val viewModel = StartMenuViewModel(MockNetworkSession(), {}, bus)
+    val viewModel = StartMenuViewModel(KatanClient(events = EventSystem()), {}, bus)
 
     override fun setup() {
         stage.actors {

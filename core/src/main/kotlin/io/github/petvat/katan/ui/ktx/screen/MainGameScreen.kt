@@ -11,6 +11,8 @@ import io.github.petvat.katan.event.EventSystem
 import io.github.petvat.katan.model.BoardHelpers
 import io.github.petvat.katan.shared.hexlib.PCoord
 import io.github.petvat.katan.shared.hexlib.Layout
+import io.github.petvat.katan.ui.KatanAssets
+import io.github.petvat.katan.ui.control.DragCameraController
 import io.github.petvat.katan.ui.ktx.view.BoardView
 import io.github.petvat.katan.ui.ktx.KtxKatan
 import io.github.petvat.katan.ui.ktx.view.gameView
@@ -57,41 +59,42 @@ class MainGameScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bu
     override lateinit var viewModel: GameScreenViewModel
 
 
+    private lateinit var movementController: DragCameraController
     // TODO: USING THIS?
-    var lastTouchX = 0f
-    var lastTouchY = 0f
-    val dragSensitivity = 0.5f
-    val minX = -230f
-    val minY = minX
-    val maxX = abs(minX)
-    val maxY = abs(minY)
-
-    private val inputProcessor = object : InputAdapter() {
-        override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            lastTouchX = screenX.toFloat()
-            lastTouchY = screenY.toFloat()
-            return true
-        }
-
-        override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-            val deltaX = lastTouchX - screenX
-            val deltaY = lastTouchY - screenY
-
-            camera.translate(
-                deltaX * camera.zoom * dragSensitivity,
-                -deltaY * camera.zoom * dragSensitivity
-            ) // Move the camera
-
-            camera.position.x = MathUtils.clamp(camera.position.x, minX, maxX)
-            camera.position.y = MathUtils.clamp(camera.position.y, minY, maxY)
-            camera.update()
-
-            lastTouchX = screenX.toFloat()
-            lastTouchY = screenY.toFloat()
-
-            return true
-        }
-    }
+//    var lastTouchX = 0f
+//    var lastTouchY = 0f
+//    val dragSensitivity = 0.5f
+//    val minX = -230f
+//    val minY = minX
+//    val maxX = abs(minX)
+//    val maxY = abs(minY)
+//
+//    private val inputProcessor = object : InputAdapter() {
+//        override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+//            lastTouchX = screenX.toFloat()
+//            lastTouchY = screenY.toFloat()
+//            return true
+//        }
+//
+//        override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+//            val deltaX = lastTouchX - screenX
+//            val deltaY = lastTouchY - screenY
+//
+//            camera.translate(
+//                deltaX * camera.zoom * dragSensitivity,
+//                -deltaY * camera.zoom * dragSensitivity
+//            ) // Move the camera
+//
+//            camera.position.x = MathUtils.clamp(camera.position.x, minX, maxX)
+//            camera.position.y = MathUtils.clamp(camera.position.y, minY, maxY)
+//            camera.update()
+//
+//            lastTouchX = screenX.toFloat()
+//            lastTouchY = screenY.toFloat()
+//
+//            return true
+//        }
+//    }
 
 
     override fun buildStage() {
@@ -111,17 +114,26 @@ class MainGameScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bu
             viewModel.board,
             assets
         )
+        movementController = DragCameraController(
+            camera = camera,
+            viewport = viewport,
+            boardExtent = 230f,
+            onTap = { screenX, screenY ->
+                boardRenderer.handleTouch(screenX, screenY, camera)
+            }
+        )
 
-        inputMultiplexer.addProcessor(inputProcessor)
+        inputMultiplexer.addProcessor(movementController)
 
         stage.actors {
             tradeView(viewModel.game, Scene2DSkin.defaultSkin) { isVisible = false } // Overlay of trade system
-            gameView(vm = viewModel.game, hud = viewModel.game.hud, Scene2DSkin.defaultSkin)
+            gameView(vm = viewModel.game, hud = viewModel.game.hud, Scene2DSkin.defaultSkin, KatanAssets())
         }
     }
 
     override fun resize(width: Int, height: Int) {
         viewport.update(width, height)
+        movementController.onResize()
         super.resize(width, height)
     }
 
@@ -136,6 +148,8 @@ class MainGameScreen(game: KtxKatan, bus: EventSystem) : AbstractScreen(game, bu
         camera.update()
 
         boardRenderer.render(batch)
+
+        movementController.update()
 
         stage.viewport.apply() // Apply the stage viewport to render the UI correctly.
 

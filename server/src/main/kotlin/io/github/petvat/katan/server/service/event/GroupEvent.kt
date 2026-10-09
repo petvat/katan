@@ -5,15 +5,6 @@ import io.github.petvat.katan.shared.UserId
 
 
 sealed interface GroupEvent : Event {
-    data class Init(
-        override val targetChannelId: ChannelId,
-        override var channelSeq: Int? = null,
-        val groupId: ChannelId,
-    ) : GroupEvent {
-        override val description = "Game ($targetChannelId) created."
-
-    }
-
     data class Created(
         override val targetChannelId: ChannelId, // groupId
         override var channelSeq: Int? = null,

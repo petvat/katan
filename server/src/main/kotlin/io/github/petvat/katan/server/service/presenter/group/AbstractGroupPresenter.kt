@@ -24,13 +24,15 @@ abstract class AbstractGroupPresenter<E : GroupEvent>(private val channelRegistr
         val members = channel.subs
         val spectators = channel.lobby.subs // questionable
         val memberResponses = members.keys.associateWith { groupView(result, it, channel) }
-        val spectatorsResponses = spectators.keys.associateWith {
+        // Only lobby users who are NOT members get the lobby view — otherwise the
+        // map merge (member + spectator for the same user) overwrites the member view.
+        val spectatorResponses = (spectators.keys - members.keys).associateWith {
             lobbyView(
                 result,
                 channel
             )
         }
-        return memberResponses + spectatorsResponses
+        return memberResponses + spectatorResponses
     }
 
     /**

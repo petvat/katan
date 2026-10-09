@@ -2,17 +2,19 @@ package io.github.petvat.katan.server.service.presenter.game
 
 import io.github.petvat.katan.server.service.channel.ChannelRegistry
 import io.github.petvat.katan.server.service.channel.GameChannel
+import io.github.petvat.katan.server.service.client.UserRegistry
 import io.github.petvat.katan.server.service.event.GameEvent
+import io.github.petvat.katan.shared.model.game.GameMeta
 import io.github.petvat.katan.shared.protocol.Response
 
-class TradeExecutedPresenter(channelRegistry: ChannelRegistry) :
-    AbstractGamePresenter<GameEvent.TradeExecuted>(channelRegistry) {
+class TradeExecutedPresenter(channelRegistry: ChannelRegistry, userRegistry: UserRegistry) :
+    AbstractGamePresenter<GameEvent.TradeExecuted>(channelRegistry, userRegistry) {
 
     override fun playerView(
         event: GameEvent.TradeExecuted,
         requestPlayer: Int,
         playerNumber: Int,
-        channel: GameChannel
+        channel: GameChannel,
     ): Response {
         val snapshot = channel.snapshot
         return Response.TradeExecuted(

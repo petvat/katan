@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * Call enqueue() to schedule a message; call flush() when the selector
  * reports OP_WRITE ready (or immediately after enqueue() as an optimistic
  * first attempt). Guarantees messages are written whole, in order, never
- * interleaved -- a partially-written message is never abandoned mid-frame
+ * interleaved, a partially-written message is never abandoned mid-frame
  * for a later one to jump ahead of.
  */
 class MessageWriter(private val channel: SocketChannel) {

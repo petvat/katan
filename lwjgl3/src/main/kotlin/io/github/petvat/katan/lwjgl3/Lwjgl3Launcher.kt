@@ -22,6 +22,7 @@ fun main() {
 
     val dm = Lwjgl3ApplicationConfiguration.getDisplayMode();
     val config = Lwjgl3ApplicationConfiguration().apply {
+        setResizable(true)
         setTitle("Katan - v0.0.1")
         setWindowedMode(dm.width / 2, dm.height / 2)
         setWindowIcon(*(arrayOf(128, 64, 32, 16).map { "libgdx$it.png" }.toTypedArray()))

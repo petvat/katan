@@ -1,9 +1,7 @@
 package io.github.petvat.katan.ui.viewmodel
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.petvat.katan.controller.LobbyActions
 import io.github.petvat.katan.event.Event
-import io.github.petvat.katan.event.LobbyEvent
 import io.github.petvat.katan.event.LoginEvent
 import io.github.petvat.katan.model.command.LobbyCommands
 

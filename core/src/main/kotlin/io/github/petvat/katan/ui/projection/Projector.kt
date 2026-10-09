@@ -22,7 +22,7 @@ data class UserProjection(
 )
 
 data class ChatProjection(
-    val chatlog: List<Pair<String, String>>
+    val chatlog: List<Pair<String, String>> // TODO: UserProjection
 )
 
 data class GroupProjection(
@@ -50,6 +50,7 @@ data class ThisPlayerProjection(
 )
 
 data class OtherPlayerProjection(
+    val displayName: String,
     val playerNumber: Int,
     val color: PlayerColor,
     val victoryPoints: Int,
@@ -127,9 +128,10 @@ object PlayerProjector {
         game.otherPlayers.map { player ->
             OtherPlayerProjection(
                 playerNumber = player,
-                color = game.colors?.get(player) ?: throw IllegalStateException(),
+                color = game.colors[player] ?: throw IllegalStateException(),
                 victoryPoints = game.victoryPoints[player] ?: 0,
-                cardCount = game.otherResources[player] ?: throw IllegalStateException()
+                cardCount = game.otherResources[player] ?: throw IllegalStateException(),
+                displayName = game.meta.playerUserData.filterKeys { it == player }.values.single().name
             )
         }
 

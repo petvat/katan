@@ -1,7 +1,9 @@
 package io.github.petvat.katan.ui.viewmodel
 
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.event.*
+import io.github.petvat.katan.model.command.GroupCommands
 import io.github.petvat.katan.model.command.LobbyCommands
 import io.github.petvat.katan.model.state.ChatSession
 import io.github.petvat.katan.model.state.ClientState
@@ -11,10 +13,11 @@ import io.github.petvat.katan.ui.projection.Projector
 
 class GroupViewModel(
     val state: ClientState,
-    private val commands: LobbyCommands,
+    private val commands: GroupCommands,
     private val transitionService: ViewTransitionService,
 ) : ViewModel() {
 
+    private val logger = KotlinLogging.logger {}
     val group by mirror(
         { state.group },
         requireNotNull(state.group) { "GroupScreen built before join." },
@@ -26,9 +29,12 @@ class GroupViewModel(
         { Projector.project(it) }
     )
 
-    fun startGame() {
-        // TODO: Settings
-        commands.create(Settings())
+    fun handleChat(message: String) {
+        commands.chat(message)
+    }
+
+    fun handleInit() {
+        commands.init()
     }
 
     fun leave() {
@@ -43,6 +49,10 @@ class GroupViewModel(
         when (event) {
             InitGameEvent -> {
                 transitionService(ScreenType.GAME)
+            }
+
+            is ChatEvent -> {
+                logger.debug { "ChatEvent: $event" }
             }
 
             LeaveEvent -> TODO()

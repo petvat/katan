@@ -1,16 +1,17 @@
 package io.github.petvat.katan.ui.ktx.widget
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.utils.Align
+import io.github.petvat.katan.shared.model.board.VillageKind
+import io.github.petvat.katan.shared.model.game.PlayerColor
 import io.github.petvat.katan.shared.model.game.Resource
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import ktx.actors.onChangeEvent
+import io.github.petvat.katan.ui.ASSETS
+import io.github.petvat.katan.ui.KatanAssets
 import ktx.scene2d.*
 
 /**
@@ -22,6 +23,7 @@ class BuildItemWidget(
     cost: ResourceMap,
     vp: Int,
     skin: Skin,
+    val assets: KatanAssets,
 ) : Table(skin), KTable {
 
     private var ore: Label? = null
@@ -30,13 +32,20 @@ class BuildItemWidget(
     private var wheat: Label? = null
     private var brick: Label? = null
 
-    // TODO: Mem leak, Pass with Skin
-    private var oreImg = Image(Texture(Gdx.files.internal("./ore-simple-tex.png")))
-    private var brickImg = Image(Texture(Gdx.files.internal("./brick-simple-tex.png")))
-    private var woolImg = Image(Texture(Gdx.files.internal("./wool-simple-tex.png")))
-    private var woodImg = Image(Texture(Gdx.files.internal("./assets/wood-simple-tex.png")))
-    private var settlImg = Image(Texture(Gdx.files.internal("./assets/settl-v001.png")))
-    private var vpImg = Image(Texture(Gdx.files.internal("./assets/vp-v001.png")))
+    // TODO: Add WOOL, BRICK (and GRAIN) to ASSETS.Resource + atlas, then use them here.
+    private val resourceAsset = mapOf(
+        Resource.WOOD to ASSETS.Resource.LUMBER,
+        Resource.ORE to ASSETS.Resource.ORE,
+        Resource.WOOL to ASSETS.Resource.LUMBER,
+        Resource.BRICK to ASSETS.Resource.ORE,
+        Resource.WHEAT to ASSETS.Resource.LUMBER,
+    )
+
+    private fun resourceIcon(resource: Resource): Image =
+        Image(assets.region(resourceAsset.getValue(resource)))
+
+    // TODO: Player color is currently hardcoded to red inside KatanAssets.
+    private val settlImg = Image(assets.village(PlayerColor.CLR1, VillageKind.SETTLEMENT))
 
     init {
         touchable = Touchable.enabled
@@ -61,69 +70,31 @@ class BuildItemWidget(
         row()
 
         wood?.let {
-            add(woodImg)
+            add(resourceIcon(Resource.WOOD))
             add(it).pad(5f)
         }
         ore?.let {
-            add(oreImg)
+            add(resourceIcon(Resource.ORE))
             add(it).pad(5f)
         }
         wool?.let {
-            add(woolImg)
+            add(resourceIcon(Resource.WOOL))
             add(it).pad(5f)
         }
         brick?.let {
-            add(brickImg)
+            add(resourceIcon(Resource.BRICK))
             add(it).pad(5f)
         }
         wheat?.let {
             add(it).pad(5f)
         }
 
-        add(vpImg).pad(5f)
-
-        add(scene2d.label("+$vp"))
+        // TODO: No victory-point icon in the atlas yet; the "+vp" label carries the info.
+        add(scene2d.label("+$vp")).pad(5f)
 
         add(settlImg).expandX().right()
-
-
-//        add(oreImg)
-//        add(ore).pad(5f)
-//        add(woolImg)
-//        add(wool).pad(5f)
-//        add(brickImg)
-//        add(brick).pad(5f)
-//        add(wheat).pad(5f)
     }
-
-
-//    init {
-//        // skin.getDrawable(selectedBgd)
-//        background = skin.getDrawable("slot")
-//
-//
-//        // TODO: Image here!
-//
-//        // TODO: Replace with image!
-////        val costLabel = scene2d.label(
-////            "${
-////                cost.getMap().forEach { (resource, amount) ->
-////                    if (amount > 0) {
-////                        "${resource.name} : $amount"
-////                    }
-////                }
-////            }"
-////        ) {
-////            onChangeEvent { }
-////        }
-//
-////        add(titleLabel).top().left().growX().padLeft(2f).padTop(2f)
-////        row()
-////        add(costLabel)
-//    }
-
 }
-
 
 @Scene2dDsl
 fun <S> KWidget<S>.buildItem(
@@ -131,5 +102,6 @@ fun <S> KWidget<S>.buildItem(
     cost: ResourceMap,
     vp: Int,
     skin: Skin,
+    assets: KatanAssets,
     init: (@Scene2dDsl BuildItemWidget).(S) -> Unit = {},
-): BuildItemWidget = actor(BuildItemWidget(title, cost, vp, skin), init)
+): BuildItemWidget = actor(BuildItemWidget(title, cost, vp, skin, assets), init)

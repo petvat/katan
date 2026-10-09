@@ -4,11 +4,10 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector3
-import io.github.petvat.katan.ui.Assets
+import io.github.petvat.katan.ui.KatanAssets
 import io.github.petvat.katan.shared.hexlib.*
 import io.github.petvat.katan.ui.projection.BoardOverlay
 import io.github.petvat.katan.ui.viewmodel.BoardViewModel
-import io.github.petvat.katan.ui.viewmodel.GameViewModel
 import kotlin.math.roundToInt
 
 
@@ -34,7 +33,7 @@ import kotlin.math.roundToInt
  */
 class BoardView(
     private val viewModel: BoardViewModel,
-    private val assets: Assets,
+    private val assets: KatanAssets,
 ) {
     private val tileTextures: Map<PCoord, TextureRegion> =
         viewModel.scaffold.tiles.mapValues { (_, asset) -> assets.region(asset) }
@@ -101,8 +100,8 @@ class BoardView(
     private fun drawCentered(batch: SpriteBatch, tex: TextureRegion, p: PCoord, yOff: Float = 0f) {
         batch.draw(
             tex,
-            p.x.roundToInt().toFloat() - tex.regionWidth / 2f,
-            p.y.roundToInt().toFloat() - tex.regionHeight / 2f + yOff
+            p.x.toFloat() - tex.regionWidth / 2f,
+            p.y.toFloat() - tex.regionHeight / 2f + yOff
         )
     }
 }

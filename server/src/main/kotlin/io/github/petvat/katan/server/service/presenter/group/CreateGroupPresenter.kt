@@ -11,11 +11,10 @@ class CreateGroupPresenter(channelRegistry: ChannelRegistry) :
     AbstractGroupPresenter<GroupEvent.Created>(channelRegistry) {
     override fun groupView(event: GroupEvent.Created, pov: UserId, channel: GroupChannel): Response {
         return Response.GroupCreated(channel.id.value, channel.chat?.id?.value, channel.settings)
-
     }
 
     override fun lobbyView(event: GroupEvent.Created, channel: GroupChannel): Response {
-        return Response.GroupUpdate(channel.id.value, 1, channel.settings.maxPlayers)
+        return Response.GroupUpdate(channel.id.value, channel.subs.size, channel.settings.maxPlayers)
 
     }
 }

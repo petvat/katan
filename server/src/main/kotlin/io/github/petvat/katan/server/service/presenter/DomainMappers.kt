@@ -3,6 +3,7 @@ package io.github.petvat.katan.server.service.presenter
 import io.github.petvat.katan.server.service.engine.GameState
 import io.github.petvat.katan.server.service.engine.Player
 import io.github.petvat.katan.server.service.engine.tradesystem.TradeContext
+import io.github.petvat.katan.shared.model.game.GameMeta
 import io.github.petvat.katan.shared.model.game.Trade
 import io.github.petvat.katan.shared.protocol.dto.*
 
@@ -36,28 +37,30 @@ fun Player.toDto(): PrivatePlayer {
     )
 }
 
-fun GameState.toPlayerDTO(viewer: Int): ParticipantGameSnapshot {
+fun GameState.toPlayerDTO(viewer: Int, meta: GameMeta): ParticipantGameSnapshot {
     val player = players.first { it.number == viewer }
     return ParticipantGameSnapshot(
         player = player.toDto(),
         board = board.toDto(),
-        otherPlayers = players.map { it.toPublicDto() },
+        otherPlayers = players.filter { it.number != player.number }.map { it.toPublicDto() },
         phase = phase,
         turnOrder = turnOrder,
         turnPlayer = turnPlayer,
         ongoingTrades = ongoingTrades.map { it.toDto() },
         rules = rules,
-        colors = colors
+        colors = colors,
+        meta = meta
     )
 }
 
-fun GameState.toSpectatorDTO(): SpectatorGameSnapshot = SpectatorGameSnapshot(
+fun GameState.toSpectatorDTO(meta: GameMeta): SpectatorGameSnapshot = SpectatorGameSnapshot(
     board = board.toDto(),
     players = players.map { it.toPublicDto() },
     phase = phase,
     turnOrder = turnOrder,
     turnPlayer = turnPlayer,
     ongoingTrades = ongoingTrades.map { it.toDto() },
-    rules = rules
+    rules = rules,
+    meta = meta
 )
 

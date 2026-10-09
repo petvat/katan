@@ -1,14 +1,10 @@
-package io.github.petvat.katan.ui.ktx.screen
+package io.github.petvat.katan.ui
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable
 import com.kotcrab.vis.ui.VisUI
 import ktx.scene2d.Scene2DSkin
-import ktx.style.*
 
 //
 //enum class Image(
@@ -42,7 +38,7 @@ fun loadVisUISkin() {
  */
 fun loadUISkin() {
     val skin = Skin(Gdx.files.internal("./katan-ui-001.json"))
-    val altSkin = Skin(Gdx.files.internal("./katan-ui-alt-001.json"))
+    val altSkin = Skin(Gdx.files.internal(AssetFiles.UI_SKIN))
 
 
     val atlas = altSkin.atlas

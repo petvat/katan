@@ -24,10 +24,13 @@ class BoardViewModel(
     private val commands: GameCommands,
     layout: Layout,
 ) : ViewModel() {
-    val projector: BoardProjector
+    val projector: BoardProjector =
+        BoardProjector(BoardHelpers(ruleBook = requireNotNull(state.game?.rules) { "Game init without rules." }))
 
-    val colors = state.game!!.colors
-    val myColor = colors[state.game!!.player]!!
+    val colors = requireNotNull(state.game?.colors) { "Game init without colors." }
+    val myColor = requireNotNull(colors[state.game!!.player]) {
+        "No color assigned for player ${state.game!!.player}; colors=$colors"
+    }
 
     val scaffold: BoardRenderMap =
         BoardRenderUtils.scaffold(layout, state.game!!.board)
@@ -38,8 +41,7 @@ class BoardViewModel(
         { projector.project(it, requireNotNull(state.game).player) }
     )
 
-
-    var overlay by propertyNotify(computeOverlay(board))
+    var overlay by propertyNotify(computeOverlay(board, null))
 
 
     var placingTarget: BuildTarget? by propertyNotify(null)
@@ -47,13 +49,9 @@ class BoardViewModel(
 
     var buildPlacingMode: Boolean by propertyNotify(false)
 
-
     init {
-        val ruleBook = requireNotNull(state.game?.rules) { "GameScreen built before init." }
-        projector = BoardProjector(BoardHelpers(ruleBook = ruleBook))
         onPropertyChange(::board) { overlay = computeOverlay(it) }
     }
-
 
     fun selectPlacingTarget(target: BuildTarget) {
         placingTarget = target
@@ -81,7 +79,7 @@ class BoardViewModel(
         return game.phase == Phase.SETUP && game.turnPlayer == game.player
     }
 
-    private fun computeOverlay(p: BoardProjection): BoardOverlay {
+    private fun computeOverlay(p: BoardProjection, target: BuildTarget? = placingTarget): BoardOverlay {
         val colors = requireNotNull(state.game?.colors)
         return BoardOverlay(
             // FIXME: Find the road orientation by looking at the coordiantes
@@ -96,7 +94,7 @@ class BoardViewModel(
                     BoardOverlay.VillageMarker(it.village.villageKind, colors.getValue(it.village.owner))
             },
             robber = scaffold.hexes.getValue(p.robberLocation),
-            frontier = frontierFor(placingTarget).associateWith { coord ->
+            frontier = frontierFor(target).associateWith { coord ->
                 when (coord) {
                     is NodeCoord -> scaffold.nodes.getValue(coord)
                     is EdgeCoord -> scaffold.edges.getValue(coord)

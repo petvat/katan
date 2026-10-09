@@ -70,7 +70,7 @@ class ChatWidget(
         //setFillParent(true) ONLY Parent fills!
         align(Align.bottomLeft)
 
-        scrollPaneWidget = scene2d.scrollWidget(skin) {
+        scrollPaneWidget = scene2d.scrollWidget(skin, labelOnEmpty = "No messages") {
 
         }
 

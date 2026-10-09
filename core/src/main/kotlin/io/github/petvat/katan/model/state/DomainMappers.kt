@@ -18,4 +18,5 @@ fun ParticipantGameSnapshot.toDomain(id: String): GameSession = GameSession(
     board = board.toDomain(),
     onGoingTrades = ongoingTrades,
     rules = rules,
+    meta = meta
 )

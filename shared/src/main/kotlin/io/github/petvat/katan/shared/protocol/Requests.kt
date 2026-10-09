@@ -4,7 +4,6 @@ import io.github.petvat.katan.shared.hexlib.Coordinates
 import io.github.petvat.katan.shared.hexlib.HexCoord
 import io.github.petvat.katan.shared.model.board.BuildKind
 import io.github.petvat.katan.shared.model.game.ResourceMap
-import io.github.petvat.katan.shared.model.game.ResourceMapData
 import io.github.petvat.katan.shared.model.game.Settings
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

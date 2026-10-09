@@ -9,6 +9,7 @@ sealed interface GameSubscriber : Subscriber {
 
 sealed interface GroupSubscriber : Subscriber {
     data object Member : GroupSubscriber
+    data object Host : GroupSubscriber
 }
 
 sealed interface ChatSubscriber : Subscriber {

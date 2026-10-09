@@ -46,31 +46,28 @@ fun main() = runBlocking<Unit> {
 }
 
 fun buildServer(): NioServer {
-    val clientRegistry = ClientRegistry()
-    val userRegistry = UserRegistry()
-    val channelManager = ChannelRegistry()
-    val lockManager = LockManager()
-    val presenterRegistry = PresenterRegistry(userRegistry)
-    val handlerRegistry = CommandHandlerRegistry(channelManager)
-    val tokenStore = ResumeTokenStore()
+    val ctx = ServerContext(
+        clientRegistry = ClientRegistry(),
+        userRegistry = UserRegistry(),
+        channelManager = ChannelRegistry(),
+        lockManager = LockManager(),
+        resumeTokenStore = ResumeTokenStore()
+    )
 
     val lobbyChannel = LobbyChannel(ChannelId("lobby:main"), ConcurrentHashMap()) // exactly one, ever
-    channelManager.register(lobbyChannel.id, lobbyChannel)
+    ctx.channelManager.register(lobbyChannel.id, lobbyChannel)
 
+    val authService = AuthService(ctx, lobbyChannel)
+    val requestProcessor = RequestProcessor(
+        authService,
+        LobbyService(ctx),
+        GroupService(ctx),
+        GameService(ctx),
+        ChatService(ctx),
+    )
 
-    val authService = AuthService(clientRegistry, userRegistry, channelManager, lobbyChannel, tokenStore)
-    val lobbyService =
-        LobbyService(handlerRegistry, presenterRegistry, lockManager, channelManager, clientRegistry, userRegistry)
-    val groupService =
-        GroupService(handlerRegistry, presenterRegistry, lockManager, channelManager, clientRegistry, userRegistry)
-    val gameService =
-        GameService(handlerRegistry, presenterRegistry, lockManager, channelManager, clientRegistry, userRegistry)
-    val chatService =
-        ChatService(handlerRegistry, presenterRegistry, lockManager, channelManager, clientRegistry, userRegistry)
+    return NioServer(requestProcessor, ctx.clientRegistry)
 
-    val requestProcessor = RequestProcessor(authService, lobbyService, groupService, gameService, chatService)
-
-    return NioServer(requestProcessor, clientRegistry)
 }
 
 

@@ -1,12 +1,14 @@
-package io.github.petvat.katan.lwjgl3.tests
-
-import io.github.petvat.katan.event.GroupUpdateEvent
-import io.github.petvat.katan.model.GroupSummary
-import io.github.petvat.katan.ui.ktx.screen.loadUISkin
-import io.github.petvat.katan.ui.ktx.view.LobbyView
-import io.github.petvat.katan.ui.viewmodel.LobbyViewModel
-//import io.mockk.every
+package io.github.petvat.katan.lwjgl3.tests//import io.mockk.every
 //import io.mockk.mockk
+import io.github.petvat.katan.event.EventSystem
+import io.github.petvat.katan.event.GroupUpdateEvent
+import io.github.petvat.katan.model.KatanClient
+import io.github.petvat.katan.model.command.LobbyCommands
+import io.github.petvat.katan.shared.model.game.Settings
+import io.github.petvat.katan.shared.protocol.dto.GroupExternal
+import io.github.petvat.katan.ui.ktx.view.LobbyView
+import io.github.petvat.katan.ui.loadUISkin
+import io.github.petvat.katan.ui.viewmodel.LobbyViewModel
 import ktx.app.KtxGame
 import ktx.scene2d.Scene2DSkin
 
@@ -36,114 +38,28 @@ private class LobbyViewTest : KtxGame<LobbyTest>() {
 private class LobbyTest() : AbstractTestScreen() {
 
     private val groups = listOf(
-        GroupSummary("id", 2, 4)
+        GroupExternal(id = "id", memberCount = 2, capacity = 4)
     )
 
     override fun setup() {
-        val viewModel = LobbyViewModel(MockLobbyActions(), {}, groups.toMutableList())
+        val commands = object : LobbyCommands {
+            override fun register(name: String) = null
+            override fun resume(token: String) = null
+            override fun join(channelId: String) = null
+            override fun create(settings: Settings) = null
+        }
+
+        val client = KatanClient(events = EventSystem())
+        val viewModel = LobbyViewModel(client.state, commands, {}, groups.toMutableList())
         stage.addActor(
             LobbyView(viewModel, Scene2DSkin.defaultSkin)
         )
 
         repeat(10) {
-            viewModel.onEvent(GroupUpdateEvent(GroupSummary("clientId $it", 2, 4)))
+            viewModel.onEvent(
+                GroupUpdateEvent(GroupExternal(id = "clientId $it", memberCount = 2, capacity = 4))
+            )
         }
-
-
     }
 }
-
-
-//
-//private class LobbyWidgetTest : AbstractTestScreen() {
-//
-//    private val groups = List(20) {
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER)
-//    }
-//
-//    override fun setup() {
-//        val groupsWgt: GroupListWidget
-//
-//        stage.actors {
-//            groupsWgt = groupsWidget({ _, _ -> }) {
-//            }
-//
-//        }
-//        groupsWgt.update(groups)
-//    }
-//
-//}
-
-//
-//private class LobbyViewTest2() : KtxGame<LobbyViewScreen>() {
-//
-//    override fun create() {
-//        loadVisUISkin()
-//        addScreen(LobbyViewScreen())
-//        setScreen<LobbyViewScreen>()
-//    }
-//}
-//
-//private class LobbyViewScreen : KtxScreen {
-//    private val vp = ScreenViewport()
-//    private val batch by lazy { SpriteBatch() }
-//    private val stage = Stage(vp, batch)
-//
-//    init {
-//        vp.camera.position.y = 10f
-//    }
-//
-//    private val groups = mutableListOf(
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//        GroupModel("1", GameMode.STANDARD, 4, PermissionLevel.USER),
-//    )
-//
-//    override fun show() {
-//
-//        val multiplexer = InputMultiplexer();
-//        multiplexer.addProcessor(stage)
-//        Gdx.input.inputProcessor = multiplexer;
-//
-//        stage.isDebugAll = true
-//
-//        val groupsWgt: GroupListWidget
-//
-//        stage.actors {
-//            groupsWgt = groupsWidget({ _, _ -> }) {
-//            }
-//
-//        }
-//        groupsWgt.update(groups)
-//
-//    }
-//
-//    override fun resize(width: Int, height: Int) {
-//        stage.viewport.update(width, height, true)
-//    }
-//
-//    override fun render(delta: Float) {
-//        clearScreen(0f, 0f, 0f, 1f)
-//        stage.act(delta)
-//        stage.draw()
-//    }
-//
-//    override fun dispose() {
-//        stage.dispose()
-//    }
-//}
-
-
-
 

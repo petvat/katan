@@ -20,14 +20,13 @@ class MessageReader(initialCapacity: Int = 4096) {
      * Blocks on the underlying channel.read() call exactly once per call --
      * caller is expected to loop calling this repeatedly.
      *
-     * @throws IOException on malformed framing or a closed/reset connection
-     *   (negative bytesRead).
+     * @return A list of available messages, or null if EOF or socket closed
      */
-    fun readAvailable(channel: SocketChannel): List<String> {
+    fun readAvailable(channel: SocketChannel): List<String>? {
         ensureCapacityForNextRead()
 
         val bytesRead = channel.read(buffer)
-        if (bytesRead < 0) throw IOException("Channel closed by peer.")
+        if (bytesRead < 0) return null
         if (bytesRead == 0) return emptyList()
 
         buffer.flip()
@@ -72,7 +71,7 @@ class MessageReader(initialCapacity: Int = 4096) {
         if (buffer.remaining() == 0 && buffer.position() == buffer.capacity()) {
             // Buffer's full of unconsumed data and nothing was drained --
             // growIfMessageWontFit should have already caught this on the
-            // previous call; this is a defensive fallback.
+            // previous call. This is a defensive fallback.
             growIfMessageWontFit(buffer.capacity() + 1)
         }
     }

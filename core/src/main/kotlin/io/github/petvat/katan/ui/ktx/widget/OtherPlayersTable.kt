@@ -20,7 +20,7 @@ class OtherPlayersTable(
 
         otherPlayersWidget = otherPlayers.associate {
             it.playerNumber to scene2d.otherPlayerStats(
-                "Placeholder", // TODO: FIX
+                it.displayName, // TODO: FIX
                 it.color,
                 it.victoryPoints,
                 it.cardCount,

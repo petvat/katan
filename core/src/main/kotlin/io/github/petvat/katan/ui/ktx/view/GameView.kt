@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.Align
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.petvat.katan.ui.KatanAssets
 import io.github.petvat.katan.ui.ktx.widget.*
 import io.github.petvat.katan.ui.projection.GameProjection
 import io.github.petvat.katan.ui.viewmodel.GameViewModel
@@ -24,6 +25,7 @@ import ktx.scene2d.*
 class GameView(
     hud: GameProjection,
     val viewModel: GameViewModel,
+    val assets: KatanAssets,
     skin: Skin
 ) : KTable, KtxView(skin) {
 
@@ -60,7 +62,7 @@ class GameView(
             this.left()
             // padRight(50f)
         }
-        buildWidget = scene2d.buildTable(skin, { cmd -> viewModel.onBuildSelected(cmd.buildKind) }) {
+        buildWidget = scene2d.buildTable(skin, assets, { cmd -> viewModel.onBuildSelected(cmd) }) {
             isVisible = false
         }
         buildBtn = scene2d.textButton("Build") {
@@ -74,7 +76,8 @@ class GameView(
 
         thisPlayerInfoTable = scene2d.thisPlayerTable(
             hud.thisPlayer,
-            skin
+            skin,
+            assets
         ) {
             this.bottom()
         }
@@ -159,6 +162,7 @@ fun <S> KWidget<S>.gameView(
     vm: GameViewModel,
     hud: GameProjection,
     skin: Skin,
+    assets: KatanAssets,
     init: (@Scene2dDsl GameView).(S) -> Unit = {},
-): GameView = actor(GameView(hud, vm, skin), init)
+): GameView = actor(GameView(hud, vm, assets, skin), init)
 

@@ -13,7 +13,13 @@ class CreateGroupHandler(
 ) : LobbyCommandHandler<CreateGroup> {
     override fun execute(client: ConnectedClient, channel: LobbyChannel, command: CreateGroup): GroupEvent {
         if (client.auth is Auth.Unauth) return Event.Failure("Not authorized.", ErrorCode.DENIED)
-        val group = GroupFactory.create(command.settings, setOf(client.auth.id), channel)
+        val group = GroupFactory.create(
+            host = client.auth.id,
+            settings = command.settings,
+            members = setOf(client.auth.id),
+            channel
+        )
+        // channelRegistry.unregister(channel.id) // TODO: Unregister from lobby?
         channelRegistry.register(group.id, group)
         group.chat?.let { channelRegistry.register(it.id, it) }
         return GroupEvent.Created(targetChannelId = group.id, description = "Group created")

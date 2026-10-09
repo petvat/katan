@@ -2,17 +2,17 @@ package io.github.petvat.katan.server.service.presenter.game
 
 import io.github.petvat.katan.server.service.channel.ChannelRegistry
 import io.github.petvat.katan.server.service.channel.GameChannel
+import io.github.petvat.katan.server.service.client.UserRegistry
 import io.github.petvat.katan.server.service.event.GameEvent
 import io.github.petvat.katan.shared.protocol.Response
-import io.github.petvat.katan.shared.protocol.dto.toDto
 
-class BuildInitialSettlementPresenter(channelRegistry: ChannelRegistry) :
-    AbstractGamePresenter<GameEvent.BuiltInitial>(channelRegistry) {
+class BuildInitialSettlementPresenter(channelRegistry: ChannelRegistry, userRegistry: UserRegistry) :
+    AbstractGamePresenter<GameEvent.BuiltInitial>(channelRegistry, userRegistry) {
     override fun playerView(
         event: GameEvent.BuiltInitial,
         requestPlayer: Int,
         playerNumber: Int,
-        channel: GameChannel // TODO: Decouple, use Id instead.
+        channel: GameChannel, // TODO: Decouple, use Id instead.
     ): Response {
 
         if (!event.setupOver) {
@@ -34,14 +34,14 @@ class BuildInitialSettlementPresenter(channelRegistry: ChannelRegistry) :
             // description = "Initial settlement built on ${event.coordinates}. Setup phase has ended.",
             thisPlayer = channel.snapshot.players
                 .single { it.number == playerNumber }
-                .resources.toDto(), // TODO: Probably better to decouple channel and do this in event receipt.
+                .resources, // TODO: Probably better to decouple channel and do this in event receipt.
             otherPlayers = channel.snapshot.players.filter { it.number != playerNumber }
                 .associate { it.number to it.resources.total }
         )
     }
 
     override fun spectatorView(event: GameEvent.BuiltInitial, channel: GameChannel): Response {
-        TODO("Not yet implemented")
+        return Response.OK // TODO: Implement
     }
 
 }

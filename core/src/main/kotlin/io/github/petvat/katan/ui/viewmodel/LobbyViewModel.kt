@@ -1,28 +1,24 @@
 package io.github.petvat.katan.ui.viewmodel
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.petvat.katan.event.*
-import io.github.petvat.katan.model.GroupSummary
 import io.github.petvat.katan.model.command.LobbyCommands
+import io.github.petvat.katan.model.state.ClientState
 import io.github.petvat.katan.shared.model.game.Settings
+import io.github.petvat.katan.shared.protocol.dto.GroupExternal
 
 
 data class LobbyViewModel(
-    val commands: LobbyCommands, // Make Model bigger! Move controllers out.
+    val state: ClientState,
+    val commands: LobbyCommands,
     val transitionService: ViewTransitionService,
-    val groups: MutableList<GroupSummary>,
+    val groups: MutableList<GroupExternal>,
 ) : ViewModel() {
+    val logger = KotlinLogging.logger { }
 
-    var groupSummaries: Map<String, GroupSummary> by propertyNotify(
-        groups.associateBy { it.id }
+    val groupSummaries: Map<String, GroupExternal> by mirror(
+        source = { state.lobby }, initial = state.lobby, project = { it }
     )
-
-    private fun addGroup(key: String, group: GroupSummary) {
-        groupSummaries = groupSummaries + (key to group)
-    }
-
-    private fun updateGroups(groups: Map<String, GroupSummary>) {
-        groupSummaries = groupSummaries + groups
-    }
 
     fun handleJoin(id: String) {
         commands.join(id)
@@ -43,10 +39,7 @@ data class LobbyViewModel(
             transitionService(ScreenType.GROUP)
         }
         if (event is GroupUpdateEvent) {
-            addGroup(
-                event.groupSummary.id,
-                event.groupSummary
-            )
+            logger.debug { "$event" }
         }
     }
 }

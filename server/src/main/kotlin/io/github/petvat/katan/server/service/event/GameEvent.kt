@@ -10,6 +10,9 @@ import io.github.petvat.katan.shared.model.game.ResourceMap
 sealed interface GameEvent : Event {
 
 
+    /**
+     * @property sourceChannelId the (group) channel this came from
+     */
     data class Init(
         override val targetChannelId: ChannelId,
         val sourceChannelId: ChannelId,

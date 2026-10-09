@@ -1,6 +1,6 @@
 package io.github.petvat.katan.event
 
-import io.github.petvat.katan.model.state.GroupExternal
+import io.github.petvat.katan.shared.protocol.dto.GroupExternal
 
 
 /**
